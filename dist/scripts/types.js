@@ -22,7 +22,6 @@
  * @property {string} firstMessage - First message
  * @property {string} firstMessageScript - Script for first message
  * @property {Array<Question>} questions - Array of questions
- * @property {number} questionCounter - Counter for question numbering
  * @property {string} activeTab - Currently active tab
  */
 
@@ -38,7 +37,6 @@ export function createEmptyScenarioData() {
         firstMessage: '',
         firstMessageScript: '',
         questions: [],
-        questionCounter: 1,
         activeTab: 'description'
     };
 }

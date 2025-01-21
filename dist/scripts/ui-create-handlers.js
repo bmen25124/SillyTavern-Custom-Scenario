@@ -1,9 +1,46 @@
 import { executeScript, interpolateText } from './utils.js';
-import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE } from './config.js';
+import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, uuidv4 } from './config.js';
 import { STORAGE_KEY, createEmptyScenarioData } from './types.js';
 
-/** @type {number} Counter for question numbering */
-let questionCounter = 1;
+/**
+ * Creates a production-ready version of scenario data without internal state
+ * @param {import('./types.js').ScenarioData} data - The full scenario data
+ * @returns {Object} Clean scenario data for production use
+ */
+function createProductionScenarioData(data) {
+    const { description, descriptionScript, firstMessage, firstMessageScript, questions } = data;
+    return {
+        description,
+        descriptionScript,
+        firstMessage,
+        firstMessageScript,
+        questions: questions.map(({ id, inputId, type, defaultValue, options }) => ({
+            id,
+            inputId,
+            type,
+            defaultValue,
+            ...(options && { options })
+        }))
+    };
+}
+
+/**
+ * Triggers download of scenario data as a JSON file
+ * @param {Object} data - The data to download
+ * @param {string} filename - The name of the file to download
+ */
+function downloadScenarioData(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 
 /**
  * Loads scenario data from local storage
@@ -67,7 +104,6 @@ function getScenarioDataFromUI(popup) {
         data.questions.push(question);
     });
 
-    data.questionCounter = questionCounter;
     return data;
 }
 
@@ -87,7 +123,6 @@ function applyScenarioDataToUI(popup, data) {
         addQuestionToUI(popup, question);
     });
 
-    questionCounter = data.questionCounter;
 
     // Switch to active tab
     switchTab(data.activeTab);
@@ -147,12 +182,92 @@ async function handleCharacterSidebarClick() {
  */
 function setupPopupHandlers() {
     const popup = $('#scenario-create-dialog');
-    questionCounter = 1; // Reset counter when opening dialog
 
     setupPreviewFunctionality(popup);
     setupTabFunctionality(popup);
     setupAccordion(popup);
     setupDynamicInputs(popup);
+    setupExportButton(popup);
+    setupImportButton(popup);
+}
+
+/**
+ * Sets up the import button functionality
+ * @param {JQuery} popup - The scenario creator dialog jQuery element
+ */
+function setupImportButton(popup) {
+    // Create hidden file input
+    const fileInput = $('<input type="file" accept=".json" style="display: none">');
+    popup.append(fileInput);
+
+    // Handle import button click
+    popup.find('#import-scenario-btn').on('click', function () {
+        fileInput.click();
+    });
+
+    // Handle file selection
+    fileInput.on('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                const scenarioData = convertImportedData(importedData);
+
+                // Clear existing data
+                popup.find('#dynamic-tab-buttons').empty();
+                popup.find('#dynamic-inputs-container').empty();
+
+                // Apply imported data
+                applyScenarioDataToUI(popup, scenarioData);
+
+                // Save imported data
+                saveScenarioData(scenarioData);
+            } catch (error) {
+                console.error('Import error:', error);
+                alert('Error importing file: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
+
+        // Reset file input for future imports
+        fileInput.val('');
+    });
+}
+
+/**
+ * Converts imported data to the correct format with internal state
+ * @param {Object} importedData - The imported scenario data
+ * @returns {import('./types.js').ScenarioData} Converted scenario data
+ */
+function convertImportedData(importedData) {
+    const { description, descriptionScript, firstMessage, firstMessageScript, questions } = importedData;
+
+    return {
+        description: description || '',
+        descriptionScript: descriptionScript || '',
+        firstMessage: firstMessage || '',
+        firstMessageScript: firstMessageScript || '',
+        questions: (questions || []).map(q => ({
+            ...q,
+            id: q.id || uuidv4()
+        })),
+        activeTab: 'description'
+    };
+}
+
+/**
+ * Sets up the export button functionality
+ * @param {JQuery} popup - The scenario creator dialog jQuery element
+ */
+function setupExportButton(popup) {
+    popup.find('#export-scenario-btn').on('click', function () {
+        const currentData = getScenarioDataFromUI(popup);
+        const productionData = createProductionScenarioData(currentData);
+        downloadScenarioData(productionData, 'scenario.json');
+    });
 }
 
 /**
@@ -314,8 +429,9 @@ function setupDynamicInputs(popup) {
     const tabButtonTemplate = popup.find('#tab-button-template');
 
     addInputBtn.on('click', () => {
+        const id = uuidv4();
         const question = {
-            id: `question-${questionCounter}`,
+            id,
             inputId: '',
             type: 'text',
             defaultValue: ''
@@ -325,8 +441,7 @@ function setupDynamicInputs(popup) {
         // Save state and switch to new tab
         const currentData = getScenarioDataFromUI(popup);
         saveScenarioData(currentData);
-        switchTab(`question-${questionCounter}`);
-        questionCounter++;
+        switchTab(`question-${id}`);
     });
 }
 

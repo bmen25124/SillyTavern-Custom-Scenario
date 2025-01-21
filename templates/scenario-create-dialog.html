@@ -2,11 +2,17 @@
     <h2>Scenario Creator</h2>
 
     <!-- Tab Navigation -->
-    <div class="flex-container tab-navigation">
-        <button class="tab-button menu_button" data-tab="description">Description</button>
-        <button class="tab-button menu_button" data-tab="first-message">First Message</button>
-        <div id="dynamic-tab-buttons"></div>
-        <button id="add-input-btn" class="menu_button">+ Add Question</button>
+    <div class="flex-container tab-navigation justifySpaceBetween">
+        <div class="flex-container">
+            <button class="tab-button menu_button" data-tab="description">Description</button>
+            <button class="tab-button menu_button" data-tab="first-message">First Message</button>
+            <div id="dynamic-tab-buttons"></div>
+            <button id="add-input-btn" class="menu_button">+ Add Question</button>
+        </div>
+        <div class="flex-container gap10">
+            <button id="import-scenario-btn" class="menu_button">Import</button>
+            <button id="export-scenario-btn" class="menu_button">Export for Play</button>
+        </div>
     </div>
 
     <!-- Tab Contents -->
