@@ -78,6 +78,82 @@ async function prepareCharacterSidebar() {
 
             const newInput = $(inputTemplate.html().replace(/{id}/g, id));
 
+            // Setup input type change handler
+            newInput.find('.input-type-select').on('change', function () {
+                const container = $(this).closest('.dynamic-input-group');
+                const selectOptionsContainer = container.find('.select-options-container');
+                const defaultValueContainer = container.find('.default-value-container');
+                const textareaDefault = defaultValueContainer.find('.input-default');
+                const checkboxDefault = defaultValueContainer.find('.checkbox-default');
+                const selectDefault = defaultValueContainer.find('.select-default');
+
+                switch ($(this).val()) {
+                    case 'select':
+                        selectOptionsContainer.show();
+                        defaultValueContainer.show();
+                        textareaDefault.hide();
+                        checkboxDefault.hide();
+                        selectDefault.show();
+                        break;
+                    case 'checkbox':
+                        selectOptionsContainer.hide();
+                        defaultValueContainer.show();
+                        textareaDefault.hide();
+                        checkboxDefault.show();
+                        selectDefault.hide();
+                        break;
+                    default: // textarea
+                        selectOptionsContainer.hide();
+                        defaultValueContainer.show();
+                        textareaDefault.show();
+                        checkboxDefault.hide();
+                        selectDefault.hide();
+                        break;
+                }
+            });
+
+            // Setup add option button
+            newInput.find('.add-option-btn').on('click', function () {
+                const optionsList = $(this).closest('.select-options-container').find('.options-list');
+                const optionTemplate = popup.find('#select-option-template').html();
+                const newOption = $(optionTemplate);
+                const selectDefault = $(this).closest('.dynamic-input-group').find('.select-default');
+
+                // Setup option change handlers
+                newOption.find('.option-value, .option-label').on('input', function () {
+                    updateDefaultOptions(optionsList, selectDefault);
+                });
+
+                newOption.find('.remove-option-btn').on('click', function () {
+                    $(this).closest('.option-item').remove();
+                    updateDefaultOptions(optionsList, selectDefault);
+                });
+
+                optionsList.append(newOption);
+            });
+
+            function updateDefaultOptions(optionsList, selectDefault) {
+                // Store current selection
+                const currentValue = selectDefault.val();
+
+                // Clear existing options except the placeholder
+                selectDefault.find('option:not(:first)').remove();
+
+                // Add new options
+                optionsList.find('.option-item').each(function () {
+                    const value = $(this).find('.option-value').val();
+                    const label = $(this).find('.option-label').val();
+                    if (value && label) {
+                        selectDefault.append(`<option value="${value}">${label}</option>`);
+                    }
+                });
+
+                // Restore previous selection if it still exists
+                if (selectDefault.find(`option[value="${currentValue}"]`).length) {
+                    selectDefault.val(currentValue);
+                }
+            }
+
             dynamicTabButtons.append(tabHtml);
             dynamicInputsContainer.append(newInput);
             questionCounter++;

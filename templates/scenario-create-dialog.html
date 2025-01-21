@@ -41,11 +41,17 @@
     <template id="dynamic-input-template">
         <div class="tab-content dynamic-input-group" data-tab="question-{id}">
             <div class="flex-container flexFlowColumn marginTop10">
-                <div class="flex-container question-header">
+                <div class="flex-container question-header gap10">
                     <div class="flex1">
                         <select class="text_pole input-type-select">
                             <option value="textarea">Textarea</option>
+                            <option value="select">Select</option>
+                            <option value="checkbox">Checkbox</option>
                         </select>
+                    </div>
+                    <div class="flex2">
+                        <input type="text" class="text_pole input-id" placeholder="Enter ID (e.g., character_name)"
+                            title="This ID will be used as {{answer_id}} in templates">
                     </div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
@@ -59,10 +65,32 @@
                         Required
                     </label>
                 </div>
-                <div class="flex-container flexFlowColumn marginTop10">
-                    <label>Default Value:</label>
-                    <textarea class="text_pole textarea_compact input-default" rows="2"
-                        placeholder="Enter default value"></textarea>
+                <!-- Select Options Section -->
+                <div class="select-options-container" style="display: none;">
+                    <div class="flex-container flexFlowColumn marginTop10">
+                        <div class="flex-container justifySpaceBetween alignItemsCenter">
+                            <label>Options:</label>
+                            <button class="menu_button add-option-btn">+ Add Option</button>
+                        </div>
+                        <div class="options-list"></div>
+                    </div>
+                </div>
+                <!-- Default Value Section -->
+                <div class="default-value-container">
+                    <div class="flex-container flexFlowColumn marginTop10">
+                        <label>Default Value:</label>
+                        <div class="default-value-input-container">
+                            <textarea class="text_pole textarea_compact input-default" rows="2"
+                                placeholder="Enter default value"></textarea>
+                            <label class="checkbox_label checkbox-default" style="display: none;">
+                                <input type="checkbox" class="input-default-checkbox">
+                                Checked by default
+                            </label>
+                            <select class="text_pole select-default" style="display: none;">
+                                <option value="">Select a default value</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -73,6 +101,17 @@
         <div class="tab-button-container">
             <button class="tab-button menu_button" data-tab="question-{id}">Question {number}</button>
             <button class="remove-input-btn menu_button" title="Remove Question">×</button>
+        </div>
+    </template>
+
+    <!-- Template for select option -->
+    <template id="select-option-template">
+        <div class="flex-container option-item marginTop5">
+            <div class="flex-container flex1 gap10">
+                <input type="text" class="text_pole option-label flex1" placeholder="Enter option label">
+                <input type="text" class="text_pole option-value flex1" placeholder="Enter option value">
+            </div>
+            <button class="menu_button remove-option-btn marginLeft10" title="Remove Option">×</button>
         </div>
     </template>
 </div>
@@ -115,5 +154,17 @@
         min-width: auto;
         font-size: 16px;
         line-height: 1;
+    }
+
+    .gap10 {
+        gap: 10px;
+    }
+
+    .marginLeft10 {
+        margin-left: 10px;
+    }
+
+    .flex2 {
+        flex: 2;
     }
 </style>
