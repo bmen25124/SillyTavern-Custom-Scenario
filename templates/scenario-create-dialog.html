@@ -1,23 +1,119 @@
 <div id="scenario-create-dialog">
-    <h2>Simple Dialog</h2>
-    <p>This is a basic dialog content.</p>
+    <h2>Scenario Creator</h2>
 
-    <div class="flex-container marginTopBot5">
-        <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Character description">
-            <label for="scenario-creator-character-description">
-                Character description:
-            </label>
-            <textarea type="text" id="scenario-creator-character-description" class="text_pole textarea_compact"
-                rows="4" placeholder="Enter character description">{{description}}</textarea>
-        </div>
+    <!-- Tab Navigation -->
+    <div class="flex-container tab-navigation">
+        <button class="tab-button menu_button" data-tab="description">Description</button>
+        <button class="tab-button menu_button" data-tab="first-message">First Message</button>
+        <div id="dynamic-tab-buttons"></div>
+        <button id="add-input-btn" class="menu_button">+ Add Question</button>
     </div>
-    <div class="flex-container marginTopBot5">
-        <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="First message">
-            <label for="scenario-creator-character-first-message">
-                First message:
-            </label>
-            <textarea type="text" id="scenario-creator-character-first-message" class="text_pole textarea_compact"
-                rows="4" placeholder="Enter first message">{{first_message}}</textarea>
+
+    <!-- Tab Contents -->
+    <div class="tab-contents">
+        <!-- Description Tab -->
+        <div class="tab-content" data-tab="description">
+            <div class="flex-container marginTopBot5">
+                <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Character description">
+                    <label for="scenario-creator-character-description">Character description:</label>
+                    <textarea id="scenario-creator-character-description" class="text_pole textarea_compact" rows="4"
+                        placeholder="Enter character description">{{description}}</textarea>
+                </div>
+            </div>
         </div>
+
+        <!-- First Message Tab -->
+        <div class="tab-content" data-tab="first-message">
+            <div class="flex-container marginTopBot5">
+                <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="First message">
+                    <label for="scenario-creator-character-first-message">First message:</label>
+                    <textarea id="scenario-creator-character-first-message" class="text_pole textarea_compact" rows="4"
+                        placeholder="Enter first message">{{first_message}}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Questions Container -->
+        <div id="dynamic-inputs-container"></div>
     </div>
+
+    <!-- Template for dynamic input -->
+    <template id="dynamic-input-template">
+        <div class="tab-content dynamic-input-group" data-tab="question-{id}">
+            <div class="flex-container flexFlowColumn marginTop10">
+                <div class="flex-container question-header">
+                    <div class="flex1">
+                        <select class="text_pole input-type-select">
+                            <option value="textarea">Textarea</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex-container flexFlowColumn marginTop10">
+                    <label>Question:</label>
+                    <textarea class="text_pole textarea_compact input-question" rows="2"
+                        placeholder="Enter question"></textarea>
+                </div>
+                <div class="flex-container alignItemsCenter marginTop10">
+                    <label class="checkbox_label">
+                        <input type="checkbox" class="input-required">
+                        Required
+                    </label>
+                </div>
+                <div class="flex-container flexFlowColumn marginTop10">
+                    <label>Default Value:</label>
+                    <textarea class="text_pole textarea_compact input-default" rows="2"
+                        placeholder="Enter default value"></textarea>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Template for tab button -->
+    <template id="tab-button-template">
+        <div class="tab-button-container">
+            <button class="tab-button menu_button" data-tab="question-{id}">Question {number}</button>
+            <button class="remove-input-btn menu_button" title="Remove Question">×</button>
+        </div>
+    </template>
 </div>
+
+<style>
+    .tab-navigation {
+        gap: 5px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .tab-button {
+        min-width: auto;
+    }
+
+    .tab-button.active {
+        background-color: var(--accent-color);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    #dynamic-tab-buttons {
+        display: flex;
+        gap: 5px;
+    }
+
+    .tab-button-container {
+        display: flex;
+        gap: 2px;
+    }
+
+    .remove-input-btn {
+        padding: 0 8px;
+        min-width: auto;
+        font-size: 16px;
+        line-height: 1;
+    }
+</style>
