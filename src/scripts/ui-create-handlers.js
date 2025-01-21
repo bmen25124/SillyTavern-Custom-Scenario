@@ -37,7 +37,8 @@ function createProductionScenarioData(data, formData) {
             defaultValue,
             required,
             ...(options && { options })
-        }))
+        })),
+        layout: data.layout || [[...questions.map(q => q.inputId)]] // Default to all questions in one page if no layout specified
     };
 
     // Return the final production data format
@@ -127,8 +128,10 @@ function getScenarioDataFromUI(popup) {
     data.firstMessageScript = popup.find('#scenario-creator-first-message-script').val() || '';
     data.activeTab = popup.find('.tab-button.active').data('tab') || 'description';
 
-    // Get questions data
+    // Get questions data and build layout
     data.questions = [];
+    const questionsByPage = new Map(); // page number -> input IDs
+
     popup.find('.dynamic-input-group').each(function () {
         const question = {
             id: $(this).data('tab').replace('question-', ''),
@@ -138,6 +141,7 @@ function getScenarioDataFromUI(popup) {
             defaultValue: '',
             required: $(this).find('.input-required').prop('checked')
         };
+        const pageNumber = parseInt($(this).find('.input-page').val()) || 1;
 
         switch (question.type) {
             case 'checkbox':
@@ -158,7 +162,18 @@ function getScenarioDataFromUI(popup) {
         }
 
         data.questions.push(question);
+
+        // Group questions by page number
+        if (!questionsByPage.has(pageNumber)) {
+            questionsByPage.set(pageNumber, []);
+        }
+        questionsByPage.set(pageNumber, [...questionsByPage.get(pageNumber), question.inputId]);
     });
+
+    // Convert page map to layout array
+    data.layout = Array.from(questionsByPage.keys())
+        .sort((a, b) => a - b) // Sort page numbers
+        .map(pageNum => questionsByPage.get(pageNum));
 
     return data;
 }
@@ -177,6 +192,10 @@ function applyScenarioDataToUI(popup, data) {
     // Restore questions
     data.questions.forEach(question => {
         addQuestionToUI(popup, question);
+        const questionGroup = popup.find(`.dynamic-input-group[data-tab="question-${question.id}"]`);
+        const pageNumber = data.layout
+            .findIndex(page => page.includes(question.inputId)) + 1 || 1;
+        questionGroup.find('.input-page').val(pageNumber);
     });
 
 
@@ -308,16 +327,27 @@ function setupImportButton(popup) {
 function convertImportedData(importedData) {
     // Extract scenario creator specific data
     const scenarioCreator = importedData.scenario_creator || {};
+    const questions = (scenarioCreator.questions || []).map(q => ({
+        ...q,
+        id: q.id || uuidv4()
+    }));
+
+    // Handle layout information
+    let layout;
+    if (scenarioCreator.layout && Array.isArray(scenarioCreator.layout)) {
+        layout = scenarioCreator.layout;
+    } else {
+        // Default to all questions in one page
+        layout = [[...questions.map(q => q.inputId)]];
+    }
 
     return {
         description: importedData.description || '',
         descriptionScript: scenarioCreator.descriptionScript || '',
         firstMessage: importedData.first_mes || '',
         firstMessageScript: scenarioCreator.firstMessageScript || '',
-        questions: (scenarioCreator.questions || []).map(q => ({
-            ...q,
-            id: q.id || uuidv4()
-        })),
+        questions,
+        layout,
         activeTab: 'description'
     };
 }

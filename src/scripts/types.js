@@ -25,6 +25,7 @@
  * @property {string} firstMessage - First message
  * @property {string} firstMessageScript - Script for first message
  * @property {Array<Question>} questions - Array of questions
+ * @property {Array<Array<string>>} layout - Array of arrays containing input IDs for page grouping
  * @property {string} activeTab - Currently active tab
  * @property {Object} formData - Form data
  */
@@ -41,6 +42,7 @@ export function createEmptyScenarioData() {
         firstMessage: '',
         firstMessageScript: '',
         questions: [],
+        layout: [],
         activeTab: 'description'
     };
 }

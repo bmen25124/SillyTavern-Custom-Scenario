@@ -71,19 +71,28 @@ async function setupPlayDialogHandlers(scenarioData) {
      */
     let inputTemplate;
 
+    // Set up pagination variables
+    let currentPageIndex = 0;
+    const layout = scenarioData.scenario_creator.layout || [[...questions.map(q => q.inputId)]];
+    const visitedPages = new Set([0]); // Track visited pages, starting with first page
+
     callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', {
         okButton: true,
         cancelButton: true,
+        wider: true,
         onClosing: async (popupInstance) => {
             if (popupInstance.result !== POPUP_RESULT.AFFIRMATIVE) {
                 return true;
             }
 
-            // Reset previous validation errors
-            popup.find('.validation-error').hide();
+            // Check if all pages have been visited before allowing cancel
+            if (visitedPages.size < layout.length) {
+                await SlashCommandParser.commands['echo'].callback({ severity: 'warning' }, 'Please view all pages before playing');
+                return false;
+            }
 
-            // Validate required fields
-            const answers = {};
+            // On final submission, validate all fields
+            const allAnswers = {};
             let hasValidationErrors = false;
 
             popup.find('.dynamic-input').each(function () {
@@ -100,7 +109,7 @@ async function setupPlayDialogHandlers(scenarioData) {
                         value = $input.val();
                 }
 
-                answers[id] = value;
+                allAnswers[id] = value;
 
                 // Check if required field is empty
                 if (required && (value === '' || value === undefined)) {
@@ -113,17 +122,30 @@ async function setupPlayDialogHandlers(scenarioData) {
             });
 
             if (hasValidationErrors) {
+                // Find first page with validation error
+                for (let i = 0; i < layout.length; i++) {
+                    const inputIds = layout[i];
+                    const hasError = inputIds.some(inputId => {
+                        const wrapper = popup.find(`[data-input-id="${inputId}"]`);
+                        return wrapper.find('.validation-error:visible').length > 0;
+                    });
+                    if (hasError) {
+                        currentPageIndex = i;
+                        displayCurrentPage();
+                        break;
+                    }
+                }
                 return false;
             }
 
             try {
-                // Process description and first message with answers
+                // Process description and first message with allAnswers
                 const descriptionVars = descriptionScript ?
-                    executeScript(descriptionScript, answers) : answers;
+                    executeScript(descriptionScript, allAnswers) : allAnswers;
                 const description = interpolateText(scenarioData.description, descriptionVars);
 
                 const firstMessageVars = firstMessageScript ?
-                    executeScript(firstMessageScript, answers) : answers;
+                    executeScript(firstMessageScript, allAnswers) : allAnswers;
                 const firstMessage = interpolateText(scenarioData.first_mes, firstMessageVars);
 
                 // Create form data for character creation
@@ -162,50 +184,138 @@ async function setupPlayDialogHandlers(scenarioData) {
     dynamicInputsContainer = popup.find('#dynamic-inputs-container');
     inputTemplate = popup.find('#dynamic-input-template');
 
-    // Add each question to the UI
-    (questions || []).forEach(question => {
-        const newInput = $(inputTemplate.html());
-        newInput.find('.input-question').text(question.text + (question.required ? ' *' : ''));
+    // Create navigation buttons
+    const navigationButtons = $(`
+        <div class="flex-container justifySpaceBetween">
+            <button id="prev-page" class="menu_button" style="display: none">Previous</button>
+            <div id="page-indicator"></div>
+            <button id="next-page" class="menu_button">Next</button>
+        </div>
+    `);
+    dynamicInputsContainer.before(navigationButtons);
 
-        const inputContainer = newInput.find('.input-container');
-        const inputAttrs = {
-            'data-id': question.inputId,
-            'data-required': question.required || false
-        };
+    // Navigation button handlers
+    const prevButton = navigationButtons.find('#prev-page');
+    const nextButton = navigationButtons.find('#next-page');
+    const pageIndicator = navigationButtons.find('#page-indicator');
 
-        switch (question.type) {
-            case 'checkbox':
-                inputContainer.html(`
+    // Function to validate current page
+    function validateCurrentPage() {
+        popup.find('.validation-error').hide();
+        let hasPageErrors = false;
+        const currentPageInputs = popup.find('.dynamic-input').filter((_, el) =>
+            layout[currentPageIndex].includes($(el).data('id'))
+        );
+
+        currentPageInputs.each(function () {
+            const $input = $(this);
+            if ($input.data('required')) {
+                let value;
+                switch ($input.attr('type')) {
+                    case 'checkbox':
+                        value = $input.prop('checked');
+                        break;
+                    default:
+                        value = $input.val();
+                }
+
+                if (value === '' || value === undefined) {
+                    hasPageErrors = true;
+                    $input.closest('.dynamic-input-group')
+                        .find('.validation-error')
+                        .text('This field is required')
+                        .show();
+                }
+            }
+        });
+
+        return !hasPageErrors;
+    }
+
+    // Function to handle page navigation
+    function navigateToPage(targetIndex) {
+        if (targetIndex >= 0 && targetIndex < layout.length) {
+            if (targetIndex > currentPageIndex && !validateCurrentPage()) {
+                return;
+            }
+            currentPageIndex = targetIndex;
+            displayCurrentPage();
+        }
+    }
+
+    prevButton.on('click', () => navigateToPage(currentPageIndex - 1));
+    nextButton.on('click', () => navigateToPage(currentPageIndex + 1));
+
+    // Create all inputs at initialization
+    function createAllInputs() {
+        questions.forEach(question => {
+            const newInput = $(inputTemplate.html());
+            newInput.find('.input-question').text(question.text + (question.required ? ' *' : ''));
+            newInput.addClass('dynamic-input-wrapper');
+            newInput.attr('data-input-id', question.inputId);
+
+            const inputContainer = newInput.find('.input-container');
+            const inputAttrs = {
+                'data-id': question.inputId,
+                'data-required': question.required || false
+            };
+
+            switch (question.type) {
+                case 'checkbox':
+                    inputContainer.html(`
                     <label class="checkbox_label">
                         <input type="checkbox" class="dynamic-input"
                             ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}
                             ${question.defaultValue ? 'checked' : ''}>
                     </label>
                 `);
-                break;
-            case 'select':
-                const selectHtml = `
+                    break;
+                case 'select':
+                    const selectHtml = `
                     <select class="text_pole dynamic-input"
                         ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}>
                         ${question.options.map(opt =>
-                    `<option value="${opt.value}" ${opt.value === question.defaultValue ? 'selected' : ''}>
+                        `<option value="${opt.value}" ${opt.value === question.defaultValue ? 'selected' : ''}>
                                 ${opt.label}
                             </option>`
-                ).join('')}
+                    ).join('')}
                     </select>
                 `;
-                inputContainer.html(selectHtml);
-                break;
-            default: // text
-                inputContainer.html(`
+                    inputContainer.html(selectHtml);
+                    break;
+                default: // text
+                    inputContainer.html(`
                     <input type="text" class="text_pole dynamic-input"
                         ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}
                         value="${question.defaultValue || ''}"
                         placeholder="${question.required ? 'Required' : 'Enter your answer'}">
                 `);
-                break;
-        }
+                    break;
+            }
 
-        dynamicInputsContainer.append(newInput);
-    });
+            dynamicInputsContainer.append(newInput);
+        });
+    }
+
+    // Function to display current page by showing/hiding inputs
+    function displayCurrentPage() {
+        // Hide all inputs first
+        dynamicInputsContainer.find('.dynamic-input-wrapper').hide();
+
+        // Show only inputs for current page
+        const currentPageQuestions = questions.filter(q => layout[currentPageIndex].includes(q.inputId));
+        currentPageQuestions.forEach(question => {
+            dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`).show();
+        });
+
+        // Update navigation and track visited pages
+        visitedPages.add(currentPageIndex);
+        prevButton.toggle(currentPageIndex > 0);
+        nextButton.toggle(currentPageIndex < layout.length - 1);
+        pageIndicator.text(`Page ${currentPageIndex + 1} of ${layout.length}`);
+    }
+
+    // Create all inputs and display first page
+    createAllInputs();
+    displayCurrentPage();
 }
