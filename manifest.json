@@ -1,0 +1,11 @@
+{
+    "display_name": "scenario-creator",
+    "loading_order": 150,
+    "requires": [],
+    "optional": [],
+    "js": "dist/scripts/index.js",
+    "css": "dist/styles/style.css",
+    "author": "bmen25124",
+    "version": "0.1.0",
+    "homePage": "https://github.com/bmen25124/????"
+}
