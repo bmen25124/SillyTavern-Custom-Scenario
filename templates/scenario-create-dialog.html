@@ -1,4 +1,23 @@
 <div id="scenario-create-dialog">
     <h2>Simple Dialog</h2>
     <p>This is a basic dialog content.</p>
+
+    <div class="flex-container marginTopBot5">
+        <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Character description">
+            <label for="scenario-creator-character-description">
+                Character description:
+            </label>
+            <textarea type="text" id="scenario-creator-character-description" class="text_pole textarea_compact"
+                rows="4" placeholder="Enter character description">{{description}}</textarea>
+        </div>
+    </div>
+    <div class="flex-container marginTopBot5">
+        <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="First message">
+            <label for="scenario-creator-character-first-message">
+                First message:
+            </label>
+            <textarea type="text" id="scenario-creator-character-first-message" class="text_pole textarea_compact"
+                rows="4" placeholder="Enter first message">{{first_message}}</textarea>
+        </div>
+    </div>
 </div>

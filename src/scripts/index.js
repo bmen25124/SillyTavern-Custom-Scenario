@@ -1,16 +1,17 @@
-import { SlashCommandParser } from '../../../../../../public/scripts/slash-commands/SlashCommandParser.js';
-import { SlashCommand } from '../../../../../../public/scripts/slash-commands/SlashCommand.js';
+// import { SlashCommandParser } from '../../../../../../public/scripts/slash-commands/SlashCommandParser.js';
+// import { SlashCommand } from '../../../../../../public/scripts/slash-commands/SlashCommand.js';
 import { renderExtensionTemplateAsync } from '../../../../../../public/scripts/extensions.js';
+// import { echoCallback } from '../../../../../../public/scripts/slash-commands.js';
 import { callGenericPopup, POPUP_TYPE } from '../../../../../../public/scripts/popup.js';
 
 const extensionName = 'scenario-creator';
 const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 
-SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-    aliases: ['testalias'],
-    name: 'testname',
-    helpString: 'testhelp',
-}));
+// SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+//     aliases: ['testalias'],
+//     name: 'testname',
+//     helpString: 'testhelp',
+// }));
 
 jQuery(async () => {
     await prepareSettings();
@@ -27,9 +28,19 @@ async function prepareCharacterSidebar() {
     $('.form_create_bottom_buttons_block').prepend(characterSidebarIconHtml);
     const characterSidebarIcon = $('#character-sidebar-icon');
 
-    const scenarioCreateDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-create-dialog'));
-
     characterSidebarIcon.on('click', async () => {
+        let formElement = $('#form_create');
+        if (formElement.length === 0) {
+            // echoCallback({}, 'Character creation form not found');
+            return;
+        }
+        formElement = formElement.get(0);
+
+        const formData = new FormData(formElement);
+        const scenarioCreateDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-create-dialog', {
+            description: formData.get('description'),
+            first_message: formData.get('first_mes'),
+        }));
         await callGenericPopup(scenarioCreateDialogHtml, POPUP_TYPE.TEXT, '', { okButton: true, cancelButton: true });
     });
 }
