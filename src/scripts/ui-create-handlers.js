@@ -174,6 +174,13 @@ async function handleCharacterSidebarClick() {
     // Load saved data after popup is created
     const popup = $('#scenario-create-dialog');
     const savedData = loadScenarioData();
+    if (!savedData.description) {
+        savedData.description = formData.get('description');
+    }
+    if (!savedData.firstMessage) {
+        savedData.firstMessage = formData.get('first_mes');
+    }
+
     applyScenarioDataToUI(popup, savedData);
 }
 
