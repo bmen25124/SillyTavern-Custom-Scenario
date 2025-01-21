@@ -47,11 +47,34 @@
 
         <!-- First Message Tab -->
         <div class="tab-content" data-tab="first-message">
-            <div class="flex-container marginTopBot5">
+            <div class="flex-container flexFlowColumn marginTopBot5">
                 <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="First message">
                     <label for="scenario-creator-character-first-message">First message:</label>
                     <textarea id="scenario-creator-character-first-message" class="text_pole textarea_compact" rows="4"
                         placeholder="Enter first message">{{first_message}}</textarea>
+                </div>
+                <div class="accordion marginTop10">
+                    <div class="accordion-header">
+                        <button class="menu_button accordion-toggle">
+                            <span class="accordion-icon">▼</span>
+                            Script
+                        </button>
+                        <button id="refresh-first-message-preview" class="menu_button">Refresh Preview</button>
+                    </div>
+                    <div class="accordion-content">
+                        <div id="first-message-script-inputs-container"
+                            class="flex-container flexFlowColumn marginTop10 marginBottom10">
+                            <!-- Dynamic script inputs will be added here -->
+                        </div>
+                        <textarea id="scenario-creator-first-message-script" class="text_pole textarea_compact" rows="8"
+                            placeholder="Enter your script here..."></textarea>
+                    </div>
+                </div>
+                <div class="flex-container flexFlowColumn marginTop10">
+                    <label>Preview:</label>
+                    <div id="first-message-preview" class="text_pole">
+                        Preview will appear here...
+                    </div>
                 </div>
             </div>
         </div>
@@ -250,7 +273,8 @@
         flex: 2;
     }
 
-    #description-preview {
+    #description-preview,
+    #first-message-preview {
         min-height: 100px;
         padding: 10px;
         white-space: pre-wrap;

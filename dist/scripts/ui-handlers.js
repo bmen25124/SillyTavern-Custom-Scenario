@@ -42,25 +42,28 @@ function setupPopupHandlers() {
 }
 
 function setupPreviewFunctionality(popup) {
+    // Description preview
     const refreshPreviewBtn = popup.find('#refresh-preview');
-    const descriptionTextarea = popup.find('#scenario-creator-character-description');
-    const scriptTextarea = popup.find('#scenario-creator-script');
-    const previewDiv = popup.find('#description-preview');
+    refreshPreviewBtn.on('click', () => updatePreview(popup, 'description'));
 
-    refreshPreviewBtn.on('click', () => updatePreview(popup));
+    // First message preview
+    const refreshFirstMessagePreviewBtn = popup.find('#refresh-first-message-preview');
+    refreshFirstMessagePreviewBtn.on('click', () => updatePreview(popup, 'first-message'));
 }
 
-function updatePreview(popup) {
-    const descriptionTextarea = popup.find('#scenario-creator-character-description');
-    const scriptTextarea = popup.find('#scenario-creator-script');
-    const previewDiv = popup.find('#description-preview');
+function updatePreview(popup, type) {
+    const isDescription = type === 'description';
+    const textarea = popup.find(isDescription ? '#scenario-creator-character-description' : '#scenario-creator-character-first-message');
+    const scriptTextarea = popup.find(isDescription ? '#scenario-creator-script' : '#scenario-creator-first-message-script');
+    const previewDiv = popup.find(isDescription ? '#description-preview' : '#first-message-preview');
+    const scriptInputsContainer = popup.find(isDescription ? '#script-inputs-container' : '#first-message-script-inputs-container');
 
-    const description = descriptionTextarea.val();
+    const content = textarea.val();
     const script = scriptTextarea.val();
 
     // Collect answers from script inputs
     const answers = {};
-    popup.find('.script-input-group').each(function () {
+    scriptInputsContainer.find('.script-input-group').each(function () {
         const id = $(this).data('id');
         const type = $(this).data('type');
         switch (type) {
@@ -80,8 +83,8 @@ function updatePreview(popup) {
         // Execute script if exists
         const variables = script ? executeScript(script, answers) : answers;
 
-        // Interpolate description with variables
-        const interpolated = interpolateText(description, variables);
+        // Interpolate content with variables
+        const interpolated = interpolateText(content, variables);
         previewDiv.text(interpolated);
     } catch (error) {
         console.error('Preview update/script execute error:', error);
@@ -106,15 +109,15 @@ function setupTabFunctionality(popup) {
 }
 
 function setupAccordion(popup) {
-    const accordion = popup.find('.accordion');
-    const accordionToggle = popup.find('.accordion-toggle');
+    const accordions = popup.find('.accordion');
+    const accordionToggles = popup.find('.accordion-toggle');
 
-    accordionToggle.on('click', function () {
-        accordion.toggleClass('open');
+    accordionToggles.on('click', function () {
+        $(this).closest('.accordion').toggleClass('open');
     });
 
-    // Start with accordion open
-    accordion.addClass('open');
+    // Start with accordions open
+    accordions.addClass('open');
 }
 
 function setupDynamicInputs(popup, questionCounter) {
@@ -233,8 +236,11 @@ function setupScriptInputsUpdateHandlers(newInput, popup) {
 
 function updateScriptInputs(popup) {
     const scriptInputsContainer = popup.find('#script-inputs-container');
+    const firstMessageScriptInputsContainer = popup.find('#first-message-script-inputs-container');
     scriptInputsContainer.empty();
+    firstMessageScriptInputsContainer.empty();
 
+    // Create script inputs for both description and first message
     popup.find('.dynamic-input-group').each(function () {
         const id = $(this).find('.input-id').val();
         if (!id) return;
@@ -267,16 +273,20 @@ function updateScriptInputs(popup) {
             </div>
         `);
 
-        scriptInputsContainer.append(inputGroup);
+        // Add to both containers
+        scriptInputsContainer.append(inputGroup.clone());
+        firstMessageScriptInputsContainer.append(inputGroup.clone());
 
-        // Set the select value after appending
+        // Set the select value after appending for both
         if (type === 'select') {
-            inputGroup.find('select').val(defaultValue);
+            scriptInputsContainer.find(`select#script-input-${id}`).val(defaultValue);
+            firstMessageScriptInputsContainer.find(`select#script-input-${id}`).val(defaultValue);
         }
     });
 
-    // Update preview after updating inputs
-    updatePreview(popup);
+    // Update both previews after updating inputs
+    updatePreview(popup, 'description');
+    updatePreview(popup, 'first-message');
 }
 
 function setupRemoveButton(tabContainer, popup) {
