@@ -90,7 +90,7 @@
                 <div class="flex-container question-header gap10">
                     <div class="flex1">
                         <select class="text_pole input-type-select">
-                            <option value="textarea">Textarea</option>
+                            <option value="text">Text</option>
                             <option value="select">Select</option>
                             <option value="checkbox">Checkbox</option>
                         </select>
@@ -265,8 +265,13 @@
         min-width: 100px;
     }
 
-    .script-input-group input {
+    .script-input-group input:not([type="checkbox"]) {
         flex: 1;
+    }
+
+    .script-input-group input[type="checkbox"] {
+        width: auto;
+        margin-left: 0;
     }
 
     .flex2 {
