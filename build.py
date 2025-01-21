@@ -30,9 +30,19 @@ def update_imports(file_path):
         content
     )
     updated_content = re.sub(
+        r'from \'../../../../../../public/',
+        'from \'../../../../../../',
+        updated_content
+    )
+    updated_content = re.sub(
         r'import \{[^}]+\} from \'../../../../../../public/scripts/',
         lambda m: m.group().replace('../../../../../../public/scripts/', '../../../../../'),
-        content
+        updated_content
+    )
+    updated_content = re.sub(
+        r'import \{[^}]+\} from \'../../../../../../public/',
+        lambda m: m.group().replace('../../../../../../public/', '../../../../../../'),
+        updated_content
     )
 
     with open(file_path, 'w', encoding='utf-8') as file:

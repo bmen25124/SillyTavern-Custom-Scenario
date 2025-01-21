@@ -5,10 +5,29 @@ import { STORAGE_KEY, createEmptyScenarioData } from './types.js';
 /**
  * Creates a production-ready version of scenario data without internal state
  * @param {import('./types.js').ScenarioData} data - The full scenario data
+ * @param {FormData} formData - The form data from the character creation form
  * @returns {Object} Clean scenario data for production use
  */
-function createProductionScenarioData(data) {
+function createProductionScenarioData(data, formData) {
     const { description, descriptionScript, firstMessage, firstMessageScript, questions } = data;
+
+    // Convert FormData to object and exclude first_mes and description
+    const formEntries = Array.from(formData.entries());
+    const formDataObj = {};
+    for (const [key, value] of formEntries) {
+        if (key !== 'first_mes' && key !== 'description') {
+            formDataObj[key] = value;
+        }
+        if (key === 'json_data') {
+            const json_data = JSON.parse(value);
+            json_data["first_mes"] = firstMessage;
+            json_data["description"] = description;
+            json_data.data["first_mes"] = firstMessage;
+            json_data.data["description"] = description;
+            formDataObj[key] = JSON.stringify(json_data);
+        }
+    }
+
     return {
         description,
         descriptionScript,
@@ -20,7 +39,8 @@ function createProductionScenarioData(data) {
             type,
             defaultValue,
             ...(options && { options })
-        }))
+        })),
+        formData: formDataObj,
     };
 }
 
@@ -272,7 +292,9 @@ function convertImportedData(importedData) {
 function setupExportButton(popup) {
     popup.find('#export-scenario-btn').on('click', function () {
         const currentData = getScenarioDataFromUI(popup);
-        const productionData = createProductionScenarioData(currentData);
+        const formElement = $('#form_create').get(0);
+        const formData = new FormData(formElement);
+        const productionData = createProductionScenarioData(currentData, formData);
         downloadScenarioData(productionData, 'scenario.json');
     });
 }

@@ -23,6 +23,7 @@
  * @property {string} firstMessageScript - Script for first message
  * @property {Array<Question>} questions - Array of questions
  * @property {string} activeTab - Currently active tab
+ * @property {Object} formData - Form data
  */
 
 export const STORAGE_KEY = 'scenario_creator_data';

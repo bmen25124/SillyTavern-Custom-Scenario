@@ -1,4 +1,4 @@
-import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE } from './config.js';
+import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, getCharacters, getRequestHeaders, SlashCommandParser } from './config.js';
 import { executeScript, interpolateText } from './utils.js';
 
 /**
@@ -104,7 +104,7 @@ function setupPlayDialogHandlers(scenarioData) {
     });
 
     // Handle OK button click
-    popup.closest('.popup').find('.popup-button-ok').on('click', function () {
+    popup.closest('.popup').find('.popup-button-ok').on('click', async function () {
         const answers = {};
         popup.find('.dynamic-input').each(function () {
             const id = $(this).data('id');
@@ -117,8 +117,8 @@ function setupPlayDialogHandlers(scenarioData) {
             }
         });
 
-        // Process description and first message with answers
         try {
+            // Process description and first message with answers
             const descriptionVars = scenarioData.descriptionScript ?
                 executeScript(scenarioData.descriptionScript, answers) : answers;
             const description = interpolateText(scenarioData.description, descriptionVars);
@@ -127,9 +127,37 @@ function setupPlayDialogHandlers(scenarioData) {
                 executeScript(scenarioData.firstMessageScript, answers) : answers;
             const firstMessage = interpolateText(scenarioData.firstMessage, firstMessageVars);
 
-            // Update character description and first message
-            $('#description').val(description);
-            $('#first_mes').val(firstMessage);
+            const formData = new FormData();
+            for (const [key, value] of Object.entries(scenarioData.formData)) {
+                formData.set(key, value);
+            }
+
+
+            formData.set("first_mes", firstMessage);
+            formData.set("description", description);
+            const jsonDate = JSON.parse(scenarioData.formData.json_data);
+            jsonDate["first_mes"] = firstMessage;
+            jsonDate["description"] = description;
+            jsonDate.data["first_mes"] = firstMessage;
+            jsonDate.data["description"] = description;
+            jsonDate.data = JSON.stringify(jsonDate.data);
+            formData.set("json_data", JSON.stringify(jsonDate));
+
+
+            const headers = getRequestHeaders();
+            delete headers['Content-Type'];
+            const fetchResult = await fetch('/api/characters/create', {
+                method: 'POST',
+                headers: headers,
+                body: formData,
+                cache: 'no-cache',
+            });
+            if (!fetchResult.ok) {
+                throw new Error('Fetch result is not ok');
+            }
+            await getCharacters();
+            const name = scenarioData.formData.ch_name;
+            SlashCommandParser.commands['go'].callback(undefined, name)
         } catch (error) {
             console.error('Error processing scenario:', error);
             alert('Error processing scenario: ' + error.message);
