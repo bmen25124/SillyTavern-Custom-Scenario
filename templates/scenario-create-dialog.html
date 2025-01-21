@@ -13,11 +13,34 @@
     <div class="tab-contents">
         <!-- Description Tab -->
         <div class="tab-content" data-tab="description">
-            <div class="flex-container marginTopBot5">
+            <div class="flex-container flexFlowColumn marginTopBot5">
                 <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Character description">
                     <label for="scenario-creator-character-description">Character description:</label>
                     <textarea id="scenario-creator-character-description" class="text_pole textarea_compact" rows="4"
                         placeholder="Enter character description">{{description}}</textarea>
+                </div>
+                <div class="accordion marginTop10">
+                    <div class="accordion-header">
+                        <button class="menu_button accordion-toggle">
+                            <span class="accordion-icon">▼</span>
+                            Script
+                        </button>
+                        <button id="refresh-preview" class="menu_button">Refresh Preview</button>
+                    </div>
+                    <div class="accordion-content">
+                        <div id="script-inputs-container"
+                            class="flex-container flexFlowColumn marginTop10 marginBottom10">
+                            <!-- Dynamic script inputs will be added here -->
+                        </div>
+                        <textarea id="scenario-creator-script" class="text_pole textarea_compact" rows="8"
+                            placeholder="Enter your script here..."></textarea>
+                    </div>
+                </div>
+                <div class="flex-container flexFlowColumn marginTop10">
+                    <label>Preview:</label>
+                    <div id="description-preview" class="text_pole">
+                        Preview will appear here...
+                    </div>
                 </div>
             </div>
         </div>
@@ -164,7 +187,73 @@
         margin-left: 10px;
     }
 
+    .marginBottom10 {
+        margin-bottom: 10px;
+    }
+
+    .accordion {
+        border: 1px solid var(--accent-color);
+        border-radius: 5px;
+    }
+
+    .accordion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .accordion-toggle {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        flex: 1;
+        text-align: left;
+    }
+
+    .accordion-icon {
+        display: inline-block;
+        transition: transform 0.3s;
+    }
+
+    .accordion-content {
+        padding: 10px;
+        display: none;
+    }
+
+    .accordion.open .accordion-content {
+        display: block;
+    }
+
+    .accordion.open .accordion-icon {
+        transform: rotate(180deg);
+    }
+
+    .script-input-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+
+    .script-input-group label {
+        min-width: 100px;
+    }
+
+    .script-input-group input {
+        flex: 1;
+    }
+
     .flex2 {
         flex: 2;
+    }
+
+    #description-preview {
+        min-height: 100px;
+        padding: 10px;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
     }
 </style>
