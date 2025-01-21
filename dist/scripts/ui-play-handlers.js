@@ -1,4 +1,4 @@
-import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, getCharacters, getRequestHeaders, SlashCommandParser } from './config.js';
+import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, POPUP_RESULT, getCharacters, getRequestHeaders, SlashCommandParser } from './config.js';
 import { executeScript, interpolateText } from './utils.js';
 
 /**
@@ -32,7 +32,7 @@ export async function handlePlayScenarioClick() {
                 setupPlayDialogHandlers(scenarioData);
             } catch (error) {
                 console.error('Import error:', error);
-                alert('Error importing scenario: ' + error.message);
+                SlashCommandParser.commands['echo'].callback({ severity: 'error' }, 'Error importing scenario: ' + error.message);
             }
         };
         reader.readAsText(file);
@@ -56,32 +56,137 @@ async function setupPlayDialogHandlers(scenarioData) {
     }
 
     const scenarioPlayDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-play-dialog'));
-    callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', { okButton: true, cancelButton: true });
-    // Extract scenario creator data
     const { descriptionScript, firstMessageScript, questions } = scenarioData.scenario_creator || {};
 
-    const popup = $('#scenario-play-dialog');
-    const dynamicInputsContainer = popup.find('#dynamic-inputs-container');
-    const inputTemplate = popup.find('#dynamic-input-template');
+    /**
+     * @type {JQuery<HTMLElement>}
+     */
+    let popup;
+    /**
+     * @type {JQuery<HTMLElement>}
+     */
+    let dynamicInputsContainer;
+    /**
+     * @type {JQuery<HTMLElement>}
+     */
+    let inputTemplate;
+
+    callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', {
+        okButton: true,
+        cancelButton: true,
+        onClosing: async (popupInstance) => {
+            if (popupInstance.result !== POPUP_RESULT.AFFIRMATIVE) {
+                return true;
+            }
+
+            // Reset previous validation errors
+            popup.find('.validation-error').hide();
+
+            // Validate required fields
+            const answers = {};
+            let hasValidationErrors = false;
+
+            popup.find('.dynamic-input').each(function () {
+                const $input = $(this);
+                const id = $input.data('id');
+                const required = $input.data('required');
+                let value;
+
+                switch ($input.attr('type')) {
+                    case 'checkbox':
+                        value = $input.prop('checked');
+                        break;
+                    default:
+                        value = $input.val();
+                }
+
+                answers[id] = value;
+
+                // Check if required field is empty
+                if (required && (value === '' || value === undefined)) {
+                    hasValidationErrors = true;
+                    $input.closest('.dynamic-input-group')
+                        .find('.validation-error')
+                        .text('This field is required')
+                        .show();
+                }
+            });
+
+            if (hasValidationErrors) {
+                return false;
+            }
+
+            try {
+                // Process description and first message with answers
+                const descriptionVars = descriptionScript ?
+                    executeScript(descriptionScript, answers) : answers;
+                const description = interpolateText(scenarioData.description, descriptionVars);
+
+                const firstMessageVars = firstMessageScript ?
+                    executeScript(firstMessageScript, answers) : answers;
+                const firstMessage = interpolateText(scenarioData.first_mes, firstMessageVars);
+
+                // Create form data for character creation
+                const formData = new FormData();
+                scenarioData.description = description;
+                scenarioData.first_mes = firstMessage;
+                scenarioData.data.description = description;
+                scenarioData.data.first_mes = firstMessage;
+                const newFile = new Blob([JSON.stringify(scenarioData)], { type: 'application/json' });
+                formData.append('avatar', newFile, 'scenario.json');
+                formData.append('file_type', 'json');
+
+                const headers = getRequestHeaders();
+                delete headers['Content-Type'];
+                const fetchResult = await fetch('/api/characters/import', {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData,
+                    cache: 'no-cache',
+                });
+                if (!fetchResult.ok) {
+                    throw new Error('Fetch result is not ok');
+                }
+                await getCharacters();
+                SlashCommandParser.commands['go'].callback(undefined, scenarioData.name);
+                return true;
+            } catch (error) {
+                console.error('Error processing scenario:', error);
+                await SlashCommandParser.commands['echo'].callback({ severity: 'error' }, 'Error processing scenario: ' + error.message);
+                return false;
+            }
+        }
+    });
+
+    popup = $('#scenario-play-dialog');
+    dynamicInputsContainer = popup.find('#dynamic-inputs-container');
+    inputTemplate = popup.find('#dynamic-input-template');
 
     // Add each question to the UI
     (questions || []).forEach(question => {
         const newInput = $(inputTemplate.html());
-        newInput.find('.input-question').text(question.inputId);
+        newInput.find('.input-question').text(question.inputId + (question.required ? ' *' : ''));
 
         const inputContainer = newInput.find('.input-container');
+        const inputAttrs = {
+            'data-id': question.inputId,
+            'data-required': question.required || false
+        };
+
         switch (question.type) {
             case 'checkbox':
                 inputContainer.html(`
                     <label class="checkbox_label">
-                        <input type="checkbox" class="dynamic-input" data-id="${question.inputId}"
+                        <input type="checkbox" class="dynamic-input"
+                            ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}
                             ${question.defaultValue ? 'checked' : ''}>
                     </label>
                 `);
                 break;
             case 'select':
                 const selectHtml = `
-                    <select class="text_pole dynamic-input" data-id="${question.inputId}">
+                    <select class="text_pole dynamic-input"
+                        ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}>
                         ${question.options.map(opt =>
                     `<option value="${opt.value}" ${opt.value === question.defaultValue ? 'selected' : ''}>
                                 ${opt.label}
@@ -93,66 +198,14 @@ async function setupPlayDialogHandlers(scenarioData) {
                 break;
             default: // text
                 inputContainer.html(`
-                    <input type="text" class="text_pole dynamic-input" data-id="${question.inputId}"
-                        value="${question.defaultValue || ''}" placeholder="Enter your answer">
+                    <input type="text" class="text_pole dynamic-input"
+                        ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}
+                        value="${question.defaultValue || ''}"
+                        placeholder="${question.required ? 'Required' : 'Enter your answer'}">
                 `);
                 break;
         }
 
         dynamicInputsContainer.append(newInput);
-    });
-
-    // Handle OK button click
-    popup.closest('.popup').find('.popup-button-ok').on('click', async function () {
-        const answers = {};
-        popup.find('.dynamic-input').each(function () {
-            const id = $(this).data('id');
-            switch ($(this).attr('type')) {
-                case 'checkbox':
-                    answers[id] = $(this).prop('checked');
-                    break;
-                default:
-                    answers[id] = $(this).val();
-            }
-        });
-
-        try {
-            // Process description and first message with answers
-            const descriptionVars = descriptionScript ?
-                executeScript(descriptionScript, answers) : answers;
-            const description = interpolateText(scenarioData.description, descriptionVars);
-
-            const firstMessageVars = firstMessageScript ?
-                executeScript(firstMessageScript, answers) : answers;
-            const firstMessage = interpolateText(scenarioData.first_mes, firstMessageVars);
-
-            // Create form data for character creation
-            const formData = new FormData();
-            scenarioData.description = description;
-            scenarioData.first_mes = firstMessage;
-            scenarioData.data.description = description;
-            scenarioData.data.first_mes = firstMessage;
-            const newFile = new Blob([JSON.stringify(scenarioData)], { type: 'application/json' });
-            formData.append('avatar', newFile, 'scenario.json');
-            formData.append('file_type', 'json');
-
-
-            const headers = getRequestHeaders();
-            delete headers['Content-Type'];
-            const fetchResult = await fetch('/api/characters/import', {
-                method: 'POST',
-                headers: headers,
-                body: formData,
-                cache: 'no-cache',
-            });
-            if (!fetchResult.ok) {
-                throw new Error('Fetch result is not ok');
-            }
-            await getCharacters();
-            SlashCommandParser.commands['go'].callback(undefined, scenarioData.name);
-        } catch (error) {
-            console.error('Error processing scenario:', error);
-            alert('Error processing scenario: ' + error.message);
-        }
     });
 }

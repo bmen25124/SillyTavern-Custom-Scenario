@@ -3,6 +3,7 @@
  * @property {string} id - Input identifier
  * @property {string} type - Input type (text, checkbox, select)
  * @property {string|boolean} defaultValue - Default value for the input
+ * @property {boolean} required - Whether this input is required
  * @property {Array<{value: string, label: string}>} [options] - Options for select type
  */
 
@@ -12,6 +13,7 @@
  * @property {string} inputId - Input identifier used in scripts
  * @property {string} type - Question type (text, checkbox, select)
  * @property {string|boolean} defaultValue - Default value
+ * @property {boolean} required - Whether this question is required
  * @property {Array<{value: string, label: string}>} [options] - Options for select type
  */
 

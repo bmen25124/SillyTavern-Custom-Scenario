@@ -29,11 +29,12 @@ function createProductionScenarioData(data, formData) {
     const scenarioCreator = {
         descriptionScript,
         firstMessageScript: firstMessageScript || '',
-        questions: questions.map(({ id, inputId, type, defaultValue, options }) => ({
+        questions: questions.map(({ id, inputId, type, defaultValue, required, options }) => ({
             id,
             inputId,
             type,
             defaultValue,
+            required,
             ...(options && { options })
         }))
     };
@@ -132,7 +133,8 @@ function getScenarioDataFromUI(popup) {
             id: $(this).data('tab').replace('question-', ''),
             inputId: $(this).find('.input-id').val(),
             type: $(this).find('.input-type-select').val(),
-            defaultValue: ''
+            defaultValue: '',
+            required: $(this).find('.input-required').prop('checked')
         };
 
         switch (question.type) {
@@ -219,7 +221,7 @@ async function handleCharacterSidebarClick() {
         description: formData.get('description'),
         first_message: formData.get('first_mes'),
     }));
-    callGenericPopup(scenarioCreateDialogHtml, POPUP_TYPE.TEXT, '', { okButton: true, cancelButton: true });
+    callGenericPopup(scenarioCreateDialogHtml, POPUP_TYPE.DISPLAY, '', { large: true, wide: true });
 
     setupPopupHandlers();
 
@@ -446,6 +448,7 @@ function addQuestionToUI(popup, question) {
     // Set values
     newInput.find('.input-id').val(question.inputId);
     newInput.find('.input-type-select').val(question.type).trigger('change');
+    newInput.find('.input-required').prop('checked', question.required);
 
     switch (question.type) {
         case 'checkbox':
@@ -496,7 +499,8 @@ function setupDynamicInputs(popup) {
             id,
             inputId: '',
             type: 'text',
-            defaultValue: ''
+            defaultValue: '',
+            required: false
         };
 
         addQuestionToUI(popup, question);

@@ -2,19 +2,20 @@
     <h2>Scenario Player</h2>
 
     <!-- Dynamic Questions Container -->
-    <div id="dynamic-inputs-container" class="flex-container flexFlowColumn marginTop10">
+    <form id="dynamic-inputs-container" class="flex-container flexFlowColumn marginTop10">
         <!-- Questions will be dynamically added here -->
-    </div>
+    </form>
 
     <!-- Template for dynamic input -->
     <template id="dynamic-input-template">
-        <div class="dynamic-input-group marginTop10">
+        <fieldset class="dynamic-input-group marginTop10">
             <div class="flex-container flexFlowColumn">
                 <label class="input-question"></label>
                 <div class="input-container">
                     <!-- Input will be dynamically added here based on type -->
                 </div>
+                <span class="validation-error" style="color: red; display: none;"></span>
             </div>
-        </div>
+        </fieldset>
     </template>
 </div>
