@@ -1,5 +1,5 @@
 import { executeScript, interpolateText } from './utils.js';
-import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, uuidv4 } from './config.js';
+import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, uuidv4, humanizedDateTime } from './config.js';
 import { STORAGE_KEY, createEmptyScenarioData } from './types.js';
 
 /**
@@ -9,38 +9,70 @@ import { STORAGE_KEY, createEmptyScenarioData } from './types.js';
  * @returns {Object} Clean scenario data for production use
  */
 function createProductionScenarioData(data, formData) {
-    const { description, descriptionScript, firstMessage, firstMessageScript, questions } = data;
-
-    // Convert FormData to object and exclude first_mes and description
+    const { descriptionScript, firstMessageScript, questions, description, firstMessage } = data;
     const formEntries = Array.from(formData.entries());
-    const formDataObj = {};
+    let jsonData;
+
+    // Extract json_data
     for (const [key, value] of formEntries) {
-        if (key !== 'first_mes' && key !== 'description') {
-            formDataObj[key] = value;
-        }
         if (key === 'json_data') {
-            const json_data = JSON.parse(value);
-            json_data["first_mes"] = firstMessage;
-            json_data["description"] = description;
-            json_data.data["first_mes"] = firstMessage;
-            json_data.data["description"] = description;
-            formDataObj[key] = JSON.stringify(json_data);
+            jsonData = JSON.parse(value);
+            break;
         }
     }
 
-    return {
-        description,
+    if (!jsonData) {
+        throw new Error('json_data not found in form data');
+    }
+
+    // Create scenario creator specific data
+    const scenarioCreator = {
         descriptionScript,
-        firstMessage,
-        firstMessageScript,
+        firstMessageScript: firstMessageScript || '',
         questions: questions.map(({ id, inputId, type, defaultValue, options }) => ({
             id,
             inputId,
             type,
             defaultValue,
             ...(options && { options })
-        })),
-        formData: formDataObj,
+        }))
+    };
+
+    // Return the final production data format
+    return {
+        name: jsonData.name,
+        description: description,
+        personality: jsonData.personality || '',
+        scenario: jsonData.scenario,
+        first_mes: firstMessage,
+        mes_example: jsonData.mes_example || '',
+        creatorcomment: jsonData.creatorcomment || '',
+        avatar: jsonData.avatar || 'none',
+        chat: jsonData.chat,
+        talkativeness: jsonData.talkativeness || '0.5',
+        fav: jsonData.fav || false,
+        tags: jsonData.tags || [],
+        spec: jsonData.spec || 'chara_card_v3',
+        spec_version: jsonData.spec_version || '3.0',
+        data: {
+            name: jsonData.data.name,
+            description: description,
+            personality: jsonData.data.personality || '',
+            scenario: jsonData.data.scenario,
+            first_mes: firstMessage,
+            mes_example: jsonData.data.mes_example || '',
+            creator_notes: jsonData.data.creator_notes || '',
+            system_prompt: jsonData.data.system_prompt || '',
+            post_history_instructions: jsonData.data.post_history_instructions || '',
+            tags: jsonData.data.tags || [],
+            creator: jsonData.data.creator || '',
+            character_version: jsonData.data.character_version || '',
+            alternate_greetings: jsonData.data.alternate_greetings || [],
+            extensions: jsonData.data.extensions,
+            group_only_greetings: jsonData.data.group_only_greetings || []
+        },
+        create_date: humanizedDateTime(),
+        scenario_creator: scenarioCreator
     };
 }
 
@@ -270,14 +302,15 @@ function setupImportButton(popup) {
  * @returns {import('./types.js').ScenarioData} Converted scenario data
  */
 function convertImportedData(importedData) {
-    const { description, descriptionScript, firstMessage, firstMessageScript, questions } = importedData;
+    // Extract scenario creator specific data
+    const scenarioCreator = importedData.scenario_creator || {};
 
     return {
-        description: description || '',
-        descriptionScript: descriptionScript || '',
-        firstMessage: firstMessage || '',
-        firstMessageScript: firstMessageScript || '',
-        questions: (questions || []).map(q => ({
+        description: importedData.description || '',
+        descriptionScript: scenarioCreator.descriptionScript || '',
+        firstMessage: importedData.first_mes || '',
+        firstMessageScript: scenarioCreator.firstMessageScript || '',
+        questions: (scenarioCreator.questions || []).map(q => ({
             ...q,
             id: q.id || uuidv4()
         })),

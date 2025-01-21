@@ -6,7 +6,7 @@ import { executeScript, interpolateText } from './utils.js';
  */
 export async function preparePlayButton() {
     const playScenarioIconHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-play-icon'));
-    $('.form_create_bottom_buttons_block').prepend(playScenarioIconHtml);
+    $('#form_character_search_form').prepend(playScenarioIconHtml);
     const playScenarioIcon = $('#scenario-play-icon');
     playScenarioIcon.on('click', handlePlayScenarioClick);
 }
@@ -29,7 +29,7 @@ export async function handlePlayScenarioClick() {
         reader.onload = function (event) {
             try {
                 const scenarioData = JSON.parse(event.target.result);
-                showScenarioPlayDialog(scenarioData);
+                setupPlayDialogHandlers(scenarioData);
             } catch (error) {
                 console.error('Import error:', error);
                 alert('Error importing scenario: ' + error.message);
@@ -46,27 +46,26 @@ export async function handlePlayScenarioClick() {
 }
 
 /**
- * Creates and shows the scenario play dialog
- * @param {import('./types.js').ScenarioData} scenarioData - The scenario data to play
+ * Sets up handlers for the play dialog
+ * @param {Object} scenarioData - The scenario data
  */
-export async function showScenarioPlayDialog(scenarioData) {
+async function setupPlayDialogHandlers(scenarioData) {
+    if (!scenarioData.scenario_creator) {
+        await SlashCommandParser.commands['echo'].callback({ severity: 'warning' }, 'This scenario does not have a creator section');
+        return
+    }
+
     const scenarioPlayDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-play-dialog'));
     callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', { okButton: true, cancelButton: true });
+    // Extract scenario creator data
+    const { descriptionScript, firstMessageScript, questions } = scenarioData.scenario_creator || {};
 
-    setupPlayDialogHandlers(scenarioData);
-}
-
-/**
- * Sets up handlers for the play dialog
- * @param {import('./types.js').ScenarioData} scenarioData - The scenario data
- */
-function setupPlayDialogHandlers(scenarioData) {
     const popup = $('#scenario-play-dialog');
     const dynamicInputsContainer = popup.find('#dynamic-inputs-container');
     const inputTemplate = popup.find('#dynamic-input-template');
 
     // Add each question to the UI
-    scenarioData.questions.forEach(question => {
+    (questions || []).forEach(question => {
         const newInput = $(inputTemplate.html());
         newInput.find('.input-question').text(question.inputId);
 
@@ -119,34 +118,28 @@ function setupPlayDialogHandlers(scenarioData) {
 
         try {
             // Process description and first message with answers
-            const descriptionVars = scenarioData.descriptionScript ?
-                executeScript(scenarioData.descriptionScript, answers) : answers;
+            const descriptionVars = descriptionScript ?
+                executeScript(descriptionScript, answers) : answers;
             const description = interpolateText(scenarioData.description, descriptionVars);
 
-            const firstMessageVars = scenarioData.firstMessageScript ?
-                executeScript(scenarioData.firstMessageScript, answers) : answers;
-            const firstMessage = interpolateText(scenarioData.firstMessage, firstMessageVars);
+            const firstMessageVars = firstMessageScript ?
+                executeScript(firstMessageScript, answers) : answers;
+            const firstMessage = interpolateText(scenarioData.first_mes, firstMessageVars);
 
+            // Create form data for character creation
             const formData = new FormData();
-            for (const [key, value] of Object.entries(scenarioData.formData)) {
-                formData.set(key, value);
-            }
-
-
-            formData.set("first_mes", firstMessage);
-            formData.set("description", description);
-            const jsonDate = JSON.parse(scenarioData.formData.json_data);
-            jsonDate["first_mes"] = firstMessage;
-            jsonDate["description"] = description;
-            jsonDate.data["first_mes"] = firstMessage;
-            jsonDate.data["description"] = description;
-            jsonDate.data = JSON.stringify(jsonDate.data);
-            formData.set("json_data", JSON.stringify(jsonDate));
+            scenarioData.description = description;
+            scenarioData.first_mes = firstMessage;
+            scenarioData.data.description = description;
+            scenarioData.data.first_mes = firstMessage;
+            const newFile = new Blob([JSON.stringify(scenarioData)], { type: 'application/json' });
+            formData.append('avatar', newFile, 'scenario.json');
+            formData.append('file_type', 'json');
 
 
             const headers = getRequestHeaders();
             delete headers['Content-Type'];
-            const fetchResult = await fetch('/api/characters/create', {
+            const fetchResult = await fetch('/api/characters/import', {
                 method: 'POST',
                 headers: headers,
                 body: formData,
@@ -156,8 +149,7 @@ function setupPlayDialogHandlers(scenarioData) {
                 throw new Error('Fetch result is not ok');
             }
             await getCharacters();
-            const name = scenarioData.formData.ch_name;
-            SlashCommandParser.commands['go'].callback(undefined, name)
+            SlashCommandParser.commands['go'].callback(undefined, scenarioData.name);
         } catch (error) {
             console.error('Error processing scenario:', error);
             alert('Error processing scenario: ' + error.message);
