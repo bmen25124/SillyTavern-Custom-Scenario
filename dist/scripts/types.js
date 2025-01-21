@@ -11,6 +11,7 @@
  * @typedef {Object} Question
  * @property {string} id - Unique identifier for the question
  * @property {string} inputId - Input identifier used in scripts
+ * @property {string} text - Question text to display
  * @property {string} type - Question type (text, checkbox, select)
  * @property {string|boolean} defaultValue - Default value
  * @property {boolean} required - Whether this question is required

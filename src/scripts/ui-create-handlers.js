@@ -29,9 +29,10 @@ function createProductionScenarioData(data, formData) {
     const scenarioCreator = {
         descriptionScript,
         firstMessageScript: firstMessageScript || '',
-        questions: questions.map(({ id, inputId, type, defaultValue, required, options }) => ({
+        questions: questions.map(({ id, inputId, text, type, defaultValue, required, options }) => ({
             id,
             inputId,
+            text,
             type,
             defaultValue,
             required,
@@ -132,6 +133,7 @@ function getScenarioDataFromUI(popup) {
         const question = {
             id: $(this).data('tab').replace('question-', ''),
             inputId: $(this).find('.input-id').val(),
+            text: $(this).find('.input-question').val(),
             type: $(this).find('.input-type-select').val(),
             defaultValue: '',
             required: $(this).find('.input-required').prop('checked')
@@ -448,24 +450,43 @@ function addQuestionToUI(popup, question) {
     // Set values
     newInput.find('.input-id').val(question.inputId);
     newInput.find('.input-type-select').val(question.type).trigger('change');
+    newInput.find('.input-question').val(question.text || '');
     newInput.find('.input-required').prop('checked', question.required);
 
     switch (question.type) {
         case 'checkbox':
-            newInput.find('.input-default-checkbox').prop('checked', question.defaultValue);
+            newInput.find('.default-value-input-container .checkbox-default').show();
+            newInput.find('.default-value-input-container textarea').hide();
             break;
         case 'select':
             const optionsList = newInput.find('.options-list');
             const selectDefault = newInput.find('.select-default');
+
+            // Clear existing default options
+            selectDefault.find('option:not(:first)').remove();
+
+            // Add options and set up handlers
             question.options.forEach(option => {
                 const optionTemplate = popup.find('#select-option-template').html();
                 const newOption = $(optionTemplate);
                 newOption.find('.option-value').val(option.value);
                 newOption.find('.option-label').val(option.label);
-                setupOptionHandlers(newOption, optionsList, selectDefault);
                 optionsList.append(newOption);
+
+                // Add option to select default
+                if (option.value && option.label) {
+                    selectDefault.append(`<option value="${option.value}">${option.label}</option>`);
+                }
+
+                // Set up handlers after the option is in DOM
+                setupOptionHandlers(newOption, optionsList, selectDefault);
             });
-            updateDefaultOptions(optionsList, selectDefault);
+
+            newInput.find('.select-options-container').show();
+            newInput.find('.default-value-input-container select').show();
+            newInput.find('.default-value-input-container textarea').hide();
+
+            // Set default value after all options are added
             selectDefault.val(question.defaultValue);
             break;
         default:
@@ -498,6 +519,7 @@ function setupDynamicInputs(popup) {
         const question = {
             id,
             inputId: '',
+            text: '',
             type: 'text',
             defaultValue: '',
             required: false

@@ -165,7 +165,7 @@ async function setupPlayDialogHandlers(scenarioData) {
     // Add each question to the UI
     (questions || []).forEach(question => {
         const newInput = $(inputTemplate.html());
-        newInput.find('.input-question').text(question.inputId + (question.required ? ' *' : ''));
+        newInput.find('.input-question').text(question.text + (question.required ? ' *' : ''));
 
         const inputContainer = newInput.find('.input-container');
         const inputAttrs = {
