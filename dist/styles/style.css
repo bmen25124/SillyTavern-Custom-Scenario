@@ -1,6 +1,101 @@
-/* This file is intentionally left blank. */
-.asd .dfdf {
-  color: red;
+#scenario-create-dialog .tab-navigation {
+  gap: 5px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+#scenario-create-dialog .tab-button {
+  min-width: auto;
+}
+#scenario-create-dialog .tab-button.active {
+  background-color: var(--accent-color);
+}
+#scenario-create-dialog .tab-content {
+  display: none;
+}
+#scenario-create-dialog .tab-content.active {
+  display: block;
+}
+#scenario-create-dialog #dynamic-tab-buttons {
+  display: flex;
+  gap: 5px;
+}
+#scenario-create-dialog .tab-button-container {
+  display: flex;
+  gap: 2px;
+}
+#scenario-create-dialog .remove-input-btn {
+  padding: 0 8px;
+  min-width: auto;
+  font-size: 16px;
+  line-height: 1;
+}
+#scenario-create-dialog .gap10 {
+  gap: 10px;
+}
+#scenario-create-dialog .marginLeft10 {
+  margin-left: 10px;
+}
+#scenario-create-dialog .marginBottom10 {
+  margin-bottom: 10px;
+}
+#scenario-create-dialog .accordion {
+  border: 1px solid var(--accent-color);
+  border-radius: 5px;
+}
+#scenario-create-dialog .accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  gap: 10px;
+}
+#scenario-create-dialog .accordion-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  flex: 1;
+  text-align: left;
+}
+#scenario-create-dialog .accordion-icon {
+  display: inline-block;
+  transition: transform 0.3s;
+}
+#scenario-create-dialog .accordion-content {
+  padding: 10px;
+  display: none;
+}
+#scenario-create-dialog .accordion.open .accordion-content {
+  display: block;
+}
+#scenario-create-dialog .accordion.open .accordion-icon {
+  transform: rotate(180deg);
+}
+#scenario-create-dialog .script-input-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+#scenario-create-dialog .script-input-group label {
+  min-width: 100px;
+}
+#scenario-create-dialog .script-input-group input:not([type=checkbox]) {
+  flex: 1;
+}
+#scenario-create-dialog .script-input-group input[type=checkbox] {
+  width: auto;
+  margin-left: 0;
+}
+#scenario-create-dialog .flex2 {
+  flex: 2;
+}
+#scenario-create-dialog #description-preview,
+#scenario-create-dialog #first-message-preview {
+  min-height: 100px;
+  padding: 10px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 /*# sourceMappingURL=style.css.map */

@@ -1,4 +1,4 @@
-import { prepareSettings, prepareCharacterSidebar } from './ui-handlers.js';
+import { prepareSettings, prepareCharacterSidebar } from './ui-create-handlers.js';
 
 jQuery(async () => {
     await prepareSettings();
