@@ -4,7 +4,7 @@ An extension that lets you create interactive scenarios with variables and basic
 
 ## What it does
 - Create scenarios with custom questions
-- Use variables in description/first message.
+- Use variables in the description/first message.
 - Add simple scripts to make things dynamic. (JavaScript)
 - Import/export scenarios as JSON
 
@@ -17,7 +17,7 @@ An extension that lets you create interactive scenarios with variables and basic
 
 ### Create a scenario
 
-Click puzzle icon on character create/edit sidebar.
+Click the puzzle icon on the character create/edit sidebar.
 
 ![create icon](images/create-icon.png)
 
@@ -36,7 +36,7 @@ Export it.
 
 ### Play a scenario
 
-Click play icon on characters sidebar and select the JSON file.
+Click the play icon on the characters sidebar and select the JSON file.
 
 ![play icon](images/play-icon.png)
 
@@ -58,7 +58,7 @@ If your description is:
 You also received a card with the following message: {{occasionMessage}}
 ```
 
-Assume this was answers of the question:
+Assume this was the answer to the question:
 ```yml
 gift: "a book"
 message: "birthday"
@@ -82,7 +82,7 @@ You also received a card with the following message: Happy birthday! Enjoy your 
 * All variables can be accessed and modified.
 * Example usage: (Let's say question id is `gift`)
     * If question type is _text_, `variables.gift`
-    * If question type is _dropdown_, `variables.gift.value` and `variables.gift.label`. When creating the card, `variables.gift.label` is used.
+    * If the question type is _dropdown_, `variables.gift.value` and `variables.gift.label`. When creating the card, `variables.gift.label` is used.
     * If question type is _checkbox_, `variables.gift`. (boolean)
 
 ## Exporting Details
@@ -92,11 +92,11 @@ You also received a card with the following message: Happy birthday! Enjoy your 
 
 
 ## FAQ:
-### Why did you created this?
+### Why did you create this?
 I saw this on [AIDungeon](https://play.aidungeon.com/) and liked it. You can see in this [reddit post](https://www.reddit.com/r/SillyTavernAI/comments/1i59jem/scenario_system_similar_to_ai_dungeon_nsfw_for/) with an example.
 
 ### Why version is _0.0.2_
 It is because of UI, not functionality.
 
 ## Known Issues
-* Exported avatar and character lorebook might not work as expected. However you can reselect this after new card is created.
+* Exported avatar and character lorebook might not work as expected. However, you can reselect this after a new card is created.
