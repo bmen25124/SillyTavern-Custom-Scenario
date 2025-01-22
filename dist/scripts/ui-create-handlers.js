@@ -271,6 +271,39 @@ function setupPopupHandlers() {
     setupDynamicInputs(popup);
     setupExportButton(popup);
     setupImportButton(popup);
+    setupResetButton(popup);
+}
+
+/**
+ * Sets up the reset button functionality
+ * @param {JQuery} popup - The scenario creator dialog jQuery element
+ */
+function setupResetButton(popup) {
+    popup.find('#reset-scenario-btn').on('click', function () {
+        // Clear the description and first message fields
+        popup.find('#scenario-creator-character-description').val('');
+        popup.find('#scenario-creator-script').val('');
+        popup.find('#scenario-creator-character-first-message').val('');
+        popup.find('#scenario-creator-first-message-script').val('');
+
+        // Clear all dynamic questions
+        popup.find('#dynamic-tab-buttons').empty();
+        popup.find('#dynamic-inputs-container').empty();
+
+        // Reset script inputs
+        popup.find('#script-inputs-container').empty();
+        popup.find('#first-message-script-inputs-container').empty();
+
+        // Reset previews
+        popup.find('#description-preview').text('Preview will appear here...');
+        popup.find('#first-message-preview').text('Preview will appear here...');
+
+        // Switch to description tab
+        switchTab('description');
+
+        // Save the empty state
+        saveScenarioData(createEmptyScenarioData());
+    });
 }
 
 /**
@@ -669,17 +702,12 @@ function updateDefaultOptions(optionsList, selectDefault) {
  * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
 function setupScriptInputsUpdateHandlers(newInput, popup) {
-    // Update script inputs when values change
-    newInput.find('.input-id, .input-type-select').on('change', () => updateScriptInputs(popup));
-    newInput.find('.input-default, .input-default-checkbox, .select-default').on('change', () => updateScriptInputs(popup));
-
     // Update tab name when input ID changes
     newInput.find('.input-id').on('change', function () {
         const tabId = newInput.data('tab');
         const newInputId = $(this).val() || 'unnamed';
         const tabButtonContainer = popup.find(`.tab-button-container:has(.tab-button[data-tab="${tabId}"])`);
         const tabButton = tabButtonContainer.find('.tab-button');
-        const removeButton = tabButtonContainer.find('.remove-input-btn');
 
         // Create new tab button HTML preserving the data-tab attribute
         tabButton.html(`Question ${newInputId}`);
@@ -687,23 +715,43 @@ function setupScriptInputsUpdateHandlers(newInput, popup) {
 }
 
 /**
- * Updates script inputs for both description and first message
+ * Updates script inputs for the specified tab type
  * @param {JQuery} popup - The scenario creator dialog jQuery element
+ * @param {'description'|'first-message'} type - The type of tab to update
  */
-function updateScriptInputs(popup) {
-    const scriptInputsContainer = popup.find('#script-inputs-container');
-    const firstMessageScriptInputsContainer = popup.find('#first-message-script-inputs-container');
-    scriptInputsContainer.empty();
-    firstMessageScriptInputsContainer.empty();
+function updateScriptInputs(popup, type) {
+    const container = type === 'description'
+        ? popup.find('#script-inputs-container')
+        : popup.find('#first-message-script-inputs-container');
 
-    // Create script inputs for both description and first message
+    // Store existing input values before emptying container
+    const existingValues = {};
+    container.find('.script-input-group').each(function () {
+        const id = $(this).data('id');
+        const inputType = $(this).data('type');
+        switch (inputType) {
+            case 'checkbox':
+                existingValues[id] = $(this).find('input[type="checkbox"]').prop('checked');
+                break;
+            case 'select':
+                existingValues[id] = $(this).find('select').val();
+                break;
+            default:
+                existingValues[id] = $(this).find('input[type="text"]').val();
+                break;
+        }
+    });
+
+    container.empty();
+
+    // Create script inputs for the specified tab
     popup.find('.dynamic-input-group').each(function () {
         const id = $(this).find('.input-id').val();
         if (!id) return;
 
-        const type = $(this).find('.input-type-select').val();
+        const inputType = $(this).find('.input-type-select').val();
         let defaultValue;
-        switch (type) {
+        switch (inputType) {
             case 'checkbox':
                 defaultValue = $(this).find('.input-default-checkbox').prop('checked');
                 break;
@@ -716,33 +764,38 @@ function updateScriptInputs(popup) {
         }
 
         const inputGroup = $(`
-            <div class="script-input-group" data-id="${id}" data-type="${type}">
-                <label for="script-input-${id}">${id}:</label>
-                ${type === 'checkbox'
-                ? `<input type="checkbox" id="script-input-${id}" class="text_pole" ${defaultValue ? 'checked' : ''}>`
-                : type === 'select'
-                    ? `<select id="script-input-${id}" class="text_pole">
+            <div class="script-input-group" data-id="${id}" data-type="${inputType}">
+                <label for="script-input-${id}-${type}">${id}:</label>
+                ${inputType === 'checkbox'
+                ? `<input type="checkbox" id="script-input-${id}-${type}" class="text_pole" ${defaultValue ? 'checked' : ''}>`
+                : inputType === 'select'
+                    ? `<select id="script-input-${id}-${type}" class="text_pole">
                             ${$(this).find('.select-default').html()}
                            </select>`
-                    : `<input type="text" id="script-input-${id}" class="text_pole" value="${defaultValue || ''}">`
+                    : `<input type="text" id="script-input-${id}-${type}" class="text_pole" value="${defaultValue || ''}">`
             }
             </div>
         `);
 
-        // Add to both containers
-        scriptInputsContainer.append(inputGroup.clone());
-        firstMessageScriptInputsContainer.append(inputGroup.clone());
+        container.append(inputGroup);
 
-        // Set the select value after appending for both
-        if (type === 'select') {
-            scriptInputsContainer.find(`select#script-input-${id}`).val(defaultValue);
-            firstMessageScriptInputsContainer.find(`select#script-input-${id}`).val(defaultValue);
+        // Restore previous value if it exists, otherwise use default
+        if (id in existingValues) {
+            if (inputType === 'checkbox') {
+                inputGroup.find('input[type="checkbox"]').prop('checked', existingValues[id]);
+            } else if (inputType === 'select') {
+                inputGroup.find('select').val(existingValues[id]);
+            } else {
+                inputGroup.find('input[type="text"]').val(existingValues[id]);
+            }
+        } else if (inputType === 'select') {
+            // Set the default value only for new inputs
+            container.find(`select#script-input-${id}-${type}`).val(defaultValue);
         }
     });
 
-    // Update both previews after updating inputs
-    updatePreview(popup, 'description');
-    updatePreview(popup, 'first-message');
+    // Update only the current tab's preview
+    updatePreview(popup, type);
 }
 
 /**
@@ -753,10 +806,20 @@ function updateScriptInputs(popup) {
 function setupRemoveButton(tabContainer, popup) {
     tabContainer.find('.remove-input-btn').on('click', function () {
         const tabId = tabContainer.find('.tab-button').data('tab');
+        const isCurrentTabActive = tabContainer.find('.tab-button').hasClass('active');
+        const isDescriptionOrFirstMessage = ['description', 'first-message'].includes(tabId);
+
         tabContainer.remove();
         popup.find(`.tab-content[data-tab="${tabId}"]`).remove();
-        updateScriptInputs(popup);
-        switchTab('description');
+
+        // If removing active tab that's not description/first-message, switch to description
+        if (isCurrentTabActive && !isDescriptionOrFirstMessage) {
+            switchTab('description');
+        }
+        // If removing description or first-message tab, update script inputs
+        else if (isDescriptionOrFirstMessage) {
+            updateScriptInputs(popup, tabId);
+        }
     });
 }
 
@@ -770,4 +833,9 @@ function switchTab(tabId) {
     popup.find('.tab-content').removeClass('active');
     popup.find(`.tab-button[data-tab="${tabId}"]`).addClass('active');
     popup.find(`.tab-content[data-tab="${tabId}"]`).addClass('active');
+
+    // Update script inputs based on active tab
+    if (tabId === 'description' || tabId === 'first-message') {
+        updateScriptInputs(popup, tabId);
+    }
 }
