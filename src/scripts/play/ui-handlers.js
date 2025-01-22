@@ -1,4 +1,5 @@
 import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, POPUP_RESULT, getCharacters, getRequestHeaders, stEcho, stGo } from '../config.js';
+import { upgradeOrDowngradeData } from '../types.js';
 import { executeScript, interpolateText } from '../utils.js';
 
 /**
@@ -26,9 +27,14 @@ export async function handlePlayScenarioClick() {
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = function (event) {
+        reader.onload = async function (event) {
             try {
                 const scenarioData = JSON.parse(event.target.result);
+                if (!scenarioData.scenario_creator) {
+                    await stEcho('warning', 'This scenario does not have a creator section');
+                    return
+                }
+                scenarioData.scenario_creator = upgradeOrDowngradeData(scenarioData.scenario_creator);
                 setupPlayDialogHandlers(scenarioData);
             } catch (error) {
                 console.error('Import error:', error);
@@ -50,11 +56,6 @@ export async function handlePlayScenarioClick() {
  * @param {Object} scenarioData - The scenario data
  */
 async function setupPlayDialogHandlers(scenarioData) {
-    if (!scenarioData.scenario_creator) {
-        await stEcho('warning', 'This scenario does not have a creator section');
-        return
-    }
-
     const scenarioPlayDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-play-dialog'));
     const { descriptionScript, firstMessageScript, questions } = scenarioData.scenario_creator || {};
 

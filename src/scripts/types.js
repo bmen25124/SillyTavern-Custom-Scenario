@@ -1,3 +1,5 @@
+import { extensionVersion } from './config.js';
+
 /**
  * @typedef {Object} ScriptInput
  * @property {string} id - Input identifier
@@ -29,6 +31,7 @@
  * @property {Array<Array<string>>} layout - Array of arrays containing input IDs for page grouping
  * @property {string} activeTab - Currently active tab
  * @property {Object} formData - Form data
+ * @property {string} version - Version of the scenario data
  */
 
 export const STORAGE_KEY = 'scenario_creator_data';
@@ -44,6 +47,26 @@ export function createEmptyScenarioData() {
         firstMessageScript: '',
         questions: [],
         layout: [],
-        activeTab: 'description'
+        activeTab: 'description',
+        version: extensionVersion
     };
+}
+
+/**
+ * Validates and creates a deep copy of the input data object, ensuring version compatibility.
+ * @param {Object} data - The input data object to be processed
+ * @throws {Error} Throws an error if version is missing or doesn't match extensionVersion
+ * @returns {Object} A deep copy of the validated data object
+ */
+export function upgradeOrDowngradeData(data) {
+    const newData = JSON.parse(JSON.stringify(data));
+    if (!newData.version) {
+        throw new Error('No version found in data');
+    }
+
+    if (newData.version !== extensionVersion) {
+        throw new Error(`Data version is not ${extensionVersion}`);
+    }
+
+    return newData;
 }

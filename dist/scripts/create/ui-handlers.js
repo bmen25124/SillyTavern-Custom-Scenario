@@ -2,9 +2,9 @@ import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup
 import { setupPreviewFunctionality, updatePreview, updateQuestionPreview } from './preview-handlers.js';
 import { setupTabFunctionality, setupAccordion, switchTab } from './tab-handlers.js';
 import { setupDynamicInputs } from './question-handlers.js';
-import { loadScenarioData, saveScenarioData, getScenarioDataFromUI, createProductionScenarioData, downloadScenarioData, convertImportedData } from './data-handlers.js';
+import { loadScenarioData, saveScenarioData, getScenarioDataFromUI, createProductionScenarioData, downloadScenarioData, convertImportedData, removeScenarioData } from './data-handlers.js';
 import { applyScenarioDataToUI } from './ui-state.js';
-import { createEmptyScenarioData } from '../types.js';
+import { createEmptyScenarioData, upgradeOrDowngradeData } from '../types.js';
 
 /**
  * Prepares and appends the settings HTML to the extensions settings section
@@ -47,7 +47,13 @@ async function handleCharacterSidebarClick() {
 
     // Load saved data after popup is created
     const popup = $('#scenario-create-dialog');
-    const savedData = loadScenarioData();
+    let savedData = loadScenarioData();
+    try {
+        savedData = await upgradeOrDowngradeData(savedData);
+    } catch (error) {
+        await stEcho('error', 'Cache data is not compatible. Removing cache data.');
+        removeScenarioData();
+    }
     if (!savedData.description) {
         savedData.description = formData.get('description');
     }
@@ -125,10 +131,13 @@ function setupImportButton(popup) {
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = function (event) {
+        reader.onload = async function (event) {
             try {
                 const importedData = JSON.parse(event.target.result);
-                const scenarioData = convertImportedData(importedData);
+                const scenarioData = await convertImportedData(importedData);
+                if (!scenarioData) {
+                    return;
+                }
 
                 // Clear existing data
                 popup.find('#dynamic-tab-buttons').empty();
@@ -141,7 +150,7 @@ function setupImportButton(popup) {
                 saveScenarioData(scenarioData);
             } catch (error) {
                 console.error('Import error:', error);
-                alert('Error importing file: ' + error.message);
+                await stEcho('error', 'Failed to import scenario data. Please check the file and try again.');
             }
         };
         reader.readAsText(file);

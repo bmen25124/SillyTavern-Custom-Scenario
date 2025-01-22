@@ -1,5 +1,5 @@
-import { STORAGE_KEY, createEmptyScenarioData } from '../types.js';
-import { uuidv4, humanizedDateTime, create_save } from '../config.js';
+import { STORAGE_KEY, createEmptyScenarioData, upgradeOrDowngradeData } from '../types.js';
+import { uuidv4, humanizedDateTime, create_save, extensionVersion, stEcho } from '../config.js';
 
 /**
  * Creates a production-ready version of scenario data without internal state
@@ -106,7 +106,10 @@ export function createProductionScenarioData(data, formData) {
             group_only_greetings: jsonData.data.group_only_greetings || []
         },
         create_date: humanizedDateTime(),
-        scenario_creator: scenarioCreator
+        scenario_creator: {
+            ...scenarioCreator,
+            version: extensionVersion
+        }
     };
 }
 
@@ -137,6 +140,15 @@ export function loadScenarioData() {
 }
 
 /**
+ * Removes the scenario data from the local storage by deleting the item associated with STORAGE_KEY.
+ * @function removeScenarioData
+ * @returns {void}
+ */
+export function removeScenarioData() {
+    localStorage.removeItem(STORAGE_KEY);
+}
+
+/**
  * Saves scenario data to local storage
  * @param {import('../types.js').ScenarioData} data - The scenario data to save
  */
@@ -157,6 +169,7 @@ export function getScenarioDataFromUI(popup) {
     data.firstMessage = popup.find('#scenario-creator-character-first-message').val() || '';
     data.firstMessageScript = popup.find('#scenario-creator-first-message-script').val() || '';
     data.activeTab = popup.find('.tab-button.active').data('tab') || 'description';
+    data.version = extensionVersion;
 
     // Get questions data and build layout
     data.questions = [];
@@ -212,11 +225,18 @@ export function getScenarioDataFromUI(popup) {
 /**
  * Converts imported data to the correct format with internal state
  * @param {Object} importedData - The imported scenario data
- * @returns {import('../types.js').ScenarioData} Converted scenario data
+ * @returns {import('../types.js').ScenarioData | null} Converted scenario data or null if there is an error
  */
-export function convertImportedData(importedData) {
+export async function convertImportedData(importedData) {
     // Extract scenario creator specific data
-    const scenarioCreator = importedData.scenario_creator || {};
+    let scenarioCreator = importedData.scenario_creator || {};
+    try {
+        scenarioCreator = upgradeOrDowngradeData(scenarioCreator);
+    } catch (error) {
+        await stEcho('error', error.message);
+        return null;
+    }
+
     const questions = (scenarioCreator.questions || []).map(q => ({
         ...q,
         id: q.id || uuidv4()
@@ -238,6 +258,7 @@ export function convertImportedData(importedData) {
         firstMessageScript: scenarioCreator.firstMessageScript || '',
         questions,
         layout,
-        activeTab: 'description'
+        activeTab: 'description',
+        version: scenarioCreator.version
     };
 }

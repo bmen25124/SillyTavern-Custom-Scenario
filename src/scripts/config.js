@@ -6,6 +6,7 @@ import { getCharacters, getRequestHeaders, create_save } from '../../../../../..
 import { humanizedDateTime } from '../../../../../../public/scripts/RossAscends-mods.js';
 
 export const extensionName = 'scenario-creator';
+export const extensionVersion = '0.2.0';
 export const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 
 /**
@@ -25,7 +26,7 @@ export async function stEcho(severity, message) {
  * @param {string} name - The name of the character to switch to.
  * @returns {Promise<void>} A promise that resolves when the character switch is complete.
  */
-export async function  stGo(name) {
+export async function stGo(name) {
     await SlashCommandParser.commands['go'].callback(undefined, name);
 }
 
