@@ -102,14 +102,16 @@ async function setupPlayDialogHandlers(scenarioData) {
                 const required = $input.data('required');
                 let value;
 
-                switch ($input.attr('type')) {
+                // Handle select elements first
+                if ($input.is('select')) {
+                    const label = $input.find('option:selected').text();
+                    value = { label, value: $input.val() };
+                }
+                // Then handle other input types
+                else switch ($input.attr('type')) {
                     case 'checkbox':
                         value = $input.prop('checked');
                         break;
-                    case 'select':
-                        const element = $input.find('select');
-                        const label = element.find('option:selected').text();
-                        value = { label, value: element.val() };
                     default:
                         value = $input.val();
                 }
@@ -152,6 +154,11 @@ async function setupPlayDialogHandlers(scenarioData) {
                 const firstMessageVars = firstMessageScript ?
                     executeScript(firstMessageScript, allAnswers) : allAnswers;
                 const firstMessage = interpolateText(scenarioData.first_mes, firstMessageVars);
+
+                scenarioData.scenario = interpolateText(scenarioData.scenario, allAnswers);
+                scenarioData.data.scenario = interpolateText(scenarioData.data.scenario, allAnswers);
+                scenarioData.personality = interpolateText(scenarioData.personality, allAnswers);
+                scenarioData.data.personality = interpolateText(scenarioData.data.personality, allAnswers);
 
                 // Create form data for character creation
                 const formData = new FormData();
@@ -216,7 +223,12 @@ async function setupPlayDialogHandlers(scenarioData) {
             const $input = $(this);
             if ($input.data('required')) {
                 let value;
-                switch ($input.attr('type')) {
+                // Handle select elements first
+                if ($input.is('select')) {
+                    value = $input.val();
+                }
+                // Then handle other input types
+                else switch ($input.attr('type')) {
                     case 'checkbox':
                         value = $input.prop('checked');
                         break;
@@ -251,13 +263,24 @@ async function setupPlayDialogHandlers(scenarioData) {
     prevButton.on('click', () => navigateToPage(currentPageIndex - 1));
     nextButton.on('click', () => navigateToPage(currentPageIndex + 1));
 
-    // Function to update a question's text based on current answers
+    /**
+     * Updates the question text based on dynamic input values and script execution.
+     * @param {JQuery} questionWrapper - jQuery object containing the question element
+     * @param {import('../types.js').Question} question - Question object containing text and script properties
+     * @throws {Error} When script execution fails
+     */
     function updateQuestionText(questionWrapper, question) {
         const answers = {};
         popup.find('.dynamic-input').each(function () {
             const $input = $(this);
             const id = $input.data('id');
-            switch ($input.attr('type')) {
+            // Handle select elements first
+            if ($input.is('select')) {
+                const label = $input.find('option:selected').text();
+                answers[id] = { label, value: $input.val() };
+            }
+            // Then handle other input types
+            else switch ($input.attr('type')) {
                 case 'checkbox':
                     answers[id] = $input.prop('checked');
                     break;
@@ -305,9 +328,7 @@ async function setupPlayDialogHandlers(scenarioData) {
                     <select class="text_pole dynamic-input"
                         ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}>
                         ${question.options.map(opt =>
-                        `<option value="${opt.value}" ${opt.value === question.defaultValue ? 'selected' : ''}>
-                                ${opt.label}
-                            </option>`
+                        `<option value="${opt.value}" ${opt.value === question.defaultValue ? 'selected' : ''}>${opt.label}</option>`
                     ).join('')}
                     </select>
                 `;

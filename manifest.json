@@ -1,5 +1,5 @@
 {
-    "display_name": "scenario-creator",
+    "display_name": "Custom Scenario",
     "loading_order": 150,
     "requires": [],
     "optional": [],
@@ -7,5 +7,5 @@
     "css": "dist/styles/style.css",
     "author": "bmen25124",
     "version": "0.2.0",
-    "homePage": "https://github.com/bmen25124/????"
+    "homePage": "https://github.com/bmen25124/SillyTavern-Custom-Scenario"
 }

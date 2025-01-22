@@ -5,7 +5,7 @@ import { uuidv4 } from '../../../../../utils.js';
 import { getCharacters, getRequestHeaders, create_save } from '../../../../../../script.js';
 import { humanizedDateTime } from '../../../../../RossAscends-mods.js';
 
-export const extensionName = 'scenario-creator';
+export const extensionName = 'SillyTavern-Custom-Scenario';
 export const extensionVersion = '0.2.0';
 export const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 

@@ -7,14 +7,6 @@ import { applyScenarioDataToUI } from './ui-state.js';
 import { createEmptyScenarioData, upgradeOrDowngradeData } from '../types.js';
 
 /**
- * Prepares and appends the settings HTML to the extensions settings section
- */
-export async function prepareSettings() {
-    const settingsHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'settings'));
-    $('#extensions_settings').append(settingsHtml);
-}
-
-/**
  * Prepares and adds the character sidebar icon with click handler
  */
 export async function prepareCharacterSidebar() {

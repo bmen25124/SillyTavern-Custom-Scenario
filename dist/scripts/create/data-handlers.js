@@ -22,7 +22,7 @@ export function createProductionScenarioData(data, formData) {
 
     if (!jsonData) {
         jsonData = {};
-        jsonData.name = formEntries.find(([key]) => key === 'ch_name')[1] || 'Unnamed Character';
+        jsonData.name = 'Unnamed Character';
         jsonData.personality = formEntries.find(([key]) => key === 'personality')[1] || '';
         jsonData.scenario = formEntries.find(([key]) => key === 'scenario')[1] || '';
         jsonData.mes_example = formEntries.find(([key]) => key === 'mes_example')[1] || '';
