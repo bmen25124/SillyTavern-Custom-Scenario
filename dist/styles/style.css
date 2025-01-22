@@ -8,6 +8,9 @@
 }
 #scenario-create-dialog .tab-button.active {
   background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--white-90);
+  font-weight: 500;
 }
 #scenario-create-dialog .tab-content {
   display: none;

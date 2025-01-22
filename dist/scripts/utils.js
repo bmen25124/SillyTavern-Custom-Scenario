@@ -21,8 +21,8 @@ export function interpolateText(template, variables) {
     while (result.includes('{{') && iteration < maxIterations) {
         result = result.replace(regex, (match, key) => {
             const variable = variables[key];
-            if (variable === undefined) {
-                return match; // Keep original if variable not found
+            if (variable === undefined || variable === null || variable === '') {
+                return match; // Keep original if variable is undefined, null, or empty
             }
             // Recursively interpolate if the variable contains template syntax
             return variable.toString().includes('{{')
