@@ -13,6 +13,13 @@ export function executeScript(script, answers) {
 }
 
 export function interpolateText(template, variables) {
+    const newVariables = JSON.parse(JSON.stringify(variables));
+    for (const [key, value] of Object.entries(variables)) {
+        if (value && typeof value === 'object' && value.hasOwnProperty('label')) {
+            newVariables[key] = value.label;
+        }
+    }
+
     let result = template;
     const regex = /\{\{([^}]+)\}\}/g;
     let maxIterations = 10; // Prevent infinite recursion
@@ -20,13 +27,13 @@ export function interpolateText(template, variables) {
 
     while (result.includes('{{') && iteration < maxIterations) {
         result = result.replace(regex, (match, key) => {
-            const variable = variables[key];
+            const variable = newVariables[key];
             if (variable === undefined || variable === null || variable === '') {
                 return match; // Keep original if variable is undefined, null, or empty
             }
             // Recursively interpolate if the variable contains template syntax
             return variable.toString().includes('{{')
-                ? interpolateText(variable.toString(), variables)
+                ? interpolateText(variable.toString(), newVariables)
                 : variable;
         });
         iteration++;

@@ -1,5 +1,5 @@
-import { prepareSettings, prepareCharacterSidebar } from './ui-create-handlers.js';
-import { preparePlayButton } from './ui-play-handlers.js';
+import { prepareSettings, prepareCharacterSidebar } from './create/ui-handlers.js';
+import { preparePlayButton } from './play/ui-handlers.js';
 
 jQuery(async () => {
     await prepareSettings();

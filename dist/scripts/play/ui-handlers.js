@@ -1,5 +1,5 @@
-import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, POPUP_RESULT, getCharacters, getRequestHeaders, SlashCommandParser } from './config.js';
-import { executeScript, interpolateText } from './utils.js';
+import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, POPUP_RESULT, getCharacters, getRequestHeaders, SlashCommandParser } from '../config.js';
+import { executeScript, interpolateText } from '../utils.js';
 
 /**
  * Prepares and adds the play scenario button to the character sidebar
@@ -105,6 +105,11 @@ async function setupPlayDialogHandlers(scenarioData) {
                     case 'checkbox':
                         value = $input.prop('checked');
                         break;
+                    case 'select':
+                        const element = $input.find('select');
+                        const label = element.find('option:selected').text();
+                        const value = element.val();
+                        value = { label, value };
                     default:
                         value = $input.val();
                 }
