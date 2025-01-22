@@ -49,14 +49,14 @@ export function updateScriptInputs(popup, type) {
 
         const inputGroup = $(`
             <div class="script-input-group" data-id="${id}" data-type="${inputType}">
-                <label for="script-input-${id}-${type}">${id}:</label>
+                <label for="script-input-${id}-${type}" title="Access using: variables.${id}">${id}:</label>
                 ${inputType === 'checkbox'
-                ? `<input type="checkbox" id="script-input-${id}-${type}" class="text_pole" ${defaultValue ? 'checked' : ''}>`
+                ? `<input type="checkbox" id="script-input-${id}-${type}" class="text_pole" ${defaultValue ? 'checked' : ''} title="Access using: variables.${id}">`
                 : inputType === 'select'
-                    ? `<select id="script-input-${id}-${type}" class="text_pole">
+                    ? `<select id="script-input-${id}-${type}" class="text_pole" title="Access using: variables.${id}.value or variables.${id}.label">
                             ${$(this).find('.select-default').html()}
                            </select>`
-                    : `<input type="text" id="script-input-${id}-${type}" class="text_pole" value="${defaultValue || ''}">`
+                    : `<input type="text" id="script-input-${id}-${type}" class="text_pole" value="${defaultValue || ''}" title="Access using: variables.${id}">`
             }
             </div>
         `);
@@ -134,14 +134,14 @@ export function updateQuestionScriptInputs(questionGroup) {
 
         const inputGroup = $(`
             <div class="script-input-group" data-id="${id}" data-type="${inputType}">
-                <label for="script-input-${id}-${currentQuestionId}">${id}:</label>
+                <label for="script-input-${id}-${currentQuestionId}" title="Access using: variables.${id}">${id}:</label>
                 ${inputType === 'checkbox'
-                ? `<input type="checkbox" id="script-input-${id}-${currentQuestionId}" class="text_pole" ${defaultValue ? 'checked' : ''}>`
+                ? `<input type="checkbox" id="script-input-${id}-${currentQuestionId}" class="text_pole" ${defaultValue ? 'checked' : ''} title="Access using: variables.${id}">`
                 : inputType === 'select'
-                    ? `<select id="script-input-${id}-${currentQuestionId}" class="text_pole">
+                    ? `<select id="script-input-${id}-${currentQuestionId}" class="text_pole" title="Access using: variables.${id}.value or variables.${id}.label">
                                ${$(this).find('.select-default').html()}
                            </select>`
-                    : `<input type="text" id="script-input-${id}-${currentQuestionId}" class="text_pole" value="${defaultValue || ''}">`
+                    : `<input type="text" id="script-input-${id}-${currentQuestionId}" class="text_pole" value="${defaultValue || ''}" title="Access using: variables.${id}">`
             }
             </div>
         `);

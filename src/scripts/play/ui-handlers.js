@@ -1,4 +1,4 @@
-import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, POPUP_RESULT, getCharacters, getRequestHeaders, SlashCommandParser } from '../config.js';
+import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, POPUP_RESULT, getCharacters, getRequestHeaders, stEcho, stGo } from '../config.js';
 import { executeScript, interpolateText } from '../utils.js';
 
 /**
@@ -32,7 +32,7 @@ export async function handlePlayScenarioClick() {
                 setupPlayDialogHandlers(scenarioData);
             } catch (error) {
                 console.error('Import error:', error);
-                SlashCommandParser.commands['echo'].callback({ severity: 'error' }, 'Error importing scenario: ' + error.message);
+                stEcho('error', 'Error importing scenario: ' + error.message);
             }
         };
         reader.readAsText(file);
@@ -51,7 +51,7 @@ export async function handlePlayScenarioClick() {
  */
 async function setupPlayDialogHandlers(scenarioData) {
     if (!scenarioData.scenario_creator) {
-        await SlashCommandParser.commands['echo'].callback({ severity: 'warning' }, 'This scenario does not have a creator section');
+        await stEcho('warning', 'This scenario does not have a creator section');
         return
     }
 
@@ -87,7 +87,7 @@ async function setupPlayDialogHandlers(scenarioData) {
 
             // Check if all pages have been visited before allowing cancel
             if (visitedPages.size < layout.length) {
-                await SlashCommandParser.commands['echo'].callback({ severity: 'warning' }, 'Please view all pages before playing');
+                await stEcho('warning', 'Please view all pages before playing');
                 return false;
             }
 
@@ -108,8 +108,7 @@ async function setupPlayDialogHandlers(scenarioData) {
                     case 'select':
                         const element = $input.find('select');
                         const label = element.find('option:selected').text();
-                        const value = element.val();
-                        value = { label, value };
+                        value = { label, value: element.val() };
                     default:
                         value = $input.val();
                 }
@@ -175,11 +174,11 @@ async function setupPlayDialogHandlers(scenarioData) {
                     throw new Error('Fetch result is not ok');
                 }
                 await getCharacters();
-                SlashCommandParser.commands['go'].callback(undefined, scenarioData.name);
+                await stGo(scenarioData.name);
                 return true;
             } catch (error) {
                 console.error('Error processing scenario:', error);
-                await SlashCommandParser.commands['echo'].callback({ severity: 'error' }, 'Error processing scenario: ' + error.message);
+                await stEcho('error', 'Error processing scenario: ' + error.message);
                 return false;
             }
         }

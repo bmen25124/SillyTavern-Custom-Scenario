@@ -1,5 +1,5 @@
-import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE } from '../config.js';
-import { setupPreviewFunctionality } from './preview-handlers.js';
+import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, stEcho } from '../config.js';
+import { setupPreviewFunctionality, updatePreview, updateQuestionPreview } from './preview-handlers.js';
 import { setupTabFunctionality, setupAccordion, switchTab } from './tab-handlers.js';
 import { setupDynamicInputs } from './question-handlers.js';
 import { loadScenarioData, saveScenarioData, getScenarioDataFromUI, createProductionScenarioData, downloadScenarioData, convertImportedData } from './data-handlers.js';
@@ -156,11 +156,39 @@ function setupImportButton(popup) {
  * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
 function setupExportButton(popup) {
-    popup.find('#export-scenario-btn').on('click', function () {
+    popup.find('#export-scenario-btn').on('click', async function () {
         const currentData = getScenarioDataFromUI(popup);
         const formElement = $('#form_create').get(0);
         const formData = new FormData(formElement);
         const productionData = createProductionScenarioData(currentData, formData);
+        // Update previews to check errors
+        let errors = 'Preview update/script execute errors:';
+        try {
+            updatePreview(popup, 'description', true);
+        } catch (error) {
+            errors += 'description'
+        }
+        try {
+            updatePreview(popup, 'first-message', true);
+        } catch (error) {
+            errors += 'first message'
+        }
+        const questionGroups = popup.find('.dynamic-input-group');
+        questionGroups.each(function () {
+            const group = $(this);
+            const inputId = group.find('.input-id').val();
+            try {
+                updateQuestionPreview(group, true)
+            } catch (error) {
+                errors += inputId;
+            }
+        });
+        if (errors !== 'Preview update/script execute errors:') {
+            await stEcho('error', errors);
+            return;
+        }
+
+
         downloadScenarioData(productionData, 'scenario.json');
     });
 }

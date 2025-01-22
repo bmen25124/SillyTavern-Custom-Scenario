@@ -19,7 +19,7 @@ export function setupPreviewFunctionality(popup) {
  * @param {JQuery} popup - The scenario creator dialog jQuery element
  * @param {'description'|'first-message'} type - The type of preview to update
  */
-export function updatePreview(popup, type) {
+export function updatePreview(popup, type, rethrowError = false) {
     const isDescription = type === 'description';
     const textarea = popup.find(isDescription ? '#scenario-creator-character-description' : '#scenario-creator-character-first-message');
     const scriptTextarea = popup.find(isDescription ? '#scenario-creator-script' : '#scenario-creator-first-message-script');
@@ -60,6 +60,9 @@ export function updatePreview(popup, type) {
     } catch (error) {
         console.error('Preview update/script execute error:', error);
         previewDiv.text(`Preview update/script execute error: ${error.message}`);
+        if (rethrowError) {
+            throw error;
+        }
     }
 }
 
@@ -67,7 +70,7 @@ export function updatePreview(popup, type) {
  * Updates the preview for a question
  * @param {JQuery} questionGroup - The question group jQuery element
  */
-export function updateQuestionPreview(questionGroup) {
+export function updateQuestionPreview(questionGroup, rethrowError = false) {
     const questionText = questionGroup.find('.input-question').val();
     const scriptText = questionGroup.find('.question-script').val();
     const previewDiv = questionGroup.find('.question-preview');
@@ -104,5 +107,8 @@ export function updateQuestionPreview(questionGroup) {
     } catch (error) {
         console.error('Question preview update/script execute error:', error);
         previewDiv.text(`Question preview update/script execute error: ${error.message}`);
+        if (rethrowError) {
+            throw error;
+        }
     }
 }

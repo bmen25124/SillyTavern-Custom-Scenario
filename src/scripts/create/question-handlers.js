@@ -168,7 +168,7 @@ export function setupDynamicInputs(popup) {
             text: '',
             type: 'text',
             defaultValue: '',
-            required: false
+            required: true
         };
 
         addQuestionToUI(popup, question);
