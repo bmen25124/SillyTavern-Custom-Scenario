@@ -246,11 +246,36 @@ async function setupPlayDialogHandlers(scenarioData) {
     prevButton.on('click', () => navigateToPage(currentPageIndex - 1));
     nextButton.on('click', () => navigateToPage(currentPageIndex + 1));
 
+    // Function to update a question's text based on current answers
+    function updateQuestionText(questionWrapper, question) {
+        const answers = {};
+        popup.find('.dynamic-input').each(function () {
+            const $input = $(this);
+            const id = $input.data('id');
+            switch ($input.attr('type')) {
+                case 'checkbox':
+                    answers[id] = $input.prop('checked');
+                    break;
+                default:
+                    answers[id] = $input.val();
+            }
+        });
+
+        try {
+            const variables = question.script ? executeScript(question.script, answers) : answers;
+            const interpolated = interpolateText(question.text, variables);
+            questionWrapper.find('.input-question').text(interpolated + (question.required ? ' *' : ''));
+        } catch (error) {
+            console.error('Question text update error:', error);
+            questionWrapper.find('.input-question').text(question.text + (question.required ? ' *' : '') +
+                ` (Script error: ${error.message})`);
+        }
+    }
+
     // Create all inputs at initialization
     function createAllInputs() {
         questions.forEach(question => {
             const newInput = $(inputTemplate.html());
-            newInput.find('.input-question').text(question.text + (question.required ? ' *' : ''));
             newInput.addClass('dynamic-input-wrapper');
             newInput.attr('data-input-id', question.inputId);
 
@@ -294,6 +319,17 @@ async function setupPlayDialogHandlers(scenarioData) {
             }
 
             dynamicInputsContainer.append(newInput);
+
+            // Set initial question text
+            updateQuestionText(newInput, question);
+
+            // Update question text when any input changes
+            popup.find('.dynamic-input').on('input change', function () {
+                questions.forEach(q => {
+                    const wrapper = dynamicInputsContainer.find(`[data-input-id="${q.inputId}"]`);
+                    updateQuestionText(wrapper, q);
+                });
+            });
         });
     }
 
@@ -305,7 +341,9 @@ async function setupPlayDialogHandlers(scenarioData) {
         // Show only inputs for current page
         const currentPageQuestions = questions.filter(q => layout[currentPageIndex].includes(q.inputId));
         currentPageQuestions.forEach(question => {
-            dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`).show();
+            const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);
+            wrapper.show();
+            updateQuestionText(wrapper, question);
         });
 
         // Update navigation and track visited pages

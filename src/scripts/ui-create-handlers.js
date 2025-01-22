@@ -15,24 +15,46 @@ function createProductionScenarioData(data, formData) {
 
     // Extract json_data
     for (const [key, value] of formEntries) {
-        if (key === 'json_data') {
+        if (key === 'json_data' && value) {
             jsonData = JSON.parse(value);
             break;
         }
     }
 
     if (!jsonData) {
-        throw new Error('json_data not found in form data');
+        jsonData = {};
+        jsonData.name = formEntries.find(([key]) => key === 'ch_name')[1] || 'Unnamed Character';
+        jsonData.personality = formEntries.find(([key]) => key === 'personality')[1] || '';
+        jsonData.scenario = formEntries.find(([key]) => key === 'scenario')[1] || '';
+        jsonData.mes_example = formEntries.find(([key]) => key === 'mes_example')[1] || '';
+        jsonData.avatar = formEntries.find(([key]) => key === 'avatar')[1] || 'none';
+        jsonData.chat = formEntries.find(([key]) => key === 'chat')[1] || '';
+        jsonData.talkativeness = formEntries.find(([key]) => key === 'talkativeness')[1] || '0.5';
+        jsonData.fav = formEntries.find(([key]) => key === 'fav')[1] || false;
+        jsonData.tags = formEntries.find(([key]) => key === 'tags')[1] || [];
+
+        jsonData.data = {};
+        jsonData.data.name = jsonData.name;
+        jsonData.data.personality = jsonData.personality;
+        jsonData.data.scenario = jsonData.scenario;
+        jsonData.data.mes_example = jsonData.mes_example;
+        jsonData.data.creator_notes = formEntries.find(([key]) => key === 'creator_notes')[1] || '';
+        jsonData.data.system_prompt = jsonData.system_prompt;
+        jsonData.data.post_history_instructions = jsonData.post_history_instructions;
+        jsonData.data.tags = jsonData.tags;
+        jsonData.data.creator = formEntries.find(([key]) => key === 'creator')[1] || '';
+        jsonData.data.character_version = formEntries.find(([key]) => key === 'character_version')[1] || '';
     }
 
     // Create scenario creator specific data
     const scenarioCreator = {
         descriptionScript,
         firstMessageScript: firstMessageScript || '',
-        questions: questions.map(({ id, inputId, text, type, defaultValue, required, options }) => ({
+        questions: questions.map(({ id, inputId, text, script, type, defaultValue, required, options }) => ({
             id,
             inputId,
             text,
+            script: script || '',
             type,
             defaultValue,
             required,
@@ -71,7 +93,7 @@ function createProductionScenarioData(data, formData) {
             creator: jsonData.data.creator || '',
             character_version: jsonData.data.character_version || '',
             alternate_greetings: jsonData.data.alternate_greetings || [],
-            extensions: jsonData.data.extensions,
+            extensions: jsonData.data.extensions || [],
             group_only_greetings: jsonData.data.group_only_greetings || []
         },
         create_date: humanizedDateTime(),
@@ -137,6 +159,7 @@ function getScenarioDataFromUI(popup) {
             id: $(this).data('tab').replace('question-', ''),
             inputId: $(this).find('.input-id').val(),
             text: $(this).find('.input-question').val(),
+            script: $(this).find('.question-script').val() || '',
             type: $(this).find('.input-type-select').val(),
             defaultValue: '',
             required: $(this).find('.input-required').prop('checked')
@@ -482,15 +505,11 @@ function setupTabFunctionality(popup) {
  * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
 function setupAccordion(popup) {
-    const accordions = popup.find('.accordion');
     const accordionToggles = popup.find('.accordion-toggle');
 
     accordionToggles.on('click', function () {
         $(this).closest('.accordion').toggleClass('open');
     });
-
-    // Start with accordions open
-    accordions.addClass('open');
 }
 
 /**
@@ -514,7 +533,18 @@ function addQuestionToUI(popup, question) {
     newInput.find('.input-id').val(question.inputId);
     newInput.find('.input-type-select').val(question.type).trigger('change');
     newInput.find('.input-question').val(question.text || '');
+    newInput.find('.question-script').val(question.script || '');
     newInput.find('.input-required').prop('checked', question.required);
+
+    // Setup question preview refresh button
+    newInput.find('.refresh-question-preview').on('click', function () {
+        updateQuestionPreview($(this).closest('.dynamic-input-group'));
+    });
+
+    const accordionToggles = newInput.find('.accordion-toggle');
+    accordionToggles.on('click', function () {
+        $(this).closest('.accordion').toggleClass('open');
+    });
 
     switch (question.type) {
         case 'checkbox':
@@ -711,7 +741,108 @@ function setupScriptInputsUpdateHandlers(newInput, popup) {
 
         // Create new tab button HTML preserving the data-tab attribute
         tabButton.html(`Question ${newInputId}`);
+
+        // Update script inputs when ID changes
+        updateQuestionScriptInputs(newInput);
     });
+
+    // Initial script inputs setup
+    updateQuestionScriptInputs(newInput);
+
+    // Update script inputs when any question changes
+    newInput.find('.input-type-select, .input-default, .input-default-checkbox, .select-default').on('change', function () {
+        updateQuestionScriptInputs(newInput);
+    });
+}
+
+/**
+ * Updates script inputs for a specific question
+ * @param {JQuery} questionGroup - The question group jQuery element
+ */
+function updateQuestionScriptInputs(questionGroup) {
+    const container = questionGroup.find('.question-script-inputs-container');
+    const popup = questionGroup.closest('#scenario-create-dialog');
+    const allInputs = popup.find('.dynamic-input-group');
+
+    // Store existing values
+    const existingValues = {};
+    container.find('.script-input-group').each(function () {
+        const id = $(this).data('id');
+        const inputType = $(this).data('type');
+        switch (inputType) {
+            case 'checkbox':
+                existingValues[id] = $(this).find('input[type="checkbox"]').prop('checked');
+                break;
+            case 'select':
+                existingValues[id] = $(this).find('select').val();
+                break;
+            default:
+                existingValues[id] = $(this).find('input[type="text"]').val();
+                break;
+        }
+    });
+
+    container.empty();
+
+    // Add script inputs for all questions except self
+    allInputs.each(function () {
+        const currentQuestionId = $(this).data('tab');
+        if (currentQuestionId === questionGroup.data('tab')) {
+            return; // Skip self to avoid circular reference
+        }
+
+        const id = $(this).find('.input-id').val();
+        if (!id) return;
+
+        const inputType = $(this).find('.input-type-select').val();
+        let defaultValue;
+        switch (inputType) {
+            case 'checkbox':
+                defaultValue = $(this).find('.input-default-checkbox').prop('checked');
+                break;
+            case 'select':
+                defaultValue = $(this).find('.select-default').val();
+                break;
+            default:
+                defaultValue = $(this).find('.input-default').val();
+                break;
+        }
+
+        const inputGroup = $(`
+            <div class="script-input-group" data-id="${id}" data-type="${inputType}">
+                <label for="script-input-${id}-${currentQuestionId}">${id}:</label>
+                ${inputType === 'checkbox'
+                ? `<input type="checkbox" id="script-input-${id}-${currentQuestionId}" class="text_pole" ${defaultValue ? 'checked' : ''}>`
+                : inputType === 'select'
+                    ? `<select id="script-input-${id}-${currentQuestionId}" class="text_pole">
+                               ${$(this).find('.select-default').html()}
+                           </select>`
+                    : `<input type="text" id="script-input-${id}-${currentQuestionId}" class="text_pole" value="${defaultValue || ''}">`
+            }
+            </div>
+        `);
+
+        container.append(inputGroup);
+
+        // Restore previous value if it exists
+        if (id in existingValues) {
+            if (inputType === 'checkbox') {
+                inputGroup.find('input[type="checkbox"]').prop('checked', existingValues[id]);
+            } else if (inputType === 'select') {
+                inputGroup.find('select').val(existingValues[id]);
+            } else {
+                inputGroup.find('input[type="text"]').val(existingValues[id]);
+            }
+        }
+
+        // Add change handler to update preview
+        inputGroup.find('input, select').on('change', function () {
+            updateQuestionPreview(questionGroup);
+        });
+    });
+
+    // Update preview after script inputs are updated
+    updateQuestionPreview(questionGroup);
 }
 
 /**
@@ -824,6 +955,47 @@ function setupRemoveButton(tabContainer, popup) {
 }
 
 /**
+ * Updates the preview for a question
+ * @param {JQuery} questionGroup - The question group jQuery element
+ */
+function updateQuestionPreview(questionGroup) {
+    const questionText = questionGroup.find('.input-question').val();
+    const scriptText = questionGroup.find('.question-script').val();
+    const previewDiv = questionGroup.find('.question-preview');
+    const scriptInputsContainer = questionGroup.find('.question-script-inputs-container');
+
+    // Collect answers from script inputs
+    const answers = {};
+    scriptInputsContainer.find('.script-input-group').each(function () {
+        const id = $(this).data('id');
+        const type = $(this).data('type');
+        switch (type) {
+            case 'checkbox':
+                answers[id] = $(this).find('input[type="checkbox"]').prop('checked');
+                break;
+            case 'select':
+                answers[id] = $(this).find('select').val();
+                break;
+            default:
+                answers[id] = $(this).find('input[type="text"]').val();
+                break;
+        }
+    });
+
+    try {
+        // Execute script if exists
+        const variables = scriptText ? executeScript(scriptText, answers) : answers;
+
+        // Interpolate content with variables
+        const interpolated = interpolateText(questionText, variables);
+        previewDiv.text(interpolated);
+    } catch (error) {
+        console.error('Question preview update/script execute error:', error);
+        previewDiv.text(`Question preview update/script execute error: ${error.message}`);
+    }
+}
+
+/**
  * Switches to the specified tab
  * @param {string} tabId - The ID of the tab to switch to
  */
@@ -837,5 +1009,7 @@ function switchTab(tabId) {
     // Update script inputs based on active tab
     if (tabId === 'description' || tabId === 'first-message') {
         updateScriptInputs(popup, tabId);
+    } else {
+        updateQuestionScriptInputs(popup.find(`.dynamic-input-group[data-tab="${tabId}"]`));
     }
 }

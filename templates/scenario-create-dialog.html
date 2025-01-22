@@ -118,6 +118,30 @@
                     <textarea class="text_pole textarea_compact input-question" rows="2"
                         placeholder="Enter question"></textarea>
                 </div>
+                <div class="accordion marginTop10">
+                    <div class="accordion-header">
+                        <button class="menu_button accordion-toggle">
+                            <span class="accordion-icon">▼</span>
+                            Script
+                        </button>
+                        <button class="refresh-question-preview menu_button">Refresh Preview</button>
+                    </div>
+                    <div class="accordion-content">
+                        <div
+                            class="question-script-inputs-container flex-container flexFlowColumn marginTop10 marginBottom10">
+                            <!-- Dynamic script inputs will be added here -->
+                        </div>
+                        <textarea class="text_pole textarea_compact question-script" rows="8"
+                            placeholder="Enter your script here..."></textarea>
+                    </div>
+                </div>
+                <div class="flex-container flexFlowColumn marginTop10">
+                    <label>Preview:</label>
+                    <div class="question-preview text_pole"
+                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
+                        Preview will appear here...
+                    </div>
+                </div>
                 <div class="flex-container alignItemsCenter marginTop10">
                     <label class="checkbox_label">
                         <input type="checkbox" class="input-required">
