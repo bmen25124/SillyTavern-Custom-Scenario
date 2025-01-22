@@ -2,7 +2,7 @@ import { renderExtensionTemplateAsync } from '../../../../../../public/scripts/e
 import { callGenericPopup, POPUP_TYPE, POPUP_RESULT } from '../../../../../../public/scripts/popup.js';
 import { SlashCommandParser } from '../../../../../../public/scripts/slash-commands/SlashCommandParser.js';
 import { uuidv4 } from '../../../../../../public/scripts/utils.js';
-import { getCharacters, getRequestHeaders } from '../../../../../../public/script.js';
+import { getCharacters, getRequestHeaders, create_save } from '../../../../../../public/script.js';
 import { humanizedDateTime } from '../../../../../../public/scripts/RossAscends-mods.js';
 
 export const extensionName = 'scenario-creator';
@@ -29,4 +29,4 @@ export async function  stGo(name) {
     await SlashCommandParser.commands['go'].callback(undefined, name);
 }
 
-export { renderExtensionTemplateAsync, callGenericPopup, POPUP_TYPE, POPUP_RESULT, uuidv4, getCharacters, getRequestHeaders, humanizedDateTime };
+export { renderExtensionTemplateAsync, callGenericPopup, POPUP_TYPE, POPUP_RESULT, uuidv4, getCharacters, getRequestHeaders, humanizedDateTime, create_save };

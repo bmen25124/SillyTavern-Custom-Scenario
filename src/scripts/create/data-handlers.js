@@ -1,5 +1,5 @@
 import { STORAGE_KEY, createEmptyScenarioData } from '../types.js';
-import { uuidv4, humanizedDateTime } from '../config.js';
+import { uuidv4, humanizedDateTime, create_save } from '../config.js';
 
 /**
  * Creates a production-ready version of scenario data without internal state
@@ -29,7 +29,7 @@ export function createProductionScenarioData(data, formData) {
         jsonData.avatar = formEntries.find(([key]) => key === 'avatar')[1] || 'none';
         jsonData.chat = formEntries.find(([key]) => key === 'chat')[1] || '';
         jsonData.talkativeness = formEntries.find(([key]) => key === 'talkativeness')[1] || '0.5';
-        jsonData.fav = formEntries.find(([key]) => key === 'fav')[1] || false;
+        jsonData.fav = formEntries.find(([key]) => key === 'fav')[1] === "true" || false;
         jsonData.tags = formEntries.find(([key]) => key === 'tags')[1] || [];
 
         jsonData.data = {};
@@ -43,6 +43,16 @@ export function createProductionScenarioData(data, formData) {
         jsonData.data.tags = jsonData.tags;
         jsonData.data.creator = formEntries.find(([key]) => key === 'creator')[1] || '';
         jsonData.data.character_version = formEntries.find(([key]) => key === 'character_version')[1] || '';
+
+        const extensions = JSON.parse(JSON.stringify(create_save.extensions));
+        extensions.depth_prompt = {
+            prompt: formEntries.find(([key]) => key === 'depth_prompt_prompt')[1] || '',
+            depth: formEntries.find(([key]) => key === 'depth_prompt_depth')[1] || 4,
+            role: formEntries.find(([key]) => key === 'depth_prompt_role')[1] || 'system',
+        }
+        extensions.talkativeness = jsonData.talkativeness;
+        extensions.fav = jsonData.fav;
+        jsonData.data.extensions = extensions;
     }
 
     // Create scenario creator specific data
