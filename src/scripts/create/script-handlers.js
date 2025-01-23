@@ -1,12 +1,28 @@
 /**
- * Sets up script input update handlers for description and first message tabs
+ * Sets up script input update handlers for all tabs
  * @param {JQuery} popup - The scenario creator dialog jQuery element
- * @param {'description'|'first-message'} type - The type of tab to update
+ * @param {'description'|'first-message'|'scenario'|'personality'|'character-note'} type - The type of tab to update
  */
 export function updateScriptInputs(popup, type) {
-    const container = type === 'description'
-        ? popup.find('#script-inputs-container')
-        : popup.find('#first-message-script-inputs-container');
+    const config = {
+        'description': {
+            containerId: '#script-inputs-container'
+        },
+        'first-message': {
+            containerId: '#first-message-script-inputs-container'
+        },
+        'scenario': {
+            containerId: '#scenario-script-inputs-container'
+        },
+        'personality': {
+            containerId: '#personality-script-inputs-container'
+        },
+        'character-note': {
+            containerId: '#character-note-script-inputs-container'
+        }
+    };
+
+    const container = popup.find(config[type].containerId);
 
     // Store existing input values before emptying container
     const existingValues = {};

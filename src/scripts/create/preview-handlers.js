@@ -1,7 +1,7 @@
 import { executeScript, interpolateText } from '../utils.js';
 
 /**
- * Sets up preview functionality for description and first message
+ * Sets up preview functionality for description, first message, scenario, personality, character note
  * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
 export function setupPreviewFunctionality(popup) {
@@ -12,19 +12,65 @@ export function setupPreviewFunctionality(popup) {
     // First message preview
     const refreshFirstMessagePreviewBtn = popup.find('#refresh-first-message-preview');
     refreshFirstMessagePreviewBtn.on('click', () => updatePreview(popup, 'first-message'));
+
+    // Scenario preview
+    const refreshScenarioPreviewBtn = popup.find('#refresh-scenario-preview');
+    refreshScenarioPreviewBtn.on('click', () => updatePreview(popup, 'scenario'));
+
+    // Personality preview
+    const refreshPersonalityPreviewBtn = popup.find('#refresh-personality-preview');
+    refreshPersonalityPreviewBtn.on('click', () => updatePreview(popup, 'personality'));
+
+    // Character Note preview
+    const refreshCharacterNotePreviewBtn = popup.find('#refresh-character-note-preview');
+    refreshCharacterNotePreviewBtn.on('click', () => updatePreview(popup, 'character-note'));
 }
 
 /**
- * Updates the preview for description or first message
+ * Updates the preview for other than question
  * @param {JQuery} popup - The scenario creator dialog jQuery element
- * @param {'description'|'first-message'} type - The type of preview to update
+ * @param {'description'|'first-message'|'scenario'|'personality'|'character-note'} type - The type of preview to update
+ * @param {boolean} [rethrowError=false] - Whether to rethrow errors
  */
 export function updatePreview(popup, type, rethrowError = false) {
-    const isDescription = type === 'description';
-    const textarea = popup.find(isDescription ? '#scenario-creator-character-description' : '#scenario-creator-character-first-message');
-    const scriptTextarea = popup.find(isDescription ? '#scenario-creator-script' : '#scenario-creator-first-message-script');
-    const previewDiv = popup.find(isDescription ? '#description-preview' : '#first-message-preview');
-    const scriptInputsContainer = popup.find(isDescription ? '#script-inputs-container' : '#first-message-script-inputs-container');
+    const config = {
+        'description': {
+            contentId: '#scenario-creator-character-description',
+            scriptId: '#scenario-creator-script',
+            previewId: '#description-preview',
+            scriptInputsId: '#script-inputs-container'
+        },
+        'first-message': {
+            contentId: '#scenario-creator-character-first-message',
+            scriptId: '#scenario-creator-first-message-script',
+            previewId: '#first-message-preview',
+            scriptInputsId: '#first-message-script-inputs-container'
+        },
+        'scenario': {
+            contentId: '#scenario-creator-character-scenario',
+            scriptId: '#scenario-creator-scenario-script',
+            previewId: '#scenario-preview',
+            scriptInputsId: '#scenario-script-inputs-container'
+        },
+        'personality': {
+            contentId: '#scenario-creator-character-personality',
+            scriptId: '#scenario-creator-personality-script',
+            previewId: '#personality-preview',
+            scriptInputsId: '#personality-script-inputs-container'
+        },
+        'character-note': {
+            contentId: '#scenario-creator-character-note',
+            scriptId: '#scenario-creator-character-note-script',
+            previewId: '#character-note-preview',
+            scriptInputsId: '#character-note-script-inputs-container'
+        }
+    };
+
+    const { contentId, scriptId, previewId, scriptInputsId } = config[type];
+    const textarea = popup.find(contentId);
+    const scriptTextarea = popup.find(scriptId);
+    const previewDiv = popup.find(previewId);
+    const scriptInputsContainer = popup.find(scriptInputsId);
 
     const content = textarea.val();
     const script = scriptTextarea.val();

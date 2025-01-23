@@ -6,7 +6,7 @@ import { getCharacters, getRequestHeaders, create_save } from '../../../../../..
 import { humanizedDateTime } from '../../../../../RossAscends-mods.js';
 
 export const extensionName = 'SillyTavern-Custom-Scenario';
-export const extensionVersion = '0.2.0';
+export const extensionVersion = '0.2.1';
 export const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 
 /**

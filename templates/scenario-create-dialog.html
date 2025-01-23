@@ -6,6 +6,9 @@
         <div class="flex-container">
             <button class="tab-button menu_button" data-tab="description">Description</button>
             <button class="tab-button menu_button" data-tab="first-message">First Message</button>
+            <button class="tab-button menu_button" data-tab="scenario">Scenario</button>
+            <button class="tab-button menu_button" data-tab="personality">Personality</button>
+            <button class="tab-button menu_button" data-tab="character-note">Character Note</button>
             <div id="dynamic-tab-buttons"></div>
             <button id="add-input-btn" class="menu_button">+ Add Question</button>
         </div>
@@ -24,7 +27,7 @@
                 <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Character description">
                     <label for="scenario-creator-character-description">Character description:</label>
                     <textarea id="scenario-creator-character-description" class="text_pole textarea_compact" rows="4"
-                        placeholder="Enter character description">{{description}}</textarea>
+                        placeholder="Enter character description"></textarea>
                 </div>
                 <div class="accordion marginTop10">
                     <div class="accordion-header">
@@ -59,7 +62,7 @@
                 <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="First message">
                     <label for="scenario-creator-character-first-message">First message:</label>
                     <textarea id="scenario-creator-character-first-message" class="text_pole textarea_compact" rows="4"
-                        placeholder="Enter first message">{{first_message}}</textarea>
+                        placeholder="Enter first message"></textarea>
                 </div>
                 <div class="accordion marginTop10">
                     <div class="accordion-header">
@@ -81,6 +84,111 @@
                 <div class="flex-container flexFlowColumn marginTop10">
                     <label>Preview:</label>
                     <div id="first-message-preview" class="text_pole"
+                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
+                        Preview will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scenario Tab -->
+        <div class="tab-content" data-tab="scenario">
+            <div class="flex-container flexFlowColumn marginTopBot5">
+                <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Scenario">
+                    <label for="scenario-creator-character-scenario">Scenario:</label>
+                    <textarea id="scenario-creator-character-scenario" class="text_pole textarea_compact" rows="4"
+                        placeholder="Enter scenario"></textarea>
+                </div>
+                <div class="accordion marginTop10">
+                    <div class="accordion-header">
+                        <button class="menu_button accordion-toggle">
+                            <span class="accordion-icon">▼</span>
+                            Script
+                        </button>
+                        <button id="refresh-scenario-preview" class="menu_button">Refresh Preview</button>
+                    </div>
+                    <div class="accordion-content">
+                        <div id="scenario-script-inputs-container"
+                            class="flex-container flexFlowColumn marginTop10 marginBottom10">
+                            <!-- Dynamic script inputs will be added here -->
+                        </div>
+                        <textarea id="scenario-creator-scenario-script" class="text_pole textarea_compact" rows="8"
+                            placeholder="Enter your script here..."></textarea>
+                    </div>
+                </div>
+                <div class="flex-container flexFlowColumn marginTop10">
+                    <label>Preview:</label>
+                    <div id="scenario-preview" class="text_pole"
+                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
+                        Preview will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personality Tab -->
+        <div class="tab-content" data-tab="personality">
+            <div class="flex-container flexFlowColumn marginTopBot5">
+                <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Personality">
+                    <label for="scenario-creator-character-personality">Personality:</label>
+                    <textarea id="scenario-creator-character-personality" class="text_pole textarea_compact" rows="4"
+                        placeholder="Enter personality"></textarea>
+                </div>
+                <div class="accordion marginTop10">
+                    <div class="accordion-header">
+                        <button class="menu_button accordion-toggle">
+                            <span class="accordion-icon">▼</span>
+                            Script
+                        </button>
+                        <button id="refresh-personality-preview" class="menu_button">Refresh Preview</button>
+                    </div>
+                    <div class="accordion-content">
+                        <div id="personality-script-inputs-container"
+                            class="flex-container flexFlowColumn marginTop10 marginBottom10">
+                            <!-- Dynamic script inputs will be added here -->
+                        </div>
+                        <textarea id="scenario-creator-personality-script" class="text_pole textarea_compact" rows="8"
+                            placeholder="Enter your script here..."></textarea>
+                    </div>
+                </div>
+                <div class="flex-container flexFlowColumn marginTop10">
+                    <label>Preview:</label>
+                    <div id="personality-preview" class="text_pole"
+                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
+                        Preview will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Note Tab -->
+        <div class="tab-content" data-tab="character-note">
+            <div class="flex-container flexFlowColumn marginTopBot5">
+                <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Character Note">
+                    <label for="scenario-creator-character-note">Character Note:</label>
+                    <textarea id="scenario-creator-character-note" class="text_pole textarea_compact" rows="4"
+                        placeholder="Enter character note"></textarea>
+                </div>
+                <div class="accordion marginTop10">
+                    <div class="accordion-header">
+                        <button class="menu_button accordion-toggle">
+                            <span class="accordion-icon">▼</span>
+                            Script
+                        </button>
+                        <button id="refresh-character-note-preview" class="menu_button">Refresh Preview</button>
+                    </div>
+                    <div class="accordion-content">
+                        <div id="character-note-script-inputs-container"
+                            class="flex-container flexFlowColumn marginTop10 marginBottom10">
+                            <!-- Dynamic script inputs will be added here -->
+                        </div>
+                        <textarea id="scenario-creator-character-note-script" class="text_pole textarea_compact" rows="8"
+                            placeholder="Enter your script here..."></textarea>
+                    </div>
+                </div>
+                <div class="flex-container flexFlowColumn marginTop10">
+                    <label>Preview:</label>
+                    <div id="character-note-preview" class="text_pole"
                         style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
                         Preview will appear here...
                     </div>

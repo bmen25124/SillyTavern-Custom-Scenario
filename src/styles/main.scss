@@ -118,7 +118,10 @@
     }
 
     #description-preview,
-    #first-message-preview {
+    #first-message-preview,
+    #scenario-preview,
+    #personality-preview,
+    #character-note-preview {
         min-height: 100px;
         padding: 10px;
         white-space: pre-wrap;

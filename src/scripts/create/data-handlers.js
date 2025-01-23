@@ -1,14 +1,14 @@
-import { STORAGE_KEY, createEmptyScenarioData, upgradeOrDowngradeData } from '../types.js';
+import { STORAGE_KEY, createEmptyScenarioCreateData, upgradeOrDowngradeData } from '../types.js';
 import { uuidv4, humanizedDateTime, create_save, extensionVersion, stEcho } from '../config.js';
 
 /**
  * Creates a production-ready version of scenario data without internal state
- * @param {import('../types.js').ScenarioData} data - The full scenario data
+ * @param {import('../types.js').ScenarioCreateData} data - The full scenario data
  * @param {FormData} formData - The form data from the character creation form
- * @returns {Object} Clean scenario data for production use
+ * @returns {import('../types.js').FullExportData} Clean scenario data for production use
  */
 export function createProductionScenarioData(data, formData) {
-    const { descriptionScript, firstMessageScript, questions, description, firstMessage } = data;
+    const { descriptionScript, firstMessageScript, scenarioScript, personalityScript, characterNote, characterNoteScript, questions, description, firstMessage, scenario, personality } = data;
     const formEntries = Array.from(formData.entries());
     let jsonData;
 
@@ -46,7 +46,7 @@ export function createProductionScenarioData(data, formData) {
 
         const extensions = JSON.parse(JSON.stringify(create_save.extensions));
         extensions.depth_prompt = {
-            prompt: formEntries.find(([key]) => key === 'depth_prompt_prompt')[1] || '',
+            prompt: characterNote || '',
             depth: formEntries.find(([key]) => key === 'depth_prompt_depth')[1] || 4,
             role: formEntries.find(([key]) => key === 'depth_prompt_role')[1] || 'system',
         }
@@ -55,10 +55,15 @@ export function createProductionScenarioData(data, formData) {
         jsonData.data.extensions = extensions;
     }
 
-    // Create scenario creator specific data
+    /**
+     * @type {import('../types.js').ScenarioExportData}
+     */
     const scenarioCreator = {
-        descriptionScript,
-        firstMessageScript: firstMessageScript || '',
+        descriptionScript: descriptionScript,
+        firstMessageScript: firstMessageScript,
+        scenarioScript: scenarioScript,
+        personalityScript: personalityScript,
+        characterNoteScript: characterNoteScript,
         questions: questions.map(({ id, inputId, text, script, type, defaultValue, required, options }) => ({
             id,
             inputId,
@@ -69,15 +74,16 @@ export function createProductionScenarioData(data, formData) {
             required,
             ...(options && { options })
         })),
-        layout: data.layout || [[...questions.map(q => q.inputId)]] // Default to all questions in one page if no layout specified
+        layout: data.layout || [[...questions.map(q => q.inputId)]], // Default to all questions in one page if no layout specified
+        version: extensionVersion,
     };
 
     // Return the final production data format
     return {
         name: jsonData.name,
         description: description,
-        personality: jsonData.personality || '',
-        scenario: jsonData.scenario,
+        personality: personality,
+        scenario: scenario,
         first_mes: firstMessage,
         mes_example: jsonData.mes_example || '',
         creatorcomment: jsonData.creatorcomment || '',
@@ -91,8 +97,8 @@ export function createProductionScenarioData(data, formData) {
         data: {
             name: jsonData.data.name,
             description: description,
-            personality: jsonData.data.personality || '',
-            scenario: jsonData.data.scenario,
+            personality: personality,
+            scenario: scenario,
             first_mes: firstMessage,
             mes_example: jsonData.data.mes_example || '',
             creator_notes: jsonData.data.creator_notes || '',
@@ -106,19 +112,16 @@ export function createProductionScenarioData(data, formData) {
             group_only_greetings: jsonData.data.group_only_greetings || []
         },
         create_date: humanizedDateTime(),
-        scenario_creator: {
-            ...scenarioCreator,
-            version: extensionVersion
-        }
+        scenario_creator: scenarioCreator
     };
 }
 
 /**
  * Triggers download of scenario data as a JSON file
- * @param {Object} data - The data to download
+ * @param {import('../types.js').FullExportData} data - The data to download
  * @param {string} filename - The name of the file to download
  */
-export function downloadScenarioData(data, filename) {
+export function downloadFile(data, filename) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -132,44 +135,48 @@ export function downloadScenarioData(data, filename) {
 
 /**
  * Loads scenario data from local storage
- * @returns {import('../types.js').ScenarioData} The loaded scenario data or empty data if none exists
+ * @returns {import('../types.js').ScenarioCreateData} The loaded scenario data or empty data if none exists
  */
-export function loadScenarioData() {
+export function loadScenarioCreateData() {
     const storedData = localStorage.getItem(STORAGE_KEY);
-    return storedData ? JSON.parse(storedData) : createEmptyScenarioData();
+    return storedData ? JSON.parse(storedData) : createEmptyScenarioCreateData();
 }
 
 /**
  * Removes the scenario data from the local storage by deleting the item associated with STORAGE_KEY.
- * @function removeScenarioData
- * @returns {void}
  */
-export function removeScenarioData() {
+export function removeScenarioCreateData() {
     localStorage.removeItem(STORAGE_KEY);
 }
 
 /**
  * Saves scenario data to local storage
- * @param {import('../types.js').ScenarioData} data - The scenario data to save
+ * @param {import('../types.js').ScenarioCreateData} data - The scenario data to save
  */
-export function saveScenarioData(data) {
+export function saveScenarioCreateData(data) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
 /**
  * Extracts current scenario data from the UI
  * @param {JQuery} popup - The scenario creator dialog jQuery element
- * @returns {import('../types.js').ScenarioData} The current scenario data
+ * @returns {import('../types.js').ScenarioCreateData} The current scenario data
  */
-export function getScenarioDataFromUI(popup) {
-    const data = createEmptyScenarioData();
+export function getScenarioCreateDataFromUI(popup) {
+    const data = createEmptyScenarioCreateData();
 
     data.description = popup.find('#scenario-creator-character-description').val() || '';
     data.descriptionScript = popup.find('#scenario-creator-script').val() || '';
     data.firstMessage = popup.find('#scenario-creator-character-first-message').val() || '';
     data.firstMessageScript = popup.find('#scenario-creator-first-message-script').val() || '';
+    data.scenario = popup.find('#scenario-creator-character-scenario').val() || '';
+    data.scenarioScript = popup.find('#scenario-creator-scenario-script').val() || '';
     data.activeTab = popup.find('.tab-button.active').data('tab') || 'description';
     data.version = extensionVersion;
+    data.personality = popup.find('#scenario-creator-character-personality').val() || '';
+    data.personalityScript = popup.find('#scenario-creator-personality-script').val() || '';
+    data.characterNote = popup.find('#scenario-creator-character-note').val() || '';
+    data.characterNoteScript = popup.find('#scenario-creator-character-note-script').val() || '';
 
     // Get questions data and build layout
     data.questions = [];
@@ -224,14 +231,18 @@ export function getScenarioDataFromUI(popup) {
 
 /**
  * Converts imported data to the correct format with internal state
- * @param {Object} importedData - The imported scenario data
- * @returns {import('../types.js').ScenarioData | null} Converted scenario data or null if there is an error
+ * @param {import('../types.js').FullExportData} importedData - The imported scenario data
+ * @returns {import('../types.js').ScenarioCreateData | null} Converted scenario data or null if there is an error
  */
 export async function convertImportedData(importedData) {
     // Extract scenario creator specific data
     let scenarioCreator = importedData.scenario_creator || {};
+    // Check version changes
+    if (scenarioCreator.version && scenarioCreator !== extensionVersion) {
+        await stEcho('info', `Imported data version changed from ${scenarioCreator.version} to ${extensionVersion}`);
+    }
     try {
-        scenarioCreator = upgradeOrDowngradeData(scenarioCreator);
+        scenarioCreator = upgradeOrDowngradeData(scenarioCreator, "export");
     } catch (error) {
         await stEcho('error', error.message);
         return null;
@@ -256,6 +267,12 @@ export async function convertImportedData(importedData) {
         descriptionScript: scenarioCreator.descriptionScript || '',
         firstMessage: importedData.first_mes || '',
         firstMessageScript: scenarioCreator.firstMessageScript || '',
+        scenario: importedData.scenario || '',
+        scenarioScript: scenarioCreator.scenarioScript || '',
+        personality: importedData.personality || '',
+        personalityScript: scenarioCreator.personalityScript || '',
+        characterNote: importedData.data.extensions?.depth_prompt?.prompt || '',
+        characterNoteScript: scenarioCreator.characterNoteScript || '',
         questions,
         layout,
         activeTab: 'description',

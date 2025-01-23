@@ -1,4 +1,4 @@
-import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, POPUP_RESULT, getCharacters, getRequestHeaders, stEcho, stGo } from '../config.js';
+import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, POPUP_RESULT, getCharacters, getRequestHeaders, stEcho, stGo, extensionVersion } from '../config.js';
 import { upgradeOrDowngradeData } from '../types.js';
 import { executeScript, interpolateText } from '../utils.js';
 
@@ -29,12 +29,25 @@ export async function handlePlayScenarioClick() {
         const reader = new FileReader();
         reader.onload = async function (event) {
             try {
+                /**
+                 * @type {import('../types.js').FullExportData}
+                 */
                 const scenarioData = JSON.parse(event.target.result);
                 if (!scenarioData.scenario_creator) {
                     await stEcho('warning', 'This scenario does not have a creator section');
                     return
                 }
-                scenarioData.scenario_creator = upgradeOrDowngradeData(scenarioData.scenario_creator);
+
+                // Check version changes
+                if (scenarioData.scenario_creator.version &&
+                    scenarioData.scenario_creator.version !== extensionVersion) {
+                    await stEcho(
+                        'info',
+                        `Scenario version changed from ${scenarioData.scenario_creator.version} to ${extensionVersion}`
+                    );
+                }
+
+                scenarioData.scenario_creator = upgradeOrDowngradeData(scenarioData.scenario_creator, "export");
                 setupPlayDialogHandlers(scenarioData);
             } catch (error) {
                 console.error('Import error:', error);
@@ -53,11 +66,18 @@ export async function handlePlayScenarioClick() {
 
 /**
  * Sets up handlers for the play dialog
- * @param {Object} scenarioData - The scenario data
+ * @param {import('../types.js').FullExportData} scenarioData - The scenario data
  */
 async function setupPlayDialogHandlers(scenarioData) {
     const scenarioPlayDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-play-dialog'));
-    const { descriptionScript, firstMessageScript, questions } = scenarioData.scenario_creator || {};
+    const {
+        descriptionScript,
+        firstMessageScript,
+        scenarioScript,
+        personalityScript,
+        questions,
+        characterNoteScript,
+    } = scenarioData.scenario_creator || {};
 
     /**
      * @type {JQuery<HTMLElement>}
@@ -155,10 +175,30 @@ async function setupPlayDialogHandlers(scenarioData) {
                     executeScript(firstMessageScript, allAnswers) : allAnswers;
                 const firstMessage = interpolateText(scenarioData.first_mes, firstMessageVars);
 
-                scenarioData.scenario = interpolateText(scenarioData.scenario, allAnswers);
-                scenarioData.data.scenario = interpolateText(scenarioData.data.scenario, allAnswers);
-                scenarioData.personality = interpolateText(scenarioData.personality, allAnswers);
-                scenarioData.data.personality = interpolateText(scenarioData.data.personality, allAnswers);
+                const scenarioVars = scenarioScript ?
+                    executeScript(scenarioScript, allAnswers) : allAnswers;
+                const processedScenario = interpolateText(scenarioData.scenario, scenarioVars);
+
+                const personalityVars = personalityScript ?
+                    executeScript(personalityScript, allAnswers) : allAnswers;
+                const processedPersonality = interpolateText(scenarioData.personality, personalityVars);
+
+
+                // Update both main and data.scenario fields
+                scenarioData.scenario = processedScenario;
+                scenarioData.data.scenario = processedScenario;
+
+                // Update both main and data.personality fields
+                scenarioData.personality = processedPersonality;
+                scenarioData.data.personality = processedPersonality;
+
+                // Add character note script processing and update extensions.depth_prompt.prompt
+                if (scenarioData.data.extensions && scenarioData.data.extensions.depth_prompt) {
+                    const characterNoteVars = characterNoteScript ?
+                        executeScript(characterNoteScript, allAnswers) : allAnswers;
+                    const processedCharacterNote = interpolateText(scenarioData.data.extensions.depth_prompt.prompt, characterNoteVars);
+                    scenarioData.data.extensions.depth_prompt.prompt = processedCharacterNote;
+                }
 
                 // Create form data for character creation
                 const formData = new FormData();

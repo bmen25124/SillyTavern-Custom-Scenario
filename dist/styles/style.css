@@ -94,7 +94,10 @@
   flex: 2;
 }
 #scenario-create-dialog #description-preview,
-#scenario-create-dialog #first-message-preview {
+#scenario-create-dialog #first-message-preview,
+#scenario-create-dialog #scenario-preview,
+#scenario-create-dialog #personality-preview,
+#scenario-create-dialog #character-note-preview {
   min-height: 100px;
   padding: 10px;
   white-space: pre-wrap;

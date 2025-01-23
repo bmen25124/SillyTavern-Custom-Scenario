@@ -1,4 +1,4 @@
-import { saveScenarioData, getScenarioDataFromUI } from './data-handlers.js';
+import { saveScenarioCreateData, getScenarioCreateDataFromUI } from './data-handlers.js';
 import { updateScriptInputs } from './script-handlers.js';
 import { updateQuestionScriptInputs } from './script-handlers.js';
 
@@ -10,8 +10,8 @@ export function setupTabFunctionality(popup) {
     popup.on('click', '.tab-button', function () {
         const tabId = $(this).data('tab');
         // Save current state before switching tabs
-        const currentData = getScenarioDataFromUI(popup);
-        saveScenarioData(currentData);
+        const currentData = getScenarioCreateDataFromUI(popup);
+        saveScenarioCreateData(currentData);
 
         switchTab(tabId);
     });
@@ -44,7 +44,7 @@ export function switchTab(tabId) {
     popup.find(`.tab-content[data-tab="${tabId}"]`).addClass('active');
 
     // Update script inputs based on active tab
-    if (tabId === 'description' || tabId === 'first-message') {
+    if (tabId === 'description' || tabId === 'first-message' || tabId === 'scenario' || tabId === 'personality' || tabId === 'character-note') {
         updateScriptInputs(popup, tabId);
     } else {
         updateQuestionScriptInputs(popup.find(`.dynamic-input-group[data-tab="${tabId}"]`));

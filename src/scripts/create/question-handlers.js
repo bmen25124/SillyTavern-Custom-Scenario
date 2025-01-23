@@ -2,7 +2,7 @@ import { uuidv4 } from '../config.js';
 import { setupOptionHandlers, setupAddOptionButton, updateDefaultOptions } from './option-handlers.js';
 import { updateQuestionScriptInputs } from './script-handlers.js';
 import { updateQuestionPreview } from './preview-handlers.js';
-import { getScenarioDataFromUI, saveScenarioData } from './data-handlers.js';
+import { getScenarioCreateDataFromUI, saveScenarioCreateData } from './data-handlers.js';
 import { switchTab } from './tab-handlers.js';
 
 /**
@@ -53,17 +53,17 @@ function setupRemoveButton(tabContainer, popup) {
     tabContainer.find('.remove-input-btn').on('click', function () {
         const tabId = tabContainer.find('.tab-button').data('tab');
         const isCurrentTabActive = tabContainer.find('.tab-button').hasClass('active');
-        const isDescriptionOrFirstMessage = ['description', 'first-message'].includes(tabId);
+        const isNotQuestion = ['description', 'first-message', 'scenario', 'personality', 'character-note'].includes(tabId);
 
         tabContainer.remove();
         popup.find(`.tab-content[data-tab="${tabId}"]`).remove();
 
-        // If removing active tab that's not description/first-message, switch to description
-        if (isCurrentTabActive && !isDescriptionOrFirstMessage) {
+        // If removing active tab that's not question, switch to description
+        if (isCurrentTabActive && !isNotQuestion) {
             switchTab('description');
         }
-        // If removing description or first-message tab, update script inputs
-        else if (isDescriptionOrFirstMessage) {
+        // If not a question tab, update script inputs
+        else if (isNotQuestion) {
             updateScriptInputs(popup, tabId);
         }
     });
@@ -173,8 +173,8 @@ export function setupDynamicInputs(popup) {
 
         addQuestionToUI(popup, question);
         // Save state and switch to new tab
-        const currentData = getScenarioDataFromUI(popup);
-        saveScenarioData(currentData);
+        const currentData = getScenarioCreateDataFromUI(popup);
+        saveScenarioCreateData(currentData);
         switchTab(`question-${id}`);
     });
 }
