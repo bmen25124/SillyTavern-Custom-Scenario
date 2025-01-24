@@ -1,9 +1,7 @@
 /**
  * Sets up script input update handlers for all tabs
- * @param {JQuery} popup - The scenario creator dialog jQuery element
- * @param {'description'|'first-message'|'scenario'|'personality'|'character-note'} type - The type of tab to update
  */
-export function updateScriptInputs(popup, type) {
+export function updateScriptInputs(popup: JQuery<HTMLElement>, type: 'description' | 'first-message' | 'scenario' | 'personality' | 'character-note') {
     const config = {
         'description': {
             containerId: '#script-inputs-container'
@@ -25,7 +23,7 @@ export function updateScriptInputs(popup, type) {
     const container = popup.find(config[type].containerId);
 
     // Store existing input values before emptying container
-    const existingValues = {};
+    const existingValues: Record<string, boolean | string> = {};
     container.find('.script-input-group').each(function () {
         const id = $(this).data('id');
         const inputType = $(this).data('type');
@@ -34,10 +32,10 @@ export function updateScriptInputs(popup, type) {
                 existingValues[id] = $(this).find('input[type="checkbox"]').prop('checked');
                 break;
             case 'select':
-                existingValues[id] = $(this).find('select').val();
+                existingValues[id] = $(this).find('select').val() as string;
                 break;
             default:
-                existingValues[id] = $(this).find('input[type="text"]').val();
+                existingValues[id] = $(this).find('input[type="text"]').val() as string;
                 break;
         }
     });
@@ -84,13 +82,13 @@ export function updateScriptInputs(popup, type) {
         container.append(inputGroup);
 
         // Restore previous value if it exists, otherwise use default
-        if (id in existingValues) {
+        if (String(id) in existingValues) {
             if (inputType === 'checkbox') {
-                inputGroup.find('input[type="checkbox"]').prop('checked', existingValues[id]);
+                inputGroup.find('input[type="checkbox"]').prop('checked', existingValues[id as string]);
             } else if (inputType === 'select') {
-                inputGroup.find('select').val(existingValues[id]);
+                inputGroup.find('select').val(existingValues[id as string] as string);
             } else {
-                inputGroup.find('input[type="text"]').val(existingValues[id]);
+                inputGroup.find('input[type="text"]').val(existingValues[id as string] as string);
             }
         } else if (inputType === 'select') {
             // Set the default value only for new inputs
@@ -101,15 +99,14 @@ export function updateScriptInputs(popup, type) {
 
 /**
  * Updates script inputs for a specific question
- * @param {JQuery} questionGroup - The question group jQuery element
  */
-export function updateQuestionScriptInputs(questionGroup) {
+export function updateQuestionScriptInputs(questionGroup: JQuery<HTMLElement>) {
     const container = questionGroup.find('.question-script-inputs-container');
     const popup = questionGroup.closest('#scenario-create-dialog');
     const allInputs = popup.find('.dynamic-input-group');
 
     // Store existing values
-    const existingValues = {};
+    const existingValues: Record<string, boolean | string> = {};
     container.find('.script-input-group').each(function () {
         const id = $(this).data('id');
         const inputType = $(this).data('type');
@@ -118,10 +115,10 @@ export function updateQuestionScriptInputs(questionGroup) {
                 existingValues[id] = $(this).find('input[type="checkbox"]').prop('checked');
                 break;
             case 'select':
-                existingValues[id] = $(this).find('select').val();
+                existingValues[id] = $(this).find('select').val() as string;
                 break;
             default:
-                existingValues[id] = $(this).find('input[type="text"]').val();
+                existingValues[id] = $(this).find('input[type="text"]').val() as string;
                 break;
         }
     });
@@ -172,13 +169,13 @@ export function updateQuestionScriptInputs(questionGroup) {
         container.append(inputGroup);
 
         // Restore previous value if it exists
-        if (id in existingValues) {
+        if (String(id) in existingValues) {
             if (inputType === 'checkbox') {
-                inputGroup.find('input[type="checkbox"]').prop('checked', existingValues[id]);
+                inputGroup.find('input[type="checkbox"]').prop('checked', existingValues[id as string]);
             } else if (inputType === 'select') {
-                inputGroup.find('select').val(existingValues[id]);
+                inputGroup.find('select').val(existingValues[id as string] as string);
             } else {
-                inputGroup.find('input[type="text"]').val(existingValues[id]);
+                inputGroup.find('input[type="text"]').val(existingValues[id as string] as string);
             }
         }
     });

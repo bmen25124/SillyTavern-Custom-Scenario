@@ -5,7 +5,10 @@
     "type": "module",
     "main": "src/scripts/main.js",
     "scripts": {
-        "build": "python build.py",
+        "build": "python build.py dev",
+        "build:prod": "python build.py production",
+        "compile": "rollup -c",
+        "watch": "rollup -c -w",
         "test": "jest"
     },
     "keywords": [],
@@ -14,10 +17,16 @@
     "devDependencies": {
         "@babel/core": "^7.26.0",
         "@babel/preset-env": "^7.26.0",
+        "@rollup/plugin-typescript": "^12.1.2",
+        "@types/jquery": "^3.5.32",
+        "@types/node": "^22.10.10",
         "babel-jest": "^29.7.0",
         "jest": "^29.7.0",
         "jquery": "^3.7.1",
-        "sass": "^1.83.4"
+        "rollup": "^4.31.0",
+        "sass": "^1.83.4",
+        "tslib": "^2.8.1",
+        "typescript": "^5.7.3"
     },
     "jest": {
         "transform": {

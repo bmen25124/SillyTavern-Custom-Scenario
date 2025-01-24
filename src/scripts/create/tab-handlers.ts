@@ -1,12 +1,11 @@
-import { saveScenarioCreateData, getScenarioCreateDataFromUI } from './data-handlers.js';
-import { updateScriptInputs } from './script-handlers.js';
-import { updateQuestionScriptInputs } from './script-handlers.js';
+import { saveScenarioCreateData, getScenarioCreateDataFromUI } from './data-handlers';
+import { updateScriptInputs } from './script-handlers';
+import { updateQuestionScriptInputs } from './script-handlers';
 
 /**
  * Sets up tab switching functionality with auto-save
- * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
-export function setupTabFunctionality(popup) {
+export function setupTabFunctionality(popup: JQuery<HTMLElement>) {
     popup.on('click', '.tab-button', function () {
         const tabId = $(this).data('tab');
         // Save current state before switching tabs
@@ -22,9 +21,8 @@ export function setupTabFunctionality(popup) {
 
 /**
  * Sets up accordion functionality
- * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
-export function setupAccordion(popup) {
+export function setupAccordion(popup: JQuery<HTMLElement>) {
     const accordionToggles = popup.find('.accordion-toggle');
 
     accordionToggles.on('click', function () {
@@ -34,9 +32,8 @@ export function setupAccordion(popup) {
 
 /**
  * Switches to the specified tab
- * @param {string} tabId - The ID of the tab to switch to
  */
-export function switchTab(tabId) {
+export function switchTab(tabId: string) {
     const popup = $('#scenario-create-dialog');
     popup.find('.tab-button').removeClass('active');
     popup.find('.tab-content').removeClass('active');

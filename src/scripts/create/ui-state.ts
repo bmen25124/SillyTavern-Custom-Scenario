@@ -1,14 +1,13 @@
-import { addQuestionToUI } from './question-handlers.js';
-import { updatePreview } from './preview-handlers.js';
-import { switchTab } from './tab-handlers.js';
-import { updateScriptInputs } from './script-handlers.js';
+import { addQuestionToUI } from './question-handlers';
+import { updatePreview } from './preview-handlers';
+import { switchTab } from './tab-handlers';
+import { updateScriptInputs } from './script-handlers';
+import { ScenarioCreateData } from '../types';
 
 /**
  * Applies scenario data to the UI
- * @param {JQuery} popup - The scenario creator dialog jQuery element
- * @param {import('../types.js').ScenarioCreateData} data - The scenario data to apply
  */
-export function applyScenarioCreateDataToUI(popup, data) {
+export function applyScenarioCreateDataToUI(popup: JQuery<HTMLElement>, data: ScenarioCreateData) {
     popup.find('#scenario-creator-character-description').val(data.description);
     popup.find('#scenario-creator-script').val(data.descriptionScript);
     popup.find('#scenario-creator-character-first-message').val(data.firstMessage);

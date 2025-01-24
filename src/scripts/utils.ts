@@ -1,4 +1,4 @@
-export function executeScript(script, answers) {
+export function executeScript(script: string, answers: {}) {
     // Clone answers to avoid modifying the original object
     const variables = JSON.parse(JSON.stringify(answers));
 
@@ -12,7 +12,7 @@ export function executeScript(script, answers) {
     return scriptFunction(variables);
 }
 
-export function interpolateText(template, variables) {
+export function interpolateText(template: string, variables: Record<string, string | boolean | { label: string, value: string }>): string {
     const newVariables = JSON.parse(JSON.stringify(variables));
     for (const [key, value] of Object.entries(variables)) {
         if (value && typeof value === 'object' && value.hasOwnProperty('label')) {

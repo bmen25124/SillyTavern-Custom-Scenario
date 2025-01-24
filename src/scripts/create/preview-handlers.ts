@@ -1,10 +1,9 @@
-import { executeScript, interpolateText } from '../utils.js';
+import { executeScript, interpolateText } from '../utils';
 
 /**
  * Sets up preview functionality for description, first message, scenario, personality, character note
- * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
-export function setupPreviewFunctionality(popup) {
+export function setupPreviewFunctionality(popup: JQuery<HTMLElement>) {
     // Description preview
     const refreshPreviewBtn = popup.find('#refresh-preview');
     refreshPreviewBtn.on('click', () => updatePreview(popup, 'description'));
@@ -28,11 +27,8 @@ export function setupPreviewFunctionality(popup) {
 
 /**
  * Updates the preview for other than question
- * @param {JQuery} popup - The scenario creator dialog jQuery element
- * @param {'description'|'first-message'|'scenario'|'personality'|'character-note'} type - The type of preview to update
- * @param {boolean} [rethrowError=false] - Whether to rethrow errors
  */
-export function updatePreview(popup, type, rethrowError = false) {
+export function updatePreview(popup: JQuery<HTMLElement>, type: 'description' | 'first-message' | 'scenario' | 'personality' | 'character-note', rethrowError = false) {
     const config = {
         'description': {
             contentId: '#scenario-creator-character-description',
@@ -72,11 +68,11 @@ export function updatePreview(popup, type, rethrowError = false) {
     const previewDiv = popup.find(previewId);
     const scriptInputsContainer = popup.find(scriptInputsId);
 
-    const content = textarea.val();
-    const script = scriptTextarea.val();
+    const content = textarea.val() as string;
+    const script = scriptTextarea.val() as string;
 
     // Collect answers from script inputs
-    const answers = {};
+    const answers: Record<string, string | boolean | { label: string, value: string }> = {};
     scriptInputsContainer.find('.script-input-group').each(function () {
         const id = $(this).data('id');
         const type = $(this).data('type');
@@ -87,11 +83,11 @@ export function updatePreview(popup, type, rethrowError = false) {
             case 'select':
                 const element = $(this).find('select');
                 const label = element.find('option:selected').text();
-                const value = element.val();
+                const value = element.val() as string;
                 answers[id] = { label, value };
                 break;
             default:
-                answers[id] = $(this).find('input[type="text"]').val();
+                answers[id] = $(this).find('input[type="text"]').val() as string;
                 break;
         }
     });
@@ -103,7 +99,7 @@ export function updatePreview(popup, type, rethrowError = false) {
         // Interpolate content with variables
         const interpolated = interpolateText(content, variables);
         previewDiv.text(interpolated);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Preview update/script execute error:', error);
         previewDiv.text(`Preview update/script execute error: ${error.message}`);
         if (rethrowError) {
@@ -114,16 +110,15 @@ export function updatePreview(popup, type, rethrowError = false) {
 
 /**
  * Updates the preview for a question
- * @param {JQuery} questionGroup - The question group jQuery element
  */
-export function updateQuestionPreview(questionGroup, rethrowError = false) {
-    const questionText = questionGroup.find('.input-question').val();
-    const scriptText = questionGroup.find('.question-script').val();
+export function updateQuestionPreview(questionGroup: JQuery<HTMLElement>, rethrowError = false) {
+    const questionText = questionGroup.find('.input-question').val() as string;
+    const scriptText = questionGroup.find('.question-script').val() as string;
     const previewDiv = questionGroup.find('.question-preview');
     const scriptInputsContainer = questionGroup.find('.question-script-inputs-container');
 
     // Collect answers from script inputs
-    const answers = {};
+    const answers: Record<string, string  | boolean | { label: string, value: string }> = {};
     scriptInputsContainer.find('.script-input-group').each(function () {
         const id = $(this).data('id');
         const type = $(this).data('type');
@@ -134,11 +129,11 @@ export function updateQuestionPreview(questionGroup, rethrowError = false) {
             case 'select':
                 const element = $(this).find('select');
                 const label = element.find('option:selected').text();
-                const value = element.val();
+                const value = element.val() as string;
                 answers[id] = { label, value };
                 break;
             default:
-                answers[id] = $(this).find('input[type="text"]').val();
+                answers[id] = $(this).find('input[type="text"]').val() as string;
                 break;
         }
     });
@@ -150,7 +145,7 @@ export function updateQuestionPreview(questionGroup, rethrowError = false) {
         // Interpolate content with variables
         const interpolated = interpolateText(questionText, variables);
         previewDiv.text(interpolated);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Question preview update/script execute error:', error);
         previewDiv.text(`Question preview update/script execute error: ${error.message}`);
         if (rethrowError) {

@@ -1,6 +1,6 @@
-import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, POPUP_RESULT, getCharacters, getRequestHeaders, stEcho, stGo, extensionVersion } from '../config.js';
-import { upgradeOrDowngradeData } from '../types.js';
-import { executeScript, interpolateText } from '../utils.js';
+import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, POPUP_RESULT, st_getCharacters, getRequestHeaders, stEcho, stGo, extensionVersion } from '../config';
+import { upgradeOrDowngradeData, FullExportData, Question } from '../types';
+import { executeScript, interpolateText } from '../utils';
 
 /**
  * Prepares and adds the play scenario button to the character sidebar
@@ -22,17 +22,15 @@ export async function handlePlayScenarioClick() {
     $('body').append(fileInput);
 
     // Handle file selection
-    fileInput.on('change', async function (e) {
+    fileInput.on('change', async function (e: JQuery.ChangeEvent) {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = async function (event) {
+            if (!event.target) return;
             try {
-                /**
-                 * @type {import('../types.js').FullExportData}
-                 */
-                const scenarioData = JSON.parse(event.target.result);
+                const scenarioData: FullExportData = JSON.parse(event.target.result as string);
                 if (!scenarioData.scenario_creator) {
                     await stEcho('warning', 'This scenario does not have a creator section');
                     return
@@ -49,7 +47,7 @@ export async function handlePlayScenarioClick() {
 
                 scenarioData.scenario_creator = upgradeOrDowngradeData(scenarioData.scenario_creator, "export");
                 setupPlayDialogHandlers(scenarioData);
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Import error:', error);
                 stEcho('error', 'Error importing scenario: ' + error.message);
             }
@@ -66,9 +64,8 @@ export async function handlePlayScenarioClick() {
 
 /**
  * Sets up handlers for the play dialog
- * @param {import('../types.js').FullExportData} scenarioData - The scenario data
  */
-async function setupPlayDialogHandlers(scenarioData) {
+async function setupPlayDialogHandlers(scenarioData: FullExportData) {
     const scenarioPlayDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-play-dialog'));
     const {
         descriptionScript,
@@ -79,18 +76,9 @@ async function setupPlayDialogHandlers(scenarioData) {
         characterNoteScript,
     } = scenarioData.scenario_creator || {};
 
-    /**
-     * @type {JQuery<HTMLElement>}
-     */
-    let popup;
-    /**
-     * @type {JQuery<HTMLElement>}
-     */
-    let dynamicInputsContainer;
-    /**
-     * @type {JQuery<HTMLElement>}
-     */
-    let inputTemplate;
+    let popup: JQuery<HTMLElement>;
+    let dynamicInputsContainer: JQuery<HTMLElement>;
+    let inputTemplate: JQuery<HTMLElement>;
 
     // Set up pagination variables
     let currentPageIndex = 0;
@@ -101,7 +89,7 @@ async function setupPlayDialogHandlers(scenarioData) {
         okButton: true,
         cancelButton: true,
         wider: true,
-        onClosing: async (popupInstance) => {
+        onClosing: async (popupInstance: { result: POPUP_RESULT }) => {
             if (popupInstance.result !== POPUP_RESULT.AFFIRMATIVE) {
                 return true;
             }
@@ -113,7 +101,7 @@ async function setupPlayDialogHandlers(scenarioData) {
             }
 
             // On final submission, validate all fields
-            const allAnswers = {};
+            const allAnswers: Record<string, string | boolean | { label: string, value: string }> = {};
             let hasValidationErrors = false;
 
             popup.find('.dynamic-input').each(function () {
@@ -221,10 +209,10 @@ async function setupPlayDialogHandlers(scenarioData) {
                 if (!fetchResult.ok) {
                     throw new Error('Fetch result is not ok');
                 }
-                await getCharacters();
+                await st_getCharacters();
                 await stGo(scenarioData.name);
                 return true;
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error processing scenario:', error);
                 await stEcho('error', 'Error processing scenario: ' + error.message);
                 return false;
@@ -290,7 +278,7 @@ async function setupPlayDialogHandlers(scenarioData) {
     }
 
     // Function to handle page navigation
-    function navigateToPage(targetIndex) {
+    function navigateToPage(targetIndex: number) {
         if (targetIndex >= 0 && targetIndex < layout.length) {
             if (targetIndex > currentPageIndex && !validateCurrentPage()) {
                 return;
@@ -305,19 +293,17 @@ async function setupPlayDialogHandlers(scenarioData) {
 
     /**
      * Updates the question text based on dynamic input values and script execution.
-     * @param {JQuery} questionWrapper - jQuery object containing the question element
-     * @param {import('../types.js').Question} question - Question object containing text and script properties
      * @throws {Error} When script execution fails
      */
-    function updateQuestionText(questionWrapper, question) {
-        const answers = {};
+    function updateQuestionText(questionWrapper: JQuery<HTMLElement>, question: Question) {
+        const answers: Record<string, string | boolean | { label: string, value: string }> = {};
         popup.find('.dynamic-input').each(function () {
             const $input = $(this);
             const id = $input.data('id');
             // Handle select elements first
             if ($input.is('select')) {
                 const label = $input.find('option:selected').text();
-                answers[id] = { label, value: $input.val() };
+                answers[id] = { label, value: $input.val() as string };
             }
             // Then handle other input types
             else switch ($input.attr('type')) {
@@ -325,7 +311,7 @@ async function setupPlayDialogHandlers(scenarioData) {
                     answers[id] = $input.prop('checked');
                     break;
                 default:
-                    answers[id] = $input.val();
+                    answers[id] = $input.val() as string | boolean;
             }
         });
 
@@ -333,7 +319,7 @@ async function setupPlayDialogHandlers(scenarioData) {
             const variables = question.script ? executeScript(question.script, answers) : answers;
             const interpolated = interpolateText(question.text, variables);
             questionWrapper.find('.input-question').text(interpolated + (question.required ? ' *' : ''));
-        } catch (error) {
+        } catch (error: any) {
             console.error('Question text update error:', error);
             questionWrapper.find('.input-question').text(question.text + (question.required ? ' *' : '') +
                 ` (Script error: ${error.message})`);
@@ -367,7 +353,7 @@ async function setupPlayDialogHandlers(scenarioData) {
                     const selectHtml = `
                     <select class="text_pole dynamic-input"
                         ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}>
-                        ${question.options.map(opt =>
+                        ${question.options!.map(opt =>
                         `<option value="${opt.value}" ${opt.value === question.defaultValue ? 'selected' : ''}>${opt.label}</option>`
                     ).join('')}
                     </select>

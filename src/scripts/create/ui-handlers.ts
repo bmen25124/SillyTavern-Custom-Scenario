@@ -1,10 +1,10 @@
-import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, stEcho, extensionVersion } from '../config.js';
-import { setupPreviewFunctionality, updatePreview, updateQuestionPreview } from './preview-handlers.js';
-import { setupTabFunctionality, setupAccordion, switchTab } from './tab-handlers.js';
-import { setupDynamicInputs } from './question-handlers.js';
-import { loadScenarioCreateData, saveScenarioCreateData, getScenarioCreateDataFromUI, createProductionScenarioData, downloadFile, convertImportedData, removeScenarioCreateData } from './data-handlers.js';
-import { applyScenarioCreateDataToUI } from './ui-state.js';
-import { createEmptyScenarioCreateData, upgradeOrDowngradeData } from '../types.js';
+import { renderExtensionTemplateAsync, extensionTemplateFolder, callGenericPopup, POPUP_TYPE, stEcho, extensionVersion } from '../config';
+import { setupPreviewFunctionality, updatePreview, updateQuestionPreview } from './preview-handlers';
+import { setupTabFunctionality, setupAccordion, switchTab } from './tab-handlers';
+import { setupDynamicInputs } from './question-handlers';
+import { loadScenarioCreateData, saveScenarioCreateData, getScenarioCreateDataFromUI, createProductionScenarioData, downloadFile, convertImportedData, removeScenarioCreateData } from './data-handlers';
+import { applyScenarioCreateDataToUI } from './ui-state';
+import { createEmptyScenarioCreateData, upgradeOrDowngradeData } from '../types';
 
 /**
  * Prepares and adds the character sidebar icon with click handler
@@ -22,7 +22,8 @@ export async function prepareCharacterSidebar() {
  * Creates the scenario creator dialog and loads saved data
  */
 async function handleCharacterSidebarClick() {
-    let formElement = $('#form_create');
+    // @ts-ignore
+    let formElement: HTMLFormElement = $('#form_create');
     if (formElement.length === 0) {
         return;
     }
@@ -51,18 +52,23 @@ async function handleCharacterSidebarClick() {
         removeScenarioCreateData();
     }
     if (!savedData.description) {
+        // @ts-ignore
         savedData.description = formData.get('description');
     }
     if (!savedData.firstMessage) {
+        // @ts-ignore
         savedData.firstMessage = formData.get('first_mes');
     }
     if (!savedData.scenario) {
+        // @ts-ignore
         savedData.scenario = formData.get('scenario');
     }
     if (!savedData.personality) {
+        // @ts-ignore
         savedData.personality = formData.get('personality');
     }
     if (!savedData.characterNote) {
+        // @ts-ignore
         savedData.characterNote = formData.get('depth_prompt_prompt') || '';
     }
 
@@ -86,9 +92,8 @@ function setupPopupHandlers() {
 
 /**
  * Sets up the reset button functionality
- * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
-function setupResetButton(popup) {
+function setupResetButton(popup: JQuery<HTMLElement>) {
     popup.find('#reset-scenario-btn').on('click', function () {
         // Clear the fields
         popup.find('#scenario-creator-character-description').val('');
@@ -130,9 +135,8 @@ function setupResetButton(popup) {
 
 /**
  * Sets up the import button functionality
- * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
-function setupImportButton(popup) {
+function setupImportButton(popup: JQuery<HTMLElement>) {
     // Create hidden file input
     const fileInput = $('<input type="file" accept=".json" style="display: none">');
     popup.append(fileInput);
@@ -143,14 +147,17 @@ function setupImportButton(popup) {
     });
 
     // Handle file selection
-    fileInput.on('change', function (e) {
+    fileInput.on('change', function (e: JQuery.ChangeEvent) {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = async function (event) {
+            if (!event.target?.result) {
+                return;
+            }
             try {
-                const importedData = JSON.parse(event.target.result);
+                const importedData = JSON.parse(event.target.result as string);
                 const scenarioData = await convertImportedData(importedData);
                 if (!scenarioData) {
                     return;
@@ -179,12 +186,11 @@ function setupImportButton(popup) {
 
 /**
  * Sets up the export button functionality
- * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
-function setupExportButton(popup) {
+function setupExportButton(popup: JQuery<HTMLElement>) {
     popup.find('#export-scenario-btn').on('click', async function () {
         const currentData = getScenarioCreateDataFromUI(popup);
-        const formElement = $('#form_create').get(0);
+        const formElement = $('#form_create').get(0) as HTMLFormElement;
         const formData = new FormData(formElement);
 
         // Validate all scripts before export
@@ -193,35 +199,35 @@ function setupExportButton(popup) {
         // Check description
         try {
             updatePreview(popup, 'description', true);
-        } catch (error) {
+        } catch (error: any) {
             errors.push('Description script error: ' + error.message);
         }
 
         // Check first message
         try {
             updatePreview(popup, 'first-message', true);
-        } catch (error) {
+        } catch (error: any) {
             errors.push('First message script error: ' + error.message);
         }
 
         // Check scenario
         try {
             updatePreview(popup, 'scenario', true);
-        } catch (error) {
+        } catch (error: any) {
             errors.push('Scenario script error: ' + error.message);
         }
 
         // Check personality
         try {
             updatePreview(popup, 'personality', true);
-        } catch (error) {
+        } catch (error: any) {
             errors.push('Personality script error: ' + error.message);
         }
 
         // Check character note
         try {
             updatePreview(popup, 'character-note', true);
-        } catch (error) {
+        } catch (error: any) {
             errors.push('Character note script error: ' + error.message);
         }
 
@@ -232,7 +238,7 @@ function setupExportButton(popup) {
             const inputId = group.find('.input-id').val();
             try {
                 updateQuestionPreview(group, true);
-            } catch (error) {
+            } catch (error: any) {
                 errors.push(`Question "${inputId}" script error: ${error.message}`);
             }
         });

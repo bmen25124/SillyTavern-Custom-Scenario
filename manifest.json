@@ -3,8 +3,8 @@
     "loading_order": 150,
     "requires": [],
     "optional": [],
-    "js": "dist/scripts/index.js",
-    "css": "dist/styles/style.css",
+    "js": "dist/index.js",
+    "css": "dist/style.css",
     "author": "bmen25124",
     "version": "0.2.1",
     "homePage": "https://github.com/bmen25124/SillyTavern-Custom-Scenario"

@@ -1,15 +1,15 @@
-import { uuidv4 } from '../config.js';
-import { setupOptionHandlers, setupAddOptionButton, updateDefaultOptions } from './option-handlers.js';
-import { updateQuestionScriptInputs } from './script-handlers.js';
-import { updateQuestionPreview } from './preview-handlers.js';
-import { getScenarioCreateDataFromUI, saveScenarioCreateData } from './data-handlers.js';
-import { switchTab } from './tab-handlers.js';
+import { st_uuidv4 } from '../config';
+import { setupOptionHandlers, setupAddOptionButton, updateDefaultOptions } from './option-handlers';
+import { updateQuestionScriptInputs, updateScriptInputs } from './script-handlers';
+import { updateQuestionPreview } from './preview-handlers';
+import { getScenarioCreateDataFromUI, saveScenarioCreateData } from './data-handlers';
+import { switchTab } from './tab-handlers';
+import { Question } from '../types';
 
 /**
  * Sets up change handler for input type selection
- * @param {JQuery} newInput - The new input jQuery element
  */
-function setupInputTypeChangeHandler(newInput) {
+function setupInputTypeChangeHandler(newInput: JQuery<HTMLElement>) {
     newInput.find('.input-type-select').on('change', function () {
         const container = $(this).closest('.dynamic-input-group');
         const selectOptionsContainer = container.find('.select-options-container');
@@ -46,10 +46,8 @@ function setupInputTypeChangeHandler(newInput) {
 
 /**
  * Sets up functionality for removing questions
- * @param {JQuery} tabContainer - The tab container jQuery element
- * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
-function setupRemoveButton(tabContainer, popup) {
+function setupRemoveButton(tabContainer: JQuery<HTMLElement>, popup: JQuery<HTMLElement>) {
     tabContainer.find('.remove-input-btn').on('click', function () {
         const tabId = tabContainer.find('.tab-button').data('tab');
         const isCurrentTabActive = tabContainer.find('.tab-button').hasClass('active');
@@ -71,10 +69,8 @@ function setupRemoveButton(tabContainer, popup) {
 
 /**
  * Adds a question to the UI
- * @param {JQuery} popup - The scenario creator dialog jQuery element
- * @param {import('../types.js').Question} question - The question to add
  */
-export function addQuestionToUI(popup, question) {
+export function addQuestionToUI(popup: JQuery<HTMLElement>, question: Question) {
     const dynamicInputsContainer = popup.find('#dynamic-inputs-container');
     const dynamicTabButtons = popup.find('#dynamic-tab-buttons');
     const inputTemplate = popup.find('#dynamic-input-template');
@@ -110,13 +106,13 @@ export function addQuestionToUI(popup, question) {
             break;
         case 'select':
             const optionsList = newInput.find('.options-list');
-            const selectDefault = newInput.find('.select-default');
+            const selectDefault = newInput.find('.select-default') as JQuery<HTMLSelectElement>;
 
             // Clear existing default options
             selectDefault.find('option:not(:first)').remove();
 
             // Add options and set up handlers
-            question.options.forEach(option => {
+            question.options?.forEach(option => {
                 const optionTemplate = popup.find('#select-option-template').html();
                 const newOption = $(optionTemplate);
                 newOption.find('.option-value').val(option.value);
@@ -137,10 +133,10 @@ export function addQuestionToUI(popup, question) {
             newInput.find('.default-value-input-container textarea').hide();
 
             // Set default value after all options are added
-            selectDefault.val(question.defaultValue);
+            selectDefault.val(question.defaultValue as string);
             break;
         default:
-            newInput.find('.input-default').val(question.defaultValue);
+            newInput.find('.input-default').val(question.defaultValue as string);
     }
 
     setupInputTypeChangeHandler(newInput);
@@ -155,20 +151,20 @@ export function addQuestionToUI(popup, question) {
 
 /**
  * Sets up dynamic input functionality
- * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
-export function setupDynamicInputs(popup) {
+export function setupDynamicInputs(popup: JQuery<HTMLElement>) {
     const addInputBtn = popup.find('#add-input-btn');
 
     addInputBtn.on('click', () => {
-        const id = uuidv4();
-        const question = {
+        const id = st_uuidv4();
+        const question: Question = {
             id,
             inputId: '',
             text: '',
             type: 'text',
             defaultValue: '',
-            required: true
+            script: '',
+            required: true,
         };
 
         addQuestionToUI(popup, question);
@@ -181,10 +177,8 @@ export function setupDynamicInputs(popup) {
 
 /**
  * Sets up update handlers for script inputs
- * @param {JQuery} newInput - The new input jQuery element
- * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
-function setupScriptInputsUpdateHandlers(newInput, popup) {
+function setupScriptInputsUpdateHandlers(newInput: JQuery<HTMLElement>, popup: JQuery<HTMLElement>) {
     // Update tab name when input ID changes
     newInput.find('.input-id').on('change', function () {
         const tabId = newInput.data('tab');

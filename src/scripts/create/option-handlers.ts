@@ -1,10 +1,7 @@
 /**
  * Sets up handlers for select options
- * @param {JQuery} newOption - The new option jQuery element
- * @param {JQuery} optionsList - The options list jQuery element
- * @param {JQuery} selectDefault - The select default jQuery element
  */
-export function setupOptionHandlers(newOption, optionsList, selectDefault) {
+export function setupOptionHandlers(newOption: JQuery<HTMLElement>, optionsList: JQuery<HTMLElement>, selectDefault: JQuery<HTMLElement>) {
     newOption.find('.option-value, .option-label').on('input', function () {
         updateDefaultOptions(optionsList, selectDefault);
     });
@@ -17,10 +14,8 @@ export function setupOptionHandlers(newOption, optionsList, selectDefault) {
 
 /**
  * Updates the default options for a select input
- * @param {JQuery} optionsList - The options list jQuery element
- * @param {JQuery} selectDefault - The select default jQuery element
  */
-export function updateDefaultOptions(optionsList, selectDefault) {
+export function updateDefaultOptions(optionsList: JQuery<HTMLElement>, selectDefault: JQuery<HTMLElement>) {
     // Store current selection
     const currentValue = selectDefault.val();
 
@@ -38,16 +33,14 @@ export function updateDefaultOptions(optionsList, selectDefault) {
 
     // Restore previous selection if it still exists
     if (selectDefault.find(`option[value="${currentValue}"]`).length) {
-        selectDefault.val(currentValue);
+        selectDefault.val(currentValue!);
     }
 }
 
 /**
  * Sets up functionality for adding options to select inputs
- * @param {JQuery} newInput - The new input jQuery element
- * @param {JQuery} popup - The scenario creator dialog jQuery element
  */
-export function setupAddOptionButton(newInput, popup) {
+export function setupAddOptionButton(newInput: JQuery<HTMLElement>, popup: JQuery<HTMLElement>) {
     newInput.find('.add-option-btn').on('click', function () {
         const optionsList = $(this).closest('.select-options-container').find('.options-list');
         const optionTemplate = popup.find('#select-option-template').html();
