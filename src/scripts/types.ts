@@ -1,151 +1,151 @@
 import { extensionVersion } from './config';
 
 export interface ScriptInput {
-    id: string;
-    type: string;
-    defaultValue: string | boolean;
-    required: boolean;
-    options?: Array<{ value: string, label: string }>;
+  id: string;
+  type: string;
+  defaultValue: string | boolean;
+  required: boolean;
+  options?: Array<{ value: string; label: string }>;
 }
 
 export interface Question {
-    id: string;
-    inputId: string;
-    text: string;
-    script: string;
-    type: string;
-    defaultValue: string | boolean;
-    required: boolean;
-    options?: Array<{ value: string, label: string }>;
+  id: string;
+  inputId: string;
+  text: string;
+  script: string;
+  type: string;
+  defaultValue: string | boolean;
+  required: boolean;
+  options?: Array<{ value: string; label: string }>;
 }
 
 export interface ScenarioCreateData {
-    description: string;
-    descriptionScript: string;
-    firstMessage: string;
-    firstMessageScript: string;
-    scenario: string;
-    scenarioScript: string;
-    personality: string;
-    personalityScript: string;
-    characterNote: string;
-    characterNoteScript: string;
-    questions: Question[];
-    layout: string[][];
-    activeTab: string;
-    version: string;
+  description: string;
+  descriptionScript: string;
+  firstMessage: string;
+  firstMessageScript: string;
+  scenario: string;
+  scenarioScript: string;
+  personality: string;
+  personalityScript: string;
+  characterNote: string;
+  characterNoteScript: string;
+  questions: Question[];
+  layout: string[][];
+  activeTab: string;
+  version: string;
 }
 
 export interface ScenarioExportData {
-    descriptionScript: string;
-    firstMessageScript: string;
-    scenarioScript: string;
-    personalityScript: string;
-    characterNoteScript: string;
-    questions: Question[];
-    layout: string[][];
-    version: string;
+  descriptionScript: string;
+  firstMessageScript: string;
+  scenarioScript: string;
+  personalityScript: string;
+  characterNoteScript: string;
+  questions: Question[];
+  layout: string[][];
+  version: string;
 }
 
 export interface FullExportData {
+  name: string;
+  description: string;
+  first_mes: string;
+  scenario: string;
+  personality: string;
+  data: {
     name: string;
     description: string;
     first_mes: string;
     scenario: string;
     personality: string;
-    data: {
-        name: string;
-        description: string;
-        first_mes: string;
-        scenario: string;
-        personality: string;
-        extensions?: {
-            depth_prompt?: {
-                prompt: string;
-            };
-        };
+    extensions?: {
+      depth_prompt?: {
+        prompt: string;
+      };
     };
-    scenario_creator: ScenarioExportData;
+  };
+  scenario_creator: ScenarioExportData;
 }
 
 export const STORAGE_KEY = 'scenario_creator_data';
 
 export function createEmptyScenarioCreateData(): ScenarioCreateData {
-    return {
-        description: '',
-        descriptionScript: '',
-        firstMessage: '',
-        firstMessageScript: '',
-        scenario: '',
-        scenarioScript: '',
-        personality: '',
-        personalityScript: '',
-        characterNote: '',
-        characterNoteScript: '',
-        questions: [],
-        layout: [],
-        activeTab: 'description',
-        version: extensionVersion
-    };
+  return {
+    description: '',
+    descriptionScript: '',
+    firstMessage: '',
+    firstMessageScript: '',
+    scenario: '',
+    scenarioScript: '',
+    personality: '',
+    personalityScript: '',
+    characterNote: '',
+    characterNoteScript: '',
+    questions: [],
+    layout: [],
+    activeTab: 'description',
+    version: extensionVersion,
+  };
 }
 
 interface VersionUpgrade {
-    from: string[];
-    to: string | string[];
-    createCallback: (data: ScenarioCreateData) => void;
-    exportCallback: (data: ScenarioExportData) => void;
+  from: string[];
+  to: string | string[];
+  createCallback: (data: ScenarioCreateData) => void;
+  exportCallback: (data: ScenarioExportData) => void;
 }
 
 const versionUpgrades: VersionUpgrade[] = [
-    {
-        from: ['0.2.0'],
-        to: '0.2.1',
-        createCallback: (data: ScenarioCreateData) => {
-            // Add personality fields if they don't exist
-            if (!data.hasOwnProperty('personality')) {
-                data.personality = '';
-            }
-            if (!data.hasOwnProperty('personalityScript')) {
-                data.personalityScript = '';
-            }
+  {
+    from: ['0.2.0'],
+    to: '0.2.1',
+    createCallback: (data: ScenarioCreateData) => {
+      // Add personality fields if they don't exist
+      if (!data.hasOwnProperty('personality')) {
+        data.personality = '';
+      }
+      if (!data.hasOwnProperty('personalityScript')) {
+        data.personalityScript = '';
+      }
 
-            // Add scenario fields if they don't exist
-            if (!data.hasOwnProperty('scenario')) {
-                data.scenario = '';
-            }
-            if (!data.hasOwnProperty('scenarioScript')) {
-                data.scenarioScript = '';
-            }
+      // Add scenario fields if they don't exist
+      if (!data.hasOwnProperty('scenario')) {
+        data.scenario = '';
+      }
+      if (!data.hasOwnProperty('scenarioScript')) {
+        data.scenarioScript = '';
+      }
 
-            // Add character note fields if they don't exist
-            if (!data.hasOwnProperty('characterNote')) {
-                data.characterNote = '';
-            }
-            if (!data.hasOwnProperty('characterNoteScript')) {
-                data.characterNoteScript = '';
-            }
+      // Add character note fields if they don't exist
+      if (!data.hasOwnProperty('characterNote')) {
+        data.characterNote = '';
+      }
+      if (!data.hasOwnProperty('characterNoteScript')) {
+        data.characterNoteScript = '';
+      }
 
-            data.version = '0.2.1';
-        },
-        exportCallback: (data: ScenarioExportData) => {
-            // Add scenario fields if they don't exist
-            if (!data.hasOwnProperty('scenarioScript')) {
-                data.scenarioScript = '';
-            }
+      data.version = '0.2.1';
+    },
+    exportCallback: (data: ScenarioExportData) => {
+      // Add scenario fields if they don't exist
+      if (!data.hasOwnProperty('scenarioScript')) {
+        data.scenarioScript = '';
+      }
 
-            // Add personality fields if they don't exist
-            if (!data.hasOwnProperty('personalityScript')) {
-                data.personalityScript = '';
-            }
+      // Add personality fields if they don't exist
+      if (!data.hasOwnProperty('personalityScript')) {
+        data.personalityScript = '';
+      }
 
-            // Add character note fields if they don't exist
-            if (!data.hasOwnProperty('characterNoteScript')) {
-                data.characterNoteScript = '';
-            }
+      // Add character note fields if they don't exist
+      if (!data.hasOwnProperty('characterNoteScript')) {
+        data.characterNoteScript = '';
+      }
 
-            data.version = '0.2.1';
-        }
-    }
+      data.version = '0.2.1';
+    },
+  },
 ];
 
 /**
@@ -154,35 +154,35 @@ const versionUpgrades: VersionUpgrade[] = [
  * @throws throws an error if version is missing
  */
 export function upgradeOrDowngradeData<T extends ScenarioCreateData | ScenarioExportData>(
-    data: T,
-    type: 'create' | 'export'
+  data: T,
+  type: 'create' | 'export',
 ): T {
-    const newData = JSON.parse(JSON.stringify(data));
-    if (!newData.version) {
-        throw new Error('No version found in data');
-    }
+  const newData = JSON.parse(JSON.stringify(data));
+  if (!newData.version) {
+    throw new Error('No version found in data');
+  }
 
-    // Find and apply all applicable upgrades
-    let upgraded = false;
-    do {
-        upgraded = false;
-        for (const upgrade of versionUpgrades) {
-            if (upgrade.from.includes(newData.version)) {
-                if (type === 'create') {
-                    upgrade.createCallback(newData);
-                } else {
-                    upgrade.exportCallback(newData);
-                }
-                upgraded = true;
-                break; // Only apply one upgrade at a time
-            }
+  // Find and apply all applicable upgrades
+  let upgraded = false;
+  do {
+    upgraded = false;
+    for (const upgrade of versionUpgrades) {
+      if (upgrade.from.includes(newData.version)) {
+        if (type === 'create') {
+          upgrade.createCallback(newData);
+        } else {
+          upgrade.exportCallback(newData);
         }
-    } while (upgraded); // Keep upgrading until no more upgrades are applicable
-
-    // If version is still not current after upgrades, it must be newer
-    if (newData.version !== extensionVersion) {
-        throw new Error(`Data version ${newData.version} is not compatible with extension version ${extensionVersion}`);
+        upgraded = true;
+        break; // Only apply one upgrade at a time
+      }
     }
+  } while (upgraded); // Keep upgrading until no more upgrades are applicable
 
-    return newData;
+  // If version is still not current after upgrades, it must be newer
+  if (newData.version !== extensionVersion) {
+    throw new Error(`Data version ${newData.version} is not compatible with extension version ${extensionVersion}`);
+  }
+
+  return newData;
 }

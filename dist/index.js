@@ -94,9 +94,7 @@ function interpolateText(template, variables) {
                 return match; // Keep original if variable is undefined, null, or empty
             }
             // Recursively interpolate if the variable contains template syntax
-            return variable.toString().includes('{{')
-                ? interpolateText(variable.toString(), newVariables)
-                : variable;
+            return variable.toString().includes('{{') ? interpolateText(variable.toString(), newVariables) : variable;
         });
         iteration++;
     }
@@ -128,36 +126,36 @@ function setupPreviewFunctionality(popup) {
  */
 function updatePreview(popup, type, rethrowError = false) {
     const config = {
-        'description': {
+        description: {
             contentId: '#scenario-creator-character-description',
             scriptId: '#scenario-creator-script',
             previewId: '#description-preview',
-            scriptInputsId: '#script-inputs-container'
+            scriptInputsId: '#script-inputs-container',
         },
         'first-message': {
             contentId: '#scenario-creator-character-first-message',
             scriptId: '#scenario-creator-first-message-script',
             previewId: '#first-message-preview',
-            scriptInputsId: '#first-message-script-inputs-container'
+            scriptInputsId: '#first-message-script-inputs-container',
         },
-        'scenario': {
+        scenario: {
             contentId: '#scenario-creator-character-scenario',
             scriptId: '#scenario-creator-scenario-script',
             previewId: '#scenario-preview',
-            scriptInputsId: '#scenario-script-inputs-container'
+            scriptInputsId: '#scenario-script-inputs-container',
         },
-        'personality': {
+        personality: {
             contentId: '#scenario-creator-character-personality',
             scriptId: '#scenario-creator-personality-script',
             previewId: '#personality-preview',
-            scriptInputsId: '#personality-script-inputs-container'
+            scriptInputsId: '#personality-script-inputs-container',
         },
         'character-note': {
             contentId: '#scenario-creator-character-note',
             scriptId: '#scenario-creator-character-note-script',
             previewId: '#character-note-preview',
-            scriptInputsId: '#character-note-script-inputs-container'
-        }
+            scriptInputsId: '#character-note-script-inputs-container',
+        },
     };
     const { contentId, scriptId, previewId, scriptInputsId } = config[type];
     const textarea = popup.find(contentId);
@@ -261,7 +259,7 @@ function createEmptyScenarioCreateData() {
         questions: [],
         layout: [],
         activeTab: 'description',
-        version: extensionVersion
+        version: extensionVersion,
     };
 }
 const versionUpgrades = [
@@ -306,8 +304,8 @@ const versionUpgrades = [
                 data.characterNoteScript = '';
             }
             data.version = '0.2.1';
-        }
-    }
+        },
+    },
 ];
 /**
  * Validates and creates a deep copy of the input data object, ensuring version compatibility.
@@ -347,7 +345,7 @@ function upgradeOrDowngradeData(data, type) {
  * Creates a production-ready version of scenario data without internal state
  */
 function createProductionScenarioData(data, formData) {
-    const { descriptionScript, firstMessageScript, scenarioScript, personalityScript, characterNote, characterNoteScript, questions, description, firstMessage, scenario, personality } = data;
+    const { descriptionScript, firstMessageScript, scenarioScript, personalityScript, characterNote, characterNoteScript, questions, description, firstMessage, scenario, personality, } = data;
     const formEntries = Array.from(formData.entries());
     let jsonData;
     // Extract json_data
@@ -374,7 +372,7 @@ function createProductionScenarioData(data, formData) {
         // @ts-ignore
         jsonData.talkativeness = formEntries.find(([key]) => key === 'talkativeness')[1] || '0.5';
         // @ts-ignore
-        jsonData.fav = formEntries.find(([key]) => key === 'fav')[1] === "true" || false;
+        jsonData.fav = formEntries.find(([key]) => key === 'fav')[1] === 'true' || false;
         // @ts-ignore
         jsonData.tags = formEntries.find(([key]) => key === 'tags')[1] || [];
         // @ts-ignore
@@ -428,9 +426,9 @@ function createProductionScenarioData(data, formData) {
             type,
             defaultValue,
             required,
-            ...(options && { options })
+            ...(options && { options }),
         })),
-        layout: data.layout || [[...questions.map(q => q.inputId)]], // Default to all questions in one page if no layout specified
+        layout: data.layout || [[...questions.map((q) => q.inputId)]], // Default to all questions in one page if no layout specified
         version: extensionVersion,
     };
     // Return the final production data format
@@ -465,17 +463,19 @@ function createProductionScenarioData(data, formData) {
             character_version: jsonData.data.character_version || '',
             alternate_greetings: jsonData.data.alternate_greetings || [],
             extensions: jsonData.data.extensions || [],
-            group_only_greetings: jsonData.data.group_only_greetings || []
+            group_only_greetings: jsonData.data.group_only_greetings || [],
         },
         create_date: st_humanizedDateTime(),
-        scenario_creator: scenarioCreator
+        scenario_creator: scenarioCreator,
     };
 }
 /**
  * Triggers download of scenario data as a JSON file
  */
 function downloadFile(data, filename) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -546,7 +546,7 @@ function getScenarioCreateDataFromUI(popup) {
             // @ts-ignore
             type: $(this).find('.input-type-select').val(),
             defaultValue: '',
-            required: $(this).find('.input-required').prop('checked')
+            required: $(this).find('.input-required').prop('checked'),
         };
         // @ts-ignore
         const pageNumber = parseInt($(this).find('.input-page').val()) || 1;
@@ -558,13 +558,15 @@ function getScenarioCreateDataFromUI(popup) {
                 // @ts-ignore
                 question.defaultValue = $(this).find('.select-default').val();
                 question.options = [];
-                $(this).find('.option-item').each(function () {
+                $(this)
+                    .find('.option-item')
+                    .each(function () {
                     // @ts-ignore
                     question.options.push({
                         // @ts-ignore
                         value: $(this).find('.option-value').val(),
                         // @ts-ignore
-                        label: $(this).find('.option-label').val()
+                        label: $(this).find('.option-label').val(),
                     });
                 });
                 break;
@@ -582,7 +584,7 @@ function getScenarioCreateDataFromUI(popup) {
     // Convert page map to layout array
     data.layout = Array.from(questionsByPage.keys())
         .sort((a, b) => a - b) // Sort page numbers
-        .map(pageNum => questionsByPage.get(pageNum));
+        .map((pageNum) => questionsByPage.get(pageNum));
     return data;
 }
 /**
@@ -597,15 +599,15 @@ async function convertImportedData(importedData) {
         await stEcho('info', `Imported data version changed from ${scenarioCreator.version} to ${extensionVersion}`);
     }
     try {
-        scenarioCreator = upgradeOrDowngradeData(scenarioCreator, "export");
+        scenarioCreator = upgradeOrDowngradeData(scenarioCreator, 'export');
     }
     catch (error) {
         await stEcho('error', error.message);
         return null;
     }
-    const questions = (scenarioCreator.questions || []).map(q => ({
+    const questions = (scenarioCreator.questions || []).map((q) => ({
         ...q,
-        id: q.id || st_uuidv4()
+        id: q.id || st_uuidv4(),
     }));
     // Handle layout information
     let layout;
@@ -614,7 +616,7 @@ async function convertImportedData(importedData) {
     }
     else {
         // Default to all questions in one page
-        layout = [[...questions.map(q => q.inputId)]];
+        layout = [[...questions.map((q) => q.inputId)]];
     }
     return {
         description: importedData.description || '',
@@ -630,7 +632,7 @@ async function convertImportedData(importedData) {
         questions,
         layout,
         activeTab: 'description',
-        version: scenarioCreator.version
+        version: scenarioCreator.version,
     };
 }
 
@@ -639,21 +641,21 @@ async function convertImportedData(importedData) {
  */
 function updateScriptInputs(popup, type) {
     const config = {
-        'description': {
-            containerId: '#script-inputs-container'
+        description: {
+            containerId: '#script-inputs-container',
         },
         'first-message': {
-            containerId: '#first-message-script-inputs-container'
+            containerId: '#first-message-script-inputs-container',
         },
-        'scenario': {
-            containerId: '#scenario-script-inputs-container'
+        scenario: {
+            containerId: '#scenario-script-inputs-container',
         },
-        'personality': {
-            containerId: '#personality-script-inputs-container'
+        personality: {
+            containerId: '#personality-script-inputs-container',
         },
         'character-note': {
-            containerId: '#character-note-script-inputs-container'
-        }
+            containerId: '#character-note-script-inputs-container',
+        },
     };
     const container = popup.find(config[type].containerId);
     // Store existing input values before emptying container
@@ -837,7 +839,11 @@ function switchTab(tabId) {
     popup.find(`.tab-button[data-tab="${tabId}"]`).addClass('active');
     popup.find(`.tab-content[data-tab="${tabId}"]`).addClass('active');
     // Update script inputs based on active tab
-    if (tabId === 'description' || tabId === 'first-message' || tabId === 'scenario' || tabId === 'personality' || tabId === 'character-note') {
+    if (tabId === 'description' ||
+        tabId === 'first-message' ||
+        tabId === 'scenario' ||
+        tabId === 'personality' ||
+        tabId === 'character-note') {
         updateScriptInputs(popup, tabId);
     }
     else {
@@ -956,7 +962,8 @@ function addQuestionToUI(popup, question) {
     const dynamicTabButtons = popup.find('#dynamic-tab-buttons');
     const inputTemplate = popup.find('#dynamic-input-template');
     const tabButtonTemplate = popup.find('#tab-button-template');
-    const tabHtml = tabButtonTemplate.html()
+    const tabHtml = tabButtonTemplate
+        .html()
         .replace(/{id}/g, question.id)
         .replace(/{number}/g, question.inputId || 'unnamed');
     const newInput = $(inputTemplate.html().replace(/{id}/g, question.id));
@@ -985,7 +992,7 @@ function addQuestionToUI(popup, question) {
             // Clear existing default options
             selectDefault.find('option:not(:first)').remove();
             // Add options and set up handlers
-            question.options?.forEach(option => {
+            question.options?.forEach((option) => {
                 const optionTemplate = popup.find('#select-option-template').html();
                 const newOption = $(optionTemplate);
                 newOption.find('.option-value').val(option.value);
@@ -1055,7 +1062,9 @@ function setupScriptInputsUpdateHandlers(newInput, popup) {
     // Initial script inputs setup
     updateQuestionScriptInputs(newInput);
     // Update script inputs when any question changes
-    newInput.find('.input-type-select, .input-default, .input-default-checkbox, .select-default').on('change', function () {
+    newInput
+        .find('.input-type-select, .input-default, .input-default-checkbox, .select-default')
+        .on('change', function () {
         updateQuestionScriptInputs(newInput);
     });
 }
@@ -1075,11 +1084,10 @@ function applyScenarioCreateDataToUI(popup, data) {
     popup.find('#scenario-creator-character-note').val(data.characterNote);
     popup.find('#scenario-creator-character-note-script').val(data.characterNoteScript);
     // Restore questions
-    data.questions.forEach(question => {
+    data.questions.forEach((question) => {
         addQuestionToUI(popup, question);
         const questionGroup = popup.find(`.dynamic-input-group[data-tab="question-${question.id}"]`);
-        const pageNumber = data.layout
-            .findIndex(page => page.includes(question.inputId)) + 1 || 1;
+        const pageNumber = data.layout.findIndex((page) => page.includes(question.inputId)) + 1 || 1;
         questionGroup.find('.input-page').val(pageNumber);
     });
     // Create/update
@@ -1120,7 +1128,10 @@ async function handleCharacterSidebarClick() {
     formElement = formElement.get(0);
     const formData = new FormData(formElement);
     const scenarioCreateDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-create-dialog'));
-    callGenericPopup(scenarioCreateDialogHtml, POPUP_TYPE.DISPLAY, '', { large: true, wide: true });
+    callGenericPopup(scenarioCreateDialogHtml, POPUP_TYPE.DISPLAY, '', {
+        large: true,
+        wide: true,
+    });
     setupPopupHandlers();
     // Load saved data after popup is created
     const popup = $('#scenario-create-dialog');
@@ -1130,7 +1141,7 @@ async function handleCharacterSidebarClick() {
         await stEcho('info', `Version of cache data changed from ${savedData.version} to ${extensionVersion}`);
     }
     try {
-        savedData = upgradeOrDowngradeData(savedData, "create");
+        savedData = upgradeOrDowngradeData(savedData, 'create');
         saveScenarioCreateData(savedData);
     }
     catch (error) {
@@ -1356,11 +1367,10 @@ async function handlePlayScenarioClick() {
                     return;
                 }
                 // Check version changes
-                if (scenarioData.scenario_creator.version &&
-                    scenarioData.scenario_creator.version !== extensionVersion) {
+                if (scenarioData.scenario_creator.version && scenarioData.scenario_creator.version !== extensionVersion) {
                     await stEcho('info', `Scenario version changed from ${scenarioData.scenario_creator.version} to ${extensionVersion}`);
                 }
-                scenarioData.scenario_creator = upgradeOrDowngradeData(scenarioData.scenario_creator, "export");
+                scenarioData.scenario_creator = upgradeOrDowngradeData(scenarioData.scenario_creator, 'export');
                 setupPlayDialogHandlers(scenarioData);
             }
             catch (error) {
@@ -1380,13 +1390,13 @@ async function handlePlayScenarioClick() {
  */
 async function setupPlayDialogHandlers(scenarioData) {
     const scenarioPlayDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-play-dialog'));
-    const { descriptionScript, firstMessageScript, scenarioScript, personalityScript, questions, characterNoteScript, } = scenarioData.scenario_creator || {};
+    const { descriptionScript, firstMessageScript, scenarioScript, personalityScript, questions, characterNoteScript } = scenarioData.scenario_creator || {};
     let popup;
     let dynamicInputsContainer;
     let inputTemplate;
     // Set up pagination variables
     let currentPageIndex = 0;
-    const layout = scenarioData.scenario_creator.layout || [[...questions.map(q => q.inputId)]];
+    const layout = scenarioData.scenario_creator.layout || [[...questions.map((q) => q.inputId)]];
     const visitedPages = new Set([0]); // Track visited pages, starting with first page
     callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', {
         okButton: true,
@@ -1427,17 +1437,14 @@ async function setupPlayDialogHandlers(scenarioData) {
                 // Check if required field is empty
                 if (required && (value === '' || value === undefined)) {
                     hasValidationErrors = true;
-                    $input.closest('.dynamic-input-group')
-                        .find('.validation-error')
-                        .text('This field is required')
-                        .show();
+                    $input.closest('.dynamic-input-group').find('.validation-error').text('This field is required').show();
                 }
             });
             if (hasValidationErrors) {
                 // Find first page with validation error
                 for (let i = 0; i < layout.length; i++) {
                     const inputIds = layout[i];
-                    const hasError = inputIds.some(inputId => {
+                    const hasError = inputIds.some((inputId) => {
                         const wrapper = popup.find(`[data-input-id="${inputId}"]`);
                         return wrapper.find('.validation-error:visible').length > 0;
                     });
@@ -1451,17 +1458,13 @@ async function setupPlayDialogHandlers(scenarioData) {
             }
             try {
                 // Process description and first message with allAnswers
-                const descriptionVars = descriptionScript ?
-                    executeScript(descriptionScript, allAnswers) : allAnswers;
+                const descriptionVars = descriptionScript ? executeScript(descriptionScript, allAnswers) : allAnswers;
                 const description = interpolateText(scenarioData.description, descriptionVars);
-                const firstMessageVars = firstMessageScript ?
-                    executeScript(firstMessageScript, allAnswers) : allAnswers;
+                const firstMessageVars = firstMessageScript ? executeScript(firstMessageScript, allAnswers) : allAnswers;
                 const firstMessage = interpolateText(scenarioData.first_mes, firstMessageVars);
-                const scenarioVars = scenarioScript ?
-                    executeScript(scenarioScript, allAnswers) : allAnswers;
+                const scenarioVars = scenarioScript ? executeScript(scenarioScript, allAnswers) : allAnswers;
                 const processedScenario = interpolateText(scenarioData.scenario, scenarioVars);
-                const personalityVars = personalityScript ?
-                    executeScript(personalityScript, allAnswers) : allAnswers;
+                const personalityVars = personalityScript ? executeScript(personalityScript, allAnswers) : allAnswers;
                 const processedPersonality = interpolateText(scenarioData.personality, personalityVars);
                 // Update both main and data.scenario fields
                 scenarioData.scenario = processedScenario;
@@ -1471,8 +1474,7 @@ async function setupPlayDialogHandlers(scenarioData) {
                 scenarioData.data.personality = processedPersonality;
                 // Add character note script processing and update extensions.depth_prompt.prompt
                 if (scenarioData.data.extensions && scenarioData.data.extensions.depth_prompt) {
-                    const characterNoteVars = characterNoteScript ?
-                        executeScript(characterNoteScript, allAnswers) : allAnswers;
+                    const characterNoteVars = characterNoteScript ? executeScript(characterNoteScript, allAnswers) : allAnswers;
                     const processedCharacterNote = interpolateText(scenarioData.data.extensions.depth_prompt.prompt, characterNoteVars);
                     scenarioData.data.extensions.depth_prompt.prompt = processedCharacterNote;
                 }
@@ -1482,7 +1484,9 @@ async function setupPlayDialogHandlers(scenarioData) {
                 scenarioData.first_mes = firstMessage;
                 scenarioData.data.description = description;
                 scenarioData.data.first_mes = firstMessage;
-                const newFile = new Blob([JSON.stringify(scenarioData)], { type: 'application/json' });
+                const newFile = new Blob([JSON.stringify(scenarioData)], {
+                    type: 'application/json',
+                });
                 formData.append('avatar', newFile, 'scenario.json');
                 formData.append('file_type', 'json');
                 const headers = getRequestHeaders();
@@ -1505,7 +1509,7 @@ async function setupPlayDialogHandlers(scenarioData) {
                 await stEcho('error', 'Error processing scenario: ' + error.message);
                 return false;
             }
-        }
+        },
     });
     popup = $('#scenario-play-dialog');
     dynamicInputsContainer = popup.find('#dynamic-inputs-container');
@@ -1527,7 +1531,9 @@ async function setupPlayDialogHandlers(scenarioData) {
     function validateCurrentPage() {
         popup.find('.validation-error').hide();
         let hasPageErrors = false;
-        const currentPageInputs = popup.find('.dynamic-input').filter((_, el) => layout[currentPageIndex].includes($(el).data('id')));
+        const currentPageInputs = popup
+            .find('.dynamic-input')
+            .filter((_, el) => layout[currentPageIndex].includes($(el).data('id')));
         currentPageInputs.each(function () {
             const $input = $(this);
             if ($input.data('required')) {
@@ -1547,10 +1553,7 @@ async function setupPlayDialogHandlers(scenarioData) {
                     }
                 if (value === '' || value === undefined) {
                     hasPageErrors = true;
-                    $input.closest('.dynamic-input-group')
-                        .find('.validation-error')
-                        .text('This field is required')
-                        .show();
+                    $input.closest('.dynamic-input-group').find('.validation-error').text('This field is required').show();
                 }
             }
         });
@@ -1599,27 +1602,30 @@ async function setupPlayDialogHandlers(scenarioData) {
         }
         catch (error) {
             console.error('Question text update error:', error);
-            questionWrapper.find('.input-question').text(question.text + (question.required ? ' *' : '') +
-                ` (Script error: ${error.message})`);
+            questionWrapper
+                .find('.input-question')
+                .text(question.text + (question.required ? ' *' : '') + ` (Script error: ${error.message})`);
         }
     }
     // Create all inputs at initialization
     function createAllInputs() {
-        questions.forEach(question => {
+        questions.forEach((question) => {
             const newInput = $(inputTemplate.html());
             newInput.addClass('dynamic-input-wrapper');
             newInput.attr('data-input-id', question.inputId);
             const inputContainer = newInput.find('.input-container');
             const inputAttrs = {
                 'data-id': question.inputId,
-                'data-required': question.required || false
+                'data-required': question.required || false,
             };
             switch (question.type) {
                 case 'checkbox':
                     inputContainer.html(`
                     <label class="checkbox_label">
                         <input type="checkbox" class="dynamic-input"
-                            ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}
+                            ${Object.entries(inputAttrs)
+                        .map(([key, val]) => `${key}="${val}"`)
+                        .join(' ')}
                             ${question.defaultValue ? 'checked' : ''}>
                     </label>
                 `);
@@ -1627,8 +1633,12 @@ async function setupPlayDialogHandlers(scenarioData) {
                 case 'select':
                     const selectHtml = `
                     <select class="text_pole dynamic-input"
-                        ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}>
-                        ${question.options.map(opt => `<option value="${opt.value}" ${opt.value === question.defaultValue ? 'selected' : ''}>${opt.label}</option>`).join('')}
+                        ${Object.entries(inputAttrs)
+                        .map(([key, val]) => `${key}="${val}"`)
+                        .join(' ')}>
+                        ${question
+                        .options.map((opt) => `<option value="${opt.value}" ${opt.value === question.defaultValue ? 'selected' : ''}>${opt.label}</option>`)
+                        .join('')}
                     </select>
                 `;
                     inputContainer.html(selectHtml);
@@ -1636,7 +1646,9 @@ async function setupPlayDialogHandlers(scenarioData) {
                 default: // text
                     inputContainer.html(`
                     <input type="text" class="text_pole dynamic-input"
-                        ${Object.entries(inputAttrs).map(([key, val]) => `${key}="${val}"`).join(' ')}
+                        ${Object.entries(inputAttrs)
+                        .map(([key, val]) => `${key}="${val}"`)
+                        .join(' ')}
                         value="${question.defaultValue || ''}"
                         placeholder="${question.required ? 'Required' : 'Enter your answer'}">
                 `);
@@ -1647,7 +1659,7 @@ async function setupPlayDialogHandlers(scenarioData) {
             updateQuestionText(newInput, question);
             // Update question text when any input changes
             popup.find('.dynamic-input').on('input change', function () {
-                questions.forEach(q => {
+                questions.forEach((q) => {
                     const wrapper = dynamicInputsContainer.find(`[data-input-id="${q.inputId}"]`);
                     updateQuestionText(wrapper, q);
                 });
@@ -1659,8 +1671,8 @@ async function setupPlayDialogHandlers(scenarioData) {
         // Hide all inputs first
         dynamicInputsContainer.find('.dynamic-input-wrapper').hide();
         // Show only inputs for current page
-        const currentPageQuestions = questions.filter(q => layout[currentPageIndex].includes(q.inputId));
-        currentPageQuestions.forEach(question => {
+        const currentPageQuestions = questions.filter((q) => layout[currentPageIndex].includes(q.inputId));
+        currentPageQuestions.forEach((question) => {
             const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);
             wrapper.show();
             updateQuestionText(wrapper, question);
