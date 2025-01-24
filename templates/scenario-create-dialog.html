@@ -1,8 +1,15 @@
 <div id="scenario-create-dialog">
     <h2>Scenario Creator</h2>
 
+    <!-- Action Buttons Row -->
+    <div class="flex-container justifyEnd gap10">
+        <button id="import-scenario-btn" class="menu_button">Import</button>
+        <button id="export-scenario-btn" class="menu_button">Export</button>
+        <button id="reset-scenario-btn" class="menu_button">Reset</button>
+    </div>
+
     <!-- Tab Navigation -->
-    <div class="flex-container tab-navigation justifySpaceBetween">
+    <div class="flex-container tab-navigation">
         <div class="flex-container">
             <button class="tab-button menu_button" data-tab="description">Description</button>
             <button class="tab-button menu_button" data-tab="first-message">First Message</button>
@@ -11,11 +18,6 @@
             <button class="tab-button menu_button" data-tab="character-note">Character Note</button>
             <div id="dynamic-tab-buttons"></div>
             <button id="add-input-btn" class="menu_button">+ Add Question</button>
-        </div>
-        <div class="flex-container gap10">
-            <button id="import-scenario-btn" class="menu_button">Import</button>
-            <button id="export-scenario-btn" class="menu_button">Export</button>
-            <button id="reset-scenario-btn" class="menu_button">Reset</button>
         </div>
     </div>
 
@@ -182,8 +184,8 @@
                             class="flex-container flexFlowColumn marginTop10 marginBottom10">
                             <!-- Dynamic script inputs will be added here -->
                         </div>
-                        <textarea id="scenario-creator-character-note-script" class="text_pole textarea_compact" rows="8"
-                            placeholder="Enter your script here..."></textarea>
+                        <textarea id="scenario-creator-character-note-script" class="text_pole textarea_compact"
+                            rows="8" placeholder="Enter your script here..."></textarea>
                     </div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
@@ -290,8 +292,8 @@
     <!-- Template for tab button -->
     <template id="tab-button-template">
         <div class="tab-button-container">
-            <button class="tab-button menu_button" data-tab="question-{id}">Question {number}</button>
-            <button class="remove-input-btn menu_button" title="Remove Question">×</button>
+            <button class="tab-button menu_button question" data-tab="question-{id}">Question {number}</button>
+            <button class="remove-input-btn menu_button danger" title="Remove Question">🗑️</button>
         </div>
     </template>
 

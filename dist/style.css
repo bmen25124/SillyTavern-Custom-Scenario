@@ -3,14 +3,32 @@
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
+#scenario-create-dialog .tab-navigation .flex-container:first-child {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+}
 #scenario-create-dialog .tab-button {
   min-width: auto;
+  padding: 3px 8px;
+  font-size: 0.9em;
+  margin: 0 1px;
+  height: 26px;
+  line-height: 1;
+}
+#scenario-create-dialog .tab-button.question {
+  height: 52px;
 }
 #scenario-create-dialog .tab-button.active {
   background-color: var(--accent-color);
   border-color: var(--accent-color);
   color: var(--white-90);
   font-weight: 500;
+}
+#scenario-create-dialog #add-input-btn {
+  margin-left: 8px;
 }
 #scenario-create-dialog .tab-content {
   display: none;
@@ -27,10 +45,19 @@
   gap: 2px;
 }
 #scenario-create-dialog .remove-input-btn {
-  padding: 0 8px;
+  padding: 3px 8px;
   min-width: auto;
-  font-size: 16px;
   line-height: 1;
+  font-size: 16px;
+}
+#scenario-create-dialog .remove-input-btn.danger {
+  background-color: var(--error-color);
+  border-color: var(--error-color);
+  color: var(--white-90);
+}
+#scenario-create-dialog .remove-input-btn.danger:hover {
+  background-color: var(--error-hover-color, #a00);
+  border-color: var(--error-hover-color, #a00);
 }
 #scenario-create-dialog .gap10 {
   gap: 10px;
