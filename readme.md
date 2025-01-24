@@ -4,7 +4,7 @@ An extension that lets you create interactive scenarios with variables and basic
 
 ## What it does
 - Create scenarios with custom questions
-- Use variables in the description/first message.
+- Use variables in the description/first message/personality/scenario/character note.
 - Add simple scripts to make things dynamic. (JavaScript)
 - Import/export scenarios as JSON
 
@@ -84,11 +84,6 @@ You also received a card with the following message: Happy birthday! Enjoy your 
     * If question type is _text_, `variables.gift`
     * If the question type is _dropdown_, `variables.gift.value` and `variables.gift.label`. When creating the card, `variables.gift.label` is used.
     * If question type is _checkbox_, `variables.gift`. (boolean)
-
-## Exporting Details
-* Exported JSON data is _almost_ same as SillyTavern structure. So if you export it, fields like personality/creator in _Advanced Definitions_ also going to be exported.
-* You can use variables in personality and summary. But there is no scripting support for those inputs.
-
 
 
 ## FAQ:
