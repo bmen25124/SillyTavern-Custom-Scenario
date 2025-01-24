@@ -983,8 +983,10 @@ function addQuestionToUI(popup, question) {
     });
     switch (question.type) {
         case 'checkbox':
-            newInput.find('.default-value-input-container .checkbox-default').show();
             newInput.find('.default-value-input-container textarea').hide();
+            const checkboxDefault = newInput.find('.default-value-input-container .checkbox-default');
+            checkboxDefault.find('input').prop('checked', question.defaultValue);
+            checkboxDefault.show();
             break;
         case 'select':
             const optionsList = newInput.find('.options-list');
