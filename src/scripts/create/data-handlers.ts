@@ -5,6 +5,7 @@ import {
   ScenarioCreateData,
   ScenarioExportData,
   createEmptyScenarioCreateData,
+  createEmptyScenarioExportData,
   upgradeOrDowngradeData,
 } from '../types';
 import { st_uuidv4, st_humanizedDateTime, st_getcreateCharacterData, extensionVersion, stEcho } from '../config';
@@ -353,6 +354,13 @@ export async function convertImportedData(importedData: FullExportData | File): 
   if (importedData instanceof File && importedData.type === 'image/png') {
     try {
       const buffer = await importedData.arrayBuffer();
+
+      // Update avatar preview
+      if ($('#rm_ch_create_block').is(':visible') && $('#form_create').attr('actiontype') === 'createcharacter') {
+        const base64String = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+        $('#avatar_load_preview').attr('src', `data:image/png;base64,${base64String}`);
+      }
+
       const extracted = readScenarioFromPng(buffer);
       if (!extracted) {
         await stEcho('error', 'No scenario data found in PNG file.');
@@ -367,8 +375,13 @@ export async function convertImportedData(importedData: FullExportData | File): 
     data = importedData as FullExportData;
   }
 
-  // Extract scenario creator specific data
-  let scenarioCreator = data.scenario_creator || {};
+  // Show info if no scenario_creator exists
+  if (!data.scenario_creator) {
+    await stEcho('info', 'No scenario_creator data found. Creating new empty data.');
+  }
+  // Extract scenario creator specific data or create a new empty data
+  let scenarioCreator = data.scenario_creator || createEmptyScenarioExportData();
+
   // Check version changes
   if (scenarioCreator.version && scenarioCreator.version !== extensionVersion) {
     await stEcho('info', `Imported data version changed from ${scenarioCreator.version} to ${extensionVersion}`);
@@ -395,13 +408,13 @@ export async function convertImportedData(importedData: FullExportData | File): 
   }
 
   return {
-    description: data.description || '',
+    description: data.description || data.data?.description || '',
     descriptionScript: scenarioCreator.descriptionScript || '',
-    firstMessage: data.first_mes || '',
+    firstMessage: data.first_mes || data.data?.first_mes || '',
     firstMessageScript: scenarioCreator.firstMessageScript || '',
-    scenario: data.scenario || '',
+    scenario: data.scenario || data.data?.scenario || '',
     scenarioScript: scenarioCreator.scenarioScript || '',
-    personality: data.personality || '',
+    personality: data.personality || data.data?.personality || '',
     personalityScript: scenarioCreator.personalityScript || '',
     characterNote: data.data?.extensions?.depth_prompt?.prompt || '',
     characterNoteScript: scenarioCreator.characterNoteScript || '',

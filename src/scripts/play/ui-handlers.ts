@@ -175,16 +175,16 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
       try {
         // Process description and first message with allAnswers
         const descriptionVars = descriptionScript ? executeScript(descriptionScript, allAnswers) : allAnswers;
-        const description = interpolateText(scenarioData.description, descriptionVars);
+        const description = interpolateText(scenarioData.description || scenarioData.data?.description, descriptionVars);
 
         const firstMessageVars = firstMessageScript ? executeScript(firstMessageScript, allAnswers) : allAnswers;
-        const firstMessage = interpolateText(scenarioData.first_mes, firstMessageVars);
+        const firstMessage = interpolateText(scenarioData.first_mes || scenarioData.data?.first_mes, firstMessageVars);
 
         const scenarioVars = scenarioScript ? executeScript(scenarioScript, allAnswers) : allAnswers;
-        const processedScenario = interpolateText(scenarioData.scenario, scenarioVars);
+        const processedScenario = interpolateText(scenarioData.scenario || scenarioData.data?.scenario, scenarioVars);
 
         const personalityVars = personalityScript ? executeScript(personalityScript, allAnswers) : allAnswers;
-        const processedPersonality = interpolateText(scenarioData.personality, personalityVars);
+        const processedPersonality = interpolateText(scenarioData.personality || scenarioData.data?.personality, personalityVars);
 
         // Update both main and data.scenario fields
         scenarioData.scenario = processedScenario;

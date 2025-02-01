@@ -11,7 +11,7 @@ import { Popper } from '../../../../../lib.js';
 import { getContext } from '../../../../extensions.js';
 
 export const extensionName = 'SillyTavern-Custom-Scenario';
-export const extensionVersion = '0.3.0';
+export const extensionVersion = '0.3.1';
 export const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 
 /**

@@ -89,6 +89,12 @@ export function createEmptyScenarioCreateData(): ScenarioCreateData {
   };
 }
 
+export function createEmptyScenarioExportData(): ScenarioExportData {
+  return {
+    ...createEmptyScenarioCreateData(),
+  };
+}
+
 interface VersionUpgrade {
   from: string;
   to: string;
@@ -154,6 +160,16 @@ const versionUpgrades: VersionUpgrade[] = [
     },
     exportCallback: (data: ScenarioExportData) => {
       data.version = '0.3.0';
+    },
+  },
+  {
+    from: '0.3.0',
+    to: '0.3.1',
+    createCallback: (data: ScenarioCreateData) => {
+      data.version = '0.3.1';
+    },
+    exportCallback: (data: ScenarioExportData) => {
+      data.version = '0.3.1';
     },
   },
 ];

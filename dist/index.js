@@ -8,7 +8,7 @@ import { getContext } from '../../../../extensions.js';
 
 // @ts-ignore
 const extensionName = 'SillyTavern-Custom-Scenario';
-const extensionVersion = '0.3.0';
+const extensionVersion = '0.3.1';
 const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
@@ -262,6 +262,11 @@ function createEmptyScenarioCreateData() {
         version: extensionVersion,
     };
 }
+function createEmptyScenarioExportData() {
+    return {
+        ...createEmptyScenarioCreateData(),
+    };
+}
 const versionUpgrades = [
     {
         from: '0.2.0',
@@ -314,6 +319,16 @@ const versionUpgrades = [
         },
         exportCallback: (data) => {
             data.version = '0.3.0';
+        },
+    },
+    {
+        from: '0.3.0',
+        to: '0.3.1',
+        createCallback: (data) => {
+            data.version = '0.3.1';
+        },
+        exportCallback: (data) => {
+            data.version = '0.3.1';
         },
     },
 ];
@@ -2792,6 +2807,7 @@ function requirePngChunkText () {
 var pngChunkTextExports = requirePngChunkText();
 var PNGtext = /*@__PURE__*/getDefaultExportFromCjs(pngChunkTextExports);
 
+// Very similar to https://github.com/SillyTavern/SillyTavern/blob/4fcad0752f6e03d4796cda9838f96604298e02e9/src/character-card-parser.js
 /**
  * Writes Character metadata to a PNG image buffer.
  * Writes only 'chara', 'ccv3' is not supported and removed not to create a mismatch.
@@ -3162,6 +3178,11 @@ async function convertImportedData(importedData) {
     if (importedData instanceof File && importedData.type === 'image/png') {
         try {
             const buffer = await importedData.arrayBuffer();
+            // Update avatar preview
+            if ($('#rm_ch_create_block').is(':visible') && $('#form_create').attr('actiontype') === 'createcharacter') {
+                const base64String = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                $('#avatar_load_preview').attr('src', `data:image/png;base64,${base64String}`);
+            }
             const extracted = readScenarioFromPng(buffer);
             if (!extracted) {
                 await stEcho('error', 'No scenario data found in PNG file.');
@@ -3177,8 +3198,12 @@ async function convertImportedData(importedData) {
     else {
         data = importedData;
     }
-    // Extract scenario creator specific data
-    let scenarioCreator = data.scenario_creator || {};
+    // Show info if no scenario_creator exists
+    if (!data.scenario_creator) {
+        await stEcho('info', 'No scenario_creator data found. Creating new empty data.');
+    }
+    // Extract scenario creator specific data or create a new empty data
+    let scenarioCreator = data.scenario_creator || createEmptyScenarioExportData();
     // Check version changes
     if (scenarioCreator.version && scenarioCreator.version !== extensionVersion) {
         await stEcho('info', `Imported data version changed from ${scenarioCreator.version} to ${extensionVersion}`);
@@ -3204,13 +3229,13 @@ async function convertImportedData(importedData) {
         layout = [[...questions.map((q) => q.inputId)]];
     }
     return {
-        description: data.description || '',
+        description: data.description || data.data?.description || '',
         descriptionScript: scenarioCreator.descriptionScript || '',
-        firstMessage: data.first_mes || '',
+        firstMessage: data.first_mes || data.data?.first_mes || '',
         firstMessageScript: scenarioCreator.firstMessageScript || '',
-        scenario: data.scenario || '',
+        scenario: data.scenario || data.data?.scenario || '',
         scenarioScript: scenarioCreator.scenarioScript || '',
-        personality: data.personality || '',
+        personality: data.personality || data.data?.personality || '',
         personalityScript: scenarioCreator.personalityScript || '',
         characterNote: data.data?.extensions?.depth_prompt?.prompt || '',
         characterNoteScript: scenarioCreator.characterNoteScript || '',
@@ -4109,13 +4134,13 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
             try {
                 // Process description and first message with allAnswers
                 const descriptionVars = descriptionScript ? executeScript(descriptionScript, allAnswers) : allAnswers;
-                const description = interpolateText(scenarioData.description, descriptionVars);
+                const description = interpolateText(scenarioData.description || scenarioData.data?.description, descriptionVars);
                 const firstMessageVars = firstMessageScript ? executeScript(firstMessageScript, allAnswers) : allAnswers;
-                const firstMessage = interpolateText(scenarioData.first_mes, firstMessageVars);
+                const firstMessage = interpolateText(scenarioData.first_mes || scenarioData.data?.first_mes, firstMessageVars);
                 const scenarioVars = scenarioScript ? executeScript(scenarioScript, allAnswers) : allAnswers;
-                const processedScenario = interpolateText(scenarioData.scenario, scenarioVars);
+                const processedScenario = interpolateText(scenarioData.scenario || scenarioData.data?.scenario, scenarioVars);
                 const personalityVars = personalityScript ? executeScript(personalityScript, allAnswers) : allAnswers;
-                const processedPersonality = interpolateText(scenarioData.personality, personalityVars);
+                const processedPersonality = interpolateText(scenarioData.personality || scenarioData.data?.personality, personalityVars);
                 // Update both main and data.scenario fields
                 scenarioData.scenario = processedScenario;
                 scenarioData.data.scenario = processedScenario;
