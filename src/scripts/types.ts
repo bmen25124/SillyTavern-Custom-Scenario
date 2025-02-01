@@ -90,15 +90,15 @@ export function createEmptyScenarioCreateData(): ScenarioCreateData {
 }
 
 interface VersionUpgrade {
-  from: string[];
-  to: string | string[];
+  from: string;
+  to: string;
   createCallback: (data: ScenarioCreateData) => void;
   exportCallback: (data: ScenarioExportData) => void;
 }
 
 const versionUpgrades: VersionUpgrade[] = [
   {
-    from: ['0.2.0'],
+    from: '0.2.0',
     to: '0.2.1',
     createCallback: (data: ScenarioCreateData) => {
       // Add personality fields if they don't exist
@@ -144,6 +144,16 @@ const versionUpgrades: VersionUpgrade[] = [
       }
 
       data.version = '0.2.1';
+    },
+  },
+  {
+    from: '0.2.1',
+    to: '0.3.0',
+    createCallback: (data: ScenarioCreateData) => {
+      data.version = '0.3.0';
+    },
+    exportCallback: (data: ScenarioExportData) => {
+      data.version = '0.3.0';
     },
   },
 ];

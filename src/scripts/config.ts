@@ -1,21 +1,17 @@
 // @ts-ignore
-// import { renderExtensionTemplateAsync } from '../../../../extensions.js';
-// @ts-ignore
-// import { callGenericPopup, POPUP_TYPE, POPUP_RESULT } from '../../../../popup.js';
-// @ts-ignore
-// import { SlashCommandParser } from '../../../../slash-commands/SlashCommandParser.js';
-// @ts-ignore
 import { uuidv4 } from '../../../../utils.js';
 // @ts-ignore
-import { getCharacters /*getRequestHeaders, create_save*/ } from '../../../../../script.js';
+import { getCharacters } from '../../../../../script.js';
 // @ts-ignore
 import { humanizedDateTime } from '../../../../RossAscends-mods.js';
+// @ts-ignore
+import { Popper } from '../../../../../lib.js';
 
 // @ts-ignore
 import { getContext } from '../../../../extensions.js';
 
 export const extensionName = 'SillyTavern-Custom-Scenario';
-export const extensionVersion = '0.2.1';
+export const extensionVersion = '0.3.0';
 export const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 
 /**
@@ -96,4 +92,22 @@ export async function st_getCharacters(): Promise<void> {
 // TODO: Get from getContext()
 export function st_humanizedDateTime(): string {
   return humanizedDateTime();
+}
+
+export function st_createPopper(
+  reference: HTMLElement,
+  popper: HTMLElement,
+  options?: {
+    placement:
+      | 'top-start'
+      | 'top-end'
+      | 'bottom-start'
+      | 'bottom-end'
+      | 'right-start'
+      | 'right-end'
+      | 'left-start'
+      | 'left-end';
+  },
+): { update: () => void } {
+  return Popper.createPopper(reference, popper, options);
 }

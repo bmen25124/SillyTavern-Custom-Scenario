@@ -12,6 +12,7 @@ import {
 } from '../config';
 import { upgradeOrDowngradeData, FullExportData, Question } from '../types';
 import { executeScript, interpolateText } from '../utils';
+import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
 
 /**
  * Prepares and adds the play scenario button to the character sidebar
@@ -29,7 +30,7 @@ export async function preparePlayButton() {
  */
 export async function handlePlayScenarioClick() {
   // Create hidden file input
-  const fileInput = $('<input type="file" accept=".json" style="display: none">');
+  const fileInput: JQuery<HTMLInputElement> = $('<input type="file" accept=".json, .png" style="display: none">');
   $('body').append(fileInput);
 
   // Handle file selection
@@ -37,32 +38,48 @@ export async function handlePlayScenarioClick() {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async function (event) {
-      if (!event.target) return;
-      try {
-        const scenarioData: FullExportData = JSON.parse(event.target.result as string);
-        if (!scenarioData.scenario_creator) {
-          await stEcho('warning', 'This scenario does not have a creator section');
+    try {
+      let scenarioData: FullExportData;
+
+      let buffer: ArrayBuffer;
+      let fileType: 'json' | 'png';
+      if (file.type === 'image/png') {
+        // Handle PNG files
+        buffer = await file.arrayBuffer();
+        fileType = 'png';
+        const extracted = readScenarioFromPng(buffer);
+        if (!extracted) {
+          await stEcho('error', 'No scenario data found in PNG file.');
           return;
         }
-
-        // Check version changes
-        if (scenarioData.scenario_creator.version && scenarioData.scenario_creator.version !== extensionVersion) {
-          await stEcho(
-            'info',
-            `Scenario version changed from ${scenarioData.scenario_creator.version} to ${extensionVersion}`,
-          );
-        }
-
-        scenarioData.scenario_creator = upgradeOrDowngradeData(scenarioData.scenario_creator, 'export');
-        setupPlayDialogHandlers(scenarioData);
-      } catch (error: any) {
-        console.error('Import error:', error);
-        stEcho('error', 'Error importing scenario: ' + error.message);
+        scenarioData = extracted;
+      } else {
+        // Handle JSON files
+        const text = await file.text();
+        buffer = new TextEncoder().encode(text);
+        fileType = 'json';
+        scenarioData = JSON.parse(text);
       }
-    };
-    reader.readAsText(file);
+
+      if (!scenarioData.scenario_creator) {
+        await stEcho('warning', 'This scenario does not have a creator section');
+        return;
+      }
+
+      // Check version changes
+      if (scenarioData.scenario_creator.version && scenarioData.scenario_creator.version !== extensionVersion) {
+        await stEcho(
+          'info',
+          `Scenario version changed from ${scenarioData.scenario_creator.version} to ${extensionVersion}`,
+        );
+      }
+
+      scenarioData.scenario_creator = upgradeOrDowngradeData(scenarioData.scenario_creator, 'export');
+      setupPlayDialogHandlers(scenarioData, buffer, fileType);
+    } catch (error: any) {
+      console.error('Import error:', error);
+      await stEcho('error', 'Error importing scenario: ' + error.message);
+    }
 
     // Clean up
     fileInput.remove();
@@ -75,7 +92,7 @@ export async function handlePlayScenarioClick() {
 /**
  * Sets up handlers for the play dialog
  */
-async function setupPlayDialogHandlers(scenarioData: FullExportData) {
+async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: ArrayBuffer, fileType: 'json' | 'png') {
   const scenarioPlayDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-play-dialog'));
   const { descriptionScript, firstMessageScript, scenarioScript, personalityScript, questions, characterNoteScript } =
     scenarioData.scenario_creator || {};
@@ -193,11 +210,23 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData) {
         scenarioData.first_mes = firstMessage;
         scenarioData.data.description = description;
         scenarioData.data.first_mes = firstMessage;
-        const newFile = new Blob([JSON.stringify(scenarioData)], {
-          type: 'application/json',
-        });
-        formData.append('avatar', newFile, 'scenario.json');
-        formData.append('file_type', 'json');
+
+        if (fileType === 'png' && buffer) {
+          // For PNG, create a new buffer with new scenario data
+          const newBuffer = writeScenarioToPng(buffer, scenarioData);
+          const newFile = new Blob([newBuffer], {
+            type: 'image/png',
+          });
+          formData.append('avatar', newFile, 'scenario.png');
+          formData.append('file_type', 'png');
+        } else {
+          // For JSON, use the standard JSON format
+          const newFile = new Blob([JSON.stringify(scenarioData)], {
+            type: 'application/json',
+          });
+          formData.append('avatar', newFile, 'scenario.json');
+          formData.append('file_type', 'json');
+        }
 
         const headers = getRequestHeaders();
         delete headers['Content-Type'];

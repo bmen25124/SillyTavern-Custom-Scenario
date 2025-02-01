@@ -4,7 +4,13 @@
     <!-- Action Buttons Row -->
     <div class="flex-container justifyEnd gap10">
         <button id="import-scenario-btn" class="menu_button">Import</button>
-        <button id="export-scenario-btn" class="menu_button">Export</button>
+        <div class="export-container" style="position: relative">
+            <button id="export-scenario-btn" class="menu_button">Export</button>
+            <div id="export-format-popup" class="list-group" style="display: none; position: absolute; z-index: 9999">
+                <div class="export-format list-group-item" data-format="png">PNG</div>
+                <div class="export-format list-group-item" data-format="json">JSON</div>
+            </div>
+        </div>
         <button id="reset-scenario-btn" class="menu_button">Reset</button>
     </div>
 
@@ -28,8 +34,12 @@
             <div class="flex-container flexFlowColumn marginTopBot5">
                 <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Character description">
                     <label for="scenario-creator-character-description">Character description:</label>
-                    <textarea id="scenario-creator-character-description" class="text_pole textarea_compact" rows="4"
-                        placeholder="Enter character description"></textarea>
+                    <textarea
+                        id="scenario-creator-character-description"
+                        class="text_pole textarea_compact"
+                        rows="4"
+                        placeholder="Enter character description"
+                    ></textarea>
                 </div>
                 <div class="accordion marginTop10">
                     <div class="accordion-header">
@@ -40,18 +50,27 @@
                         <button id="refresh-preview" class="menu_button">Refresh Preview</button>
                     </div>
                     <div class="accordion-content">
-                        <div id="script-inputs-container"
-                            class="flex-container flexFlowColumn marginTop10 marginBottom10">
+                        <div
+                            id="script-inputs-container"
+                            class="flex-container flexFlowColumn marginTop10 marginBottom10"
+                        >
                             <!-- Dynamic script inputs will be added here -->
                         </div>
-                        <textarea id="scenario-creator-script" class="text_pole textarea_compact" rows="8"
-                            placeholder="Enter your script here..."></textarea>
+                        <textarea
+                            id="scenario-creator-script"
+                            class="text_pole textarea_compact"
+                            rows="8"
+                            placeholder="Enter your script here..."
+                        ></textarea>
                     </div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
                     <label>Preview:</label>
-                    <div id="description-preview" class="text_pole"
-                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
+                    <div
+                        id="description-preview"
+                        class="text_pole"
+                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px"
+                    >
                         Preview will appear here...
                     </div>
                 </div>
@@ -63,8 +82,12 @@
             <div class="flex-container flexFlowColumn marginTopBot5">
                 <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="First message">
                     <label for="scenario-creator-character-first-message">First message:</label>
-                    <textarea id="scenario-creator-character-first-message" class="text_pole textarea_compact" rows="4"
-                        placeholder="Enter first message"></textarea>
+                    <textarea
+                        id="scenario-creator-character-first-message"
+                        class="text_pole textarea_compact"
+                        rows="4"
+                        placeholder="Enter first message"
+                    ></textarea>
                 </div>
                 <div class="accordion marginTop10">
                     <div class="accordion-header">
@@ -75,18 +98,27 @@
                         <button id="refresh-first-message-preview" class="menu_button">Refresh Preview</button>
                     </div>
                     <div class="accordion-content">
-                        <div id="first-message-script-inputs-container"
-                            class="flex-container flexFlowColumn marginTop10 marginBottom10">
+                        <div
+                            id="first-message-script-inputs-container"
+                            class="flex-container flexFlowColumn marginTop10 marginBottom10"
+                        >
                             <!-- Dynamic script inputs will be added here -->
                         </div>
-                        <textarea id="scenario-creator-first-message-script" class="text_pole textarea_compact" rows="8"
-                            placeholder="Enter your script here..."></textarea>
+                        <textarea
+                            id="scenario-creator-first-message-script"
+                            class="text_pole textarea_compact"
+                            rows="8"
+                            placeholder="Enter your script here..."
+                        ></textarea>
                     </div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
                     <label>Preview:</label>
-                    <div id="first-message-preview" class="text_pole"
-                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
+                    <div
+                        id="first-message-preview"
+                        class="text_pole"
+                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px"
+                    >
                         Preview will appear here...
                     </div>
                 </div>
@@ -98,8 +130,12 @@
             <div class="flex-container flexFlowColumn marginTopBot5">
                 <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Scenario">
                     <label for="scenario-creator-character-scenario">Scenario:</label>
-                    <textarea id="scenario-creator-character-scenario" class="text_pole textarea_compact" rows="4"
-                        placeholder="Enter scenario"></textarea>
+                    <textarea
+                        id="scenario-creator-character-scenario"
+                        class="text_pole textarea_compact"
+                        rows="4"
+                        placeholder="Enter scenario"
+                    ></textarea>
                 </div>
                 <div class="accordion marginTop10">
                     <div class="accordion-header">
@@ -110,18 +146,27 @@
                         <button id="refresh-scenario-preview" class="menu_button">Refresh Preview</button>
                     </div>
                     <div class="accordion-content">
-                        <div id="scenario-script-inputs-container"
-                            class="flex-container flexFlowColumn marginTop10 marginBottom10">
+                        <div
+                            id="scenario-script-inputs-container"
+                            class="flex-container flexFlowColumn marginTop10 marginBottom10"
+                        >
                             <!-- Dynamic script inputs will be added here -->
                         </div>
-                        <textarea id="scenario-creator-scenario-script" class="text_pole textarea_compact" rows="8"
-                            placeholder="Enter your script here..."></textarea>
+                        <textarea
+                            id="scenario-creator-scenario-script"
+                            class="text_pole textarea_compact"
+                            rows="8"
+                            placeholder="Enter your script here..."
+                        ></textarea>
                     </div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
                     <label>Preview:</label>
-                    <div id="scenario-preview" class="text_pole"
-                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
+                    <div
+                        id="scenario-preview"
+                        class="text_pole"
+                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px"
+                    >
                         Preview will appear here...
                     </div>
                 </div>
@@ -133,8 +178,12 @@
             <div class="flex-container flexFlowColumn marginTopBot5">
                 <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Personality">
                     <label for="scenario-creator-character-personality">Personality:</label>
-                    <textarea id="scenario-creator-character-personality" class="text_pole textarea_compact" rows="4"
-                        placeholder="Enter personality"></textarea>
+                    <textarea
+                        id="scenario-creator-character-personality"
+                        class="text_pole textarea_compact"
+                        rows="4"
+                        placeholder="Enter personality"
+                    ></textarea>
                 </div>
                 <div class="accordion marginTop10">
                     <div class="accordion-header">
@@ -145,18 +194,27 @@
                         <button id="refresh-personality-preview" class="menu_button">Refresh Preview</button>
                     </div>
                     <div class="accordion-content">
-                        <div id="personality-script-inputs-container"
-                            class="flex-container flexFlowColumn marginTop10 marginBottom10">
+                        <div
+                            id="personality-script-inputs-container"
+                            class="flex-container flexFlowColumn marginTop10 marginBottom10"
+                        >
                             <!-- Dynamic script inputs will be added here -->
                         </div>
-                        <textarea id="scenario-creator-personality-script" class="text_pole textarea_compact" rows="8"
-                            placeholder="Enter your script here..."></textarea>
+                        <textarea
+                            id="scenario-creator-personality-script"
+                            class="text_pole textarea_compact"
+                            rows="8"
+                            placeholder="Enter your script here..."
+                        ></textarea>
                     </div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
                     <label>Preview:</label>
-                    <div id="personality-preview" class="text_pole"
-                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
+                    <div
+                        id="personality-preview"
+                        class="text_pole"
+                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px"
+                    >
                         Preview will appear here...
                     </div>
                 </div>
@@ -168,8 +226,12 @@
             <div class="flex-container flexFlowColumn marginTopBot5">
                 <div class="flex-container justifySpaceBetween alignItemsCenter flex1" title="Character Note">
                     <label for="scenario-creator-character-note">Character Note:</label>
-                    <textarea id="scenario-creator-character-note" class="text_pole textarea_compact" rows="4"
-                        placeholder="Enter character note"></textarea>
+                    <textarea
+                        id="scenario-creator-character-note"
+                        class="text_pole textarea_compact"
+                        rows="4"
+                        placeholder="Enter character note"
+                    ></textarea>
                 </div>
                 <div class="accordion marginTop10">
                     <div class="accordion-header">
@@ -180,18 +242,27 @@
                         <button id="refresh-character-note-preview" class="menu_button">Refresh Preview</button>
                     </div>
                     <div class="accordion-content">
-                        <div id="character-note-script-inputs-container"
-                            class="flex-container flexFlowColumn marginTop10 marginBottom10">
+                        <div
+                            id="character-note-script-inputs-container"
+                            class="flex-container flexFlowColumn marginTop10 marginBottom10"
+                        >
                             <!-- Dynamic script inputs will be added here -->
                         </div>
-                        <textarea id="scenario-creator-character-note-script" class="text_pole textarea_compact"
-                            rows="8" placeholder="Enter your script here..."></textarea>
+                        <textarea
+                            id="scenario-creator-character-note-script"
+                            class="text_pole textarea_compact"
+                            rows="8"
+                            placeholder="Enter your script here..."
+                        ></textarea>
                     </div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
                     <label>Preview:</label>
-                    <div id="character-note-preview" class="text_pole"
-                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
+                    <div
+                        id="character-note-preview"
+                        class="text_pole"
+                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px"
+                    >
                         Preview will appear here...
                     </div>
                 </div>
@@ -215,18 +286,30 @@
                         </select>
                     </div>
                     <div class="flex2">
-                        <input type="text" class="text_pole input-id" placeholder="Enter ID (e.g., character_name)"
-                            title="This ID will be used as {{answer_id}} in templates">
+                        <input
+                            type="text"
+                            class="text_pole input-id"
+                            placeholder="Enter ID (e.g., character_name)"
+                            title="This ID will be used as {{answer_id}} in templates"
+                        />
                     </div>
                     <div class="flex1">
-                        <input type="number" class="text_pole input-page" min="1" value="1"
-                            title="Page number this question should appear on">
+                        <input
+                            type="number"
+                            class="text_pole input-page"
+                            min="1"
+                            value="1"
+                            title="Page number this question should appear on"
+                        />
                     </div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
                     <label>Question:</label>
-                    <textarea class="text_pole textarea_compact input-question" rows="2"
-                        placeholder="Enter question"></textarea>
+                    <textarea
+                        class="text_pole textarea_compact input-question"
+                        rows="2"
+                        placeholder="Enter question"
+                    ></textarea>
                 </div>
                 <div class="accordion marginTop10">
                     <div class="accordion-header">
@@ -238,28 +321,34 @@
                     </div>
                     <div class="accordion-content">
                         <div
-                            class="question-script-inputs-container flex-container flexFlowColumn marginTop10 marginBottom10">
+                            class="question-script-inputs-container flex-container flexFlowColumn marginTop10 marginBottom10"
+                        >
                             <!-- Dynamic script inputs will be added here -->
                         </div>
-                        <textarea class="text_pole textarea_compact question-script" rows="8"
-                            placeholder="Enter your script here..."></textarea>
+                        <textarea
+                            class="text_pole textarea_compact question-script"
+                            rows="8"
+                            placeholder="Enter your script here..."
+                        ></textarea>
                     </div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
                     <label>Preview:</label>
-                    <div class="question-preview text_pole"
-                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px;">
+                    <div
+                        class="question-preview text_pole"
+                        style="overflow-y: auto; overflow-x: hidden; max-height: 150px"
+                    >
                         Preview will appear here...
                     </div>
                 </div>
                 <div class="flex-container alignItemsCenter marginTop10">
                     <label class="checkbox_label">
-                        <input type="checkbox" class="input-required">
+                        <input type="checkbox" class="input-required" />
                         Required
                     </label>
                 </div>
                 <!-- Select Options Section -->
-                <div class="select-options-container" style="display: none;">
+                <div class="select-options-container" style="display: none">
                     <div class="flex-container flexFlowColumn marginTop10">
                         <div class="flex-container justifySpaceBetween alignItemsCenter">
                             <label>Options:</label>
@@ -273,13 +362,16 @@
                     <div class="flex-container flexFlowColumn marginTop10">
                         <label>Default Value:</label>
                         <div class="default-value-input-container">
-                            <textarea class="text_pole textarea_compact input-default" rows="2"
-                                placeholder="Enter default value"></textarea>
-                            <label class="checkbox_label checkbox-default" style="display: none;">
-                                <input type="checkbox" class="input-default-checkbox">
+                            <textarea
+                                class="text_pole textarea_compact input-default"
+                                rows="2"
+                                placeholder="Enter default value"
+                            ></textarea>
+                            <label class="checkbox_label checkbox-default" style="display: none">
+                                <input type="checkbox" class="input-default-checkbox" />
                                 Checked by default
                             </label>
-                            <select class="text_pole select-default" style="display: none;">
+                            <select class="text_pole select-default" style="display: none">
                                 <option value="">Select a default value</option>
                             </select>
                         </div>
@@ -301,8 +393,8 @@
     <template id="select-option-template">
         <div class="flex-container option-item marginTop5">
             <div class="flex-container flex1 gap10">
-                <input type="text" class="text_pole option-label flex1" placeholder="Enter option label">
-                <input type="text" class="text_pole option-value flex1" placeholder="Enter option value">
+                <input type="text" class="text_pole option-label flex1" placeholder="Enter option label" />
+                <input type="text" class="text_pole option-value flex1" placeholder="Enter option value" />
             </div>
             <button class="menu_button remove-option-btn marginLeft10" title="Remove Option">×</button>
         </div>

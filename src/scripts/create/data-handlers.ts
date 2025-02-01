@@ -8,6 +8,7 @@ import {
   upgradeOrDowngradeData,
 } from '../types';
 import { st_uuidv4, st_humanizedDateTime, st_getcreateCharacterData, extensionVersion, stEcho } from '../config';
+import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
 
 /**
  * Creates a production-ready version of scenario data without internal state
@@ -157,12 +158,65 @@ export function createProductionScenarioData(data: ScenarioCreateData, formData:
 }
 
 /**
- * Triggers download of scenario data as a JSON file
+ * Triggers download of scenario data as a JSON or PNG file
  */
-export function downloadFile(data: FullExportData, filename: string) {
+export async function downloadFile(data: FullExportData, filename: string, format: 'json' | 'png' = 'json') {
+  if (format === 'png') {
+    try {
+      // Get the avatar preview image
+      const avatarPreview = document.querySelector<HTMLImageElement>('#avatar_load_preview');
+      if (!avatarPreview) {
+        throw new Error('Avatar preview element not found.');
+      }
+
+      // Create a canvas to convert any image format to PNG
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Failed to get canvas context');
+      }
+
+      // Load and convert image to PNG
+      const img = new Image();
+      const pngBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('Failed to convert image to PNG'));
+              return;
+            }
+            blob.arrayBuffer().then(resolve).catch(reject);
+          }, 'image/png');
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.crossOrigin = 'anonymous'; // Enable CORS for relative path images
+        img.src = avatarPreview.src;
+      });
+
+      // Process the PNG data and trigger download
+      const pngWithData = writeScenarioToPng(pngBuffer, data);
+      const finalBlob = new Blob([pngWithData], { type: 'image/png' });
+      triggerDownload(finalBlob, filename);
+    } catch (error: any) {
+      throw new Error(`Failed to process image: ${error.message}`);
+    }
+    return;
+  }
+
+  // JSON format
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: 'application/json',
   });
+  triggerDownload(blob, filename);
+}
+
+/**
+ * Helper function to trigger file download
+ */
+function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -289,11 +343,32 @@ export function getScenarioCreateDataFromUI(popup: JQuery<HTMLElement>): Scenari
 
 /**
  * Converts imported data to the correct format with internal state
+ * @param importedData Full export data or File object for PNG imports
  * @returns null if there is an error
  */
-export async function convertImportedData(importedData: FullExportData): Promise<ScenarioCreateData | null> {
+export async function convertImportedData(importedData: FullExportData | File): Promise<ScenarioCreateData | null> {
+  let data: FullExportData;
+
+  // Handle PNG files
+  if (importedData instanceof File && importedData.type === 'image/png') {
+    try {
+      const buffer = await importedData.arrayBuffer();
+      const extracted = readScenarioFromPng(buffer);
+      if (!extracted) {
+        await stEcho('error', 'No scenario data found in PNG file.');
+        return null;
+      }
+      data = extracted;
+    } catch (error: any) {
+      await stEcho('error', `Failed to read PNG file: ${error.message}`);
+      return null;
+    }
+  } else {
+    data = importedData as FullExportData;
+  }
+
   // Extract scenario creator specific data
-  let scenarioCreator = importedData.scenario_creator || {};
+  let scenarioCreator = data.scenario_creator || {};
   // Check version changes
   if (scenarioCreator.version && scenarioCreator.version !== extensionVersion) {
     await stEcho('info', `Imported data version changed from ${scenarioCreator.version} to ${extensionVersion}`);
@@ -305,7 +380,7 @@ export async function convertImportedData(importedData: FullExportData): Promise
     return null;
   }
 
-  const questions = (scenarioCreator.questions || []).map((q) => ({
+  const questions = (scenarioCreator.questions || []).map((q: any) => ({
     ...q,
     id: q.id || st_uuidv4(),
   }));
@@ -320,15 +395,15 @@ export async function convertImportedData(importedData: FullExportData): Promise
   }
 
   return {
-    description: importedData.description || '',
+    description: data.description || '',
     descriptionScript: scenarioCreator.descriptionScript || '',
-    firstMessage: importedData.first_mes || '',
+    firstMessage: data.first_mes || '',
     firstMessageScript: scenarioCreator.firstMessageScript || '',
-    scenario: importedData.scenario || '',
+    scenario: data.scenario || '',
     scenarioScript: scenarioCreator.scenarioScript || '',
-    personality: importedData.personality || '',
+    personality: data.personality || '',
     personalityScript: scenarioCreator.personalityScript || '',
-    characterNote: importedData.data.extensions?.depth_prompt?.prompt || '',
+    characterNote: data.data?.extensions?.depth_prompt?.prompt || '',
     characterNoteScript: scenarioCreator.characterNoteScript || '',
     questions,
     layout,

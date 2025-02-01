@@ -5,6 +5,7 @@ import {
   POPUP_TYPE,
   stEcho,
   extensionVersion,
+  st_createPopper,
 } from '../config';
 import { setupPreviewFunctionality, updatePreview, updateQuestionPreview } from './preview-handlers';
 import { setupTabFunctionality, setupAccordion, switchTab } from './tab-handlers';
@@ -160,7 +161,7 @@ function setupResetButton(popup: JQuery<HTMLElement>) {
  */
 function setupImportButton(popup: JQuery<HTMLElement>) {
   // Create hidden file input
-  const fileInput = $('<input type="file" accept=".json" style="display: none">');
+  const fileInput = $('<input type="file" accept=".json, .png" style="display: none">');
   popup.append(fileInput);
 
   // Handle import button click
@@ -169,18 +170,13 @@ function setupImportButton(popup: JQuery<HTMLElement>) {
   });
 
   // Handle file selection
-  fileInput.on('change', function (e: JQuery.ChangeEvent) {
+  fileInput.on('change', async function (e: JQuery.ChangeEvent) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async function (event) {
-      if (!event.target?.result) {
-        return;
-      }
+    if (file.type === 'image/png') {
       try {
-        const importedData = JSON.parse(event.target.result as string);
-        const scenarioData = await convertImportedData(importedData);
+        const scenarioData = await convertImportedData(file);
         if (!scenarioData) {
           return;
         }
@@ -196,10 +192,38 @@ function setupImportButton(popup: JQuery<HTMLElement>) {
         saveScenarioCreateData(scenarioData);
       } catch (error) {
         console.error('Import error:', error);
-        await stEcho('error', 'Failed to import scenario data. Please check the file and try again.');
+        await stEcho('error', 'Failed to import scenario data from PNG. Please check the file and try again.');
       }
-    };
-    reader.readAsText(file);
+    } else {
+      // Handle JSON files
+      const reader = new FileReader();
+      reader.onload = async function (event) {
+        if (!event.target?.result) {
+          return;
+        }
+        try {
+          const importedData = JSON.parse(event.target.result as string);
+          const scenarioData = await convertImportedData(importedData);
+          if (!scenarioData) {
+            return;
+          }
+
+          // Clear existing data
+          popup.find('#dynamic-tab-buttons').empty();
+          popup.find('#dynamic-inputs-container').empty();
+
+          // Apply imported data
+          applyScenarioCreateDataToUI(popup, scenarioData);
+
+          // Save imported data
+          saveScenarioCreateData(scenarioData);
+        } catch (error) {
+          console.error('Import error:', error);
+          await stEcho('error', 'Failed to import scenario data. Please check the file and try again.');
+        }
+      };
+      reader.readAsText(file);
+    }
 
     // Reset file input for future imports
     fileInput.val('');
@@ -210,7 +234,31 @@ function setupImportButton(popup: JQuery<HTMLElement>) {
  * Sets up the export button functionality
  */
 function setupExportButton(popup: JQuery<HTMLElement>) {
-  popup.find('#export-scenario-btn').on('click', async function () {
+  let isExportPopupOpen = false;
+  const exportButton = popup.find('#export-scenario-btn').get(0) as HTMLElement;
+  const formatPopup = popup.find('#export-format-popup').get(0) as HTMLElement;
+
+  // Create popper instance
+  let exportPopper = st_createPopper(exportButton, formatPopup, {
+    placement: 'left-end',
+  });
+
+  popup.find('#export-scenario-btn').on('click', function () {
+    isExportPopupOpen = !isExportPopupOpen;
+    popup.find('#export-format-popup').toggle(isExportPopupOpen);
+    exportPopper.update();
+  });
+
+  popup.find('.export-format').on('click', async function () {
+    const format = $(this).data('format') as 'json' | 'png';
+    if (!format) {
+      return;
+    }
+
+    // Hide popup
+    popup.find('#export-format-popup').hide();
+    isExportPopupOpen = false;
+
     const currentData = getScenarioCreateDataFromUI(popup);
     const formElement = $('#form_create').get(0) as HTMLFormElement;
     const formData = new FormData(formElement);
@@ -274,6 +322,15 @@ function setupExportButton(popup: JQuery<HTMLElement>) {
 
     // If all validations pass, create and download the file
     const productionData = createProductionScenarioData(currentData, formData);
-    downloadFile(productionData, 'scenario.json');
+    downloadFile(productionData, `scenario.${format}`, format);
+  });
+
+  // Close popup when clicking outside
+  $(document).on('click', function (event) {
+    if (isExportPopupOpen && !$(event.target).closest('.export-container').length) {
+      popup.find('#export-format-popup').hide();
+      isExportPopupOpen = false;
+      exportPopper.update();
+    }
   });
 }

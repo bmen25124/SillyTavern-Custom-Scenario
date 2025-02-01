@@ -6,7 +6,7 @@ An extension that lets you create interactive scenarios with variables and basic
 - Create scenarios with custom questions
 - Use variables in the description/first message/personality/scenario/character note.
 - Add simple scripts to make things dynamic. (JavaScript)
-- Import/export scenarios as JSON
+- Import/export scenarios as JSON/PNG
 
 ## Question types
 - Text input
@@ -36,7 +36,7 @@ Export it.
 
 ### Play a scenario
 
-Click the play icon on the characters sidebar and select the JSON file.
+Click the play icon on the characters sidebar and select the JSON/PNG file.
 
 ![play icon](images/play-icon.png)
 
@@ -94,4 +94,4 @@ I saw this on [AIDungeon](https://play.aidungeon.com/) and liked it. You can see
 It is because of UI, not functionality.
 
 ## Known Issues
-* Exported avatar and character lorebook might not work as expected. However, you can reselect this after a new card is created.
+* Exported character lorebook might not work as expected. However, you can reselect this after a new card is created.
