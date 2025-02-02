@@ -4,11 +4,18 @@ import {
   callGenericPopup,
   POPUP_TYPE,
   POPUP_RESULT,
-  st_getCharacters,
-  getRequestHeaders,
+  st_updateCharacters,
+  st_getRequestHeaders,
   stEcho,
   stGo,
   extensionVersion,
+  st_getCharacters,
+  st_checkEmbeddedWorld,
+  st_importEmbeddedWorldInfo,
+  st_saveCharacterDebounced,
+  st_getWorldNames,
+  st_setWorldInfoButtonClass,
+  st_getThumbnailUrl,
 } from '../config';
 import { upgradeOrDowngradeData, FullExportData, Question } from '../types';
 import { executeScript, interpolateText } from '../utils';
@@ -175,7 +182,10 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
       try {
         // Process description and first message with allAnswers
         const descriptionVars = descriptionScript ? executeScript(descriptionScript, allAnswers) : allAnswers;
-        const description = interpolateText(scenarioData.description || scenarioData.data?.description, descriptionVars);
+        const description = interpolateText(
+          scenarioData.description || scenarioData.data?.description,
+          descriptionVars,
+        );
 
         const firstMessageVars = firstMessageScript ? executeScript(firstMessageScript, allAnswers) : allAnswers;
         const firstMessage = interpolateText(scenarioData.first_mes || scenarioData.data?.first_mes, firstMessageVars);
@@ -184,7 +194,10 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
         const processedScenario = interpolateText(scenarioData.scenario || scenarioData.data?.scenario, scenarioVars);
 
         const personalityVars = personalityScript ? executeScript(personalityScript, allAnswers) : allAnswers;
-        const processedPersonality = interpolateText(scenarioData.personality || scenarioData.data?.personality, personalityVars);
+        const processedPersonality = interpolateText(
+          scenarioData.personality || scenarioData.data?.personality,
+          personalityVars,
+        );
 
         // Update both main and data.scenario fields
         scenarioData.scenario = processedScenario;
@@ -228,7 +241,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
           formData.append('file_type', 'json');
         }
 
-        const headers = getRequestHeaders();
+        const headers = st_getRequestHeaders();
         delete headers['Content-Type'];
         const fetchResult = await fetch('/api/characters/import', {
           method: 'POST',
@@ -239,8 +252,62 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
         if (!fetchResult.ok) {
           throw new Error('Fetch result is not ok');
         }
-        await st_getCharacters();
-        await stGo(scenarioData.name);
+        const fetchBody = (await fetchResult.json()) as { file_name: string };
+        await st_updateCharacters();
+        if (!fetchBody.file_name) {
+          await stEcho('error', 'Failed to get file name from server.');
+          return false;
+        }
+        await stGo(`${fetchBody.file_name}.png`);
+
+        async function updateAvatar() {
+          if (fetchBody.file_name) {
+            let thumbnailUrl = st_getThumbnailUrl('avatar', `${fetchBody.file_name}.png`);
+            await fetch(thumbnailUrl, {
+              method: 'GET',
+              cache: 'no-cache',
+              headers: {
+                pragma: 'no-cache',
+                'cache-control': 'no-cache',
+              },
+            });
+            // Add time query to avoid caching
+            thumbnailUrl += `&scenarioTime=${new Date().getTime()}`;
+            $('#avatar_load_preview').attr('src', thumbnailUrl);
+
+            $('.mes').each(function () {
+              const nameMatch = $(this).attr('ch_name') === scenarioData.name;
+              if ($(this).attr('is_system') == 'true' && !nameMatch) {
+                return;
+              }
+              if ($(this).attr('is_user') == 'true') {
+                return;
+              }
+              if (nameMatch) {
+                const avatar = $(this).find('.avatar img');
+                avatar.attr('src', thumbnailUrl);
+              }
+            });
+          }
+        }
+        updateAvatar();
+
+        // Import world info
+        const chid = $('#set_character_world').data('chid');
+        if (chid) {
+          const characters = st_getCharacters();
+          const worldName = characters[chid]?.data?.extensions?.world;
+          if (worldName) {
+            const hasEmbed = st_checkEmbeddedWorld(chid);
+            const worldNames = st_getWorldNames();
+            if (hasEmbed && !worldNames.includes(worldName)) {
+              await st_importEmbeddedWorldInfo();
+              st_saveCharacterDebounced();
+            } else {
+              st_setWorldInfoButtonClass(chid, true);
+            }
+          }
+        }
         return true;
       } catch (error: any) {
         console.error('Error processing scenario:', error);

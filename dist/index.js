@@ -1,14 +1,15 @@
 var global = typeof global !== "undefined" ? global : typeof window !== "undefined" ? window : typeof self !== "undefined" ? self : undefined;
 
 import { uuidv4 } from '../../../../utils.js';
-import { getCharacters } from '../../../../../script.js';
+import { getCharacters, saveCharacterDebounced, extension_prompt_roles, getThumbnailUrl } from '../../../../../script.js';
 import { humanizedDateTime } from '../../../../RossAscends-mods.js';
 import { Popper } from '../../../../../lib.js';
 import { getContext } from '../../../../extensions.js';
+import { checkEmbeddedWorld, importEmbeddedWorldInfo, world_names, loadWorldInfo, newWorldInfoEntryTemplate, world_info_position, DEFAULT_DEPTH, world_info_logic, DEFAULT_WEIGHT, saveWorldInfo, setWorldInfoButtonClass } from '../../../../world-info.js';
 
 // @ts-ignore
 const extensionName = 'SillyTavern-Custom-Scenario';
-const extensionVersion = '0.3.1';
+const extensionVersion = '0.3.2';
 const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
@@ -43,7 +44,7 @@ var POPUP_RESULT;
 function callGenericPopup(content, type, inputValue, popupOptions) {
     return getContext().callGenericPopup(content, type, inputValue, popupOptions);
 }
-function getRequestHeaders() {
+function st_getRequestHeaders() {
     return getContext().getRequestHeaders();
 }
 function st_getcreateCharacterData() {
@@ -54,7 +55,7 @@ function st_uuidv4() {
     return uuidv4();
 }
 // TODO: Get from getContext()
-async function st_getCharacters() {
+async function st_updateCharacters() {
     return await getCharacters();
 }
 // TODO: Get from getContext()
@@ -63,6 +64,135 @@ function st_humanizedDateTime() {
 }
 function st_createPopper(reference, popper, options) {
     return Popper.createPopper(reference, popper, options);
+}
+/**
+ * Note: It doesn't contain the scenario data.
+ */
+function st_getCharacters() {
+    return getContext().characters;
+}
+function st_checkEmbeddedWorld(chid) {
+    return checkEmbeddedWorld(chid);
+}
+async function st_importEmbeddedWorldInfo(skipPopup = false) {
+    return await importEmbeddedWorldInfo(skipPopup);
+}
+function st_saveCharacterDebounced() {
+    return saveCharacterDebounced();
+}
+function st_getWorldNames() {
+    return world_names;
+}
+async function st_getWorldInfo(worldName) {
+    return await loadWorldInfo(worldName);
+}
+// https://github.com/SillyTavern/SillyTavern/blob/999da4945aaf1da6f6d4ff1e9e314c11f0ccfeb1/src/endpoints/characters.js#L466
+function st_server_convertWorldInfoToCharacterBook(name, entries) {
+    const result = { entries: [], name };
+    for (const index in entries) {
+        const entry = entries[index];
+        const originalEntry = {
+            id: entry.uid,
+            keys: entry.key,
+            secondary_keys: entry.keysecondary,
+            comment: entry.comment,
+            content: entry.content,
+            constant: entry.constant,
+            selective: entry.selective,
+            insertion_order: entry.order,
+            enabled: !entry.disable,
+            position: entry.position == 0 ? 'before_char' : 'after_char',
+            use_regex: true, // ST keys are always regex
+            extensions: {
+                ...entry.extensions,
+                position: entry.position,
+                exclude_recursion: entry.excludeRecursion,
+                display_index: entry.displayIndex,
+                probability: entry.probability ?? null,
+                useProbability: entry.useProbability ?? false,
+                depth: entry.depth ?? 4,
+                selectiveLogic: entry.selectiveLogic ?? 0,
+                group: entry.group ?? '',
+                group_override: entry.groupOverride ?? false,
+                group_weight: entry.groupWeight ?? null,
+                prevent_recursion: entry.preventRecursion ?? false,
+                delay_until_recursion: entry.delayUntilRecursion ?? false,
+                scan_depth: entry.scanDepth ?? null,
+                match_whole_words: entry.matchWholeWords ?? null,
+                use_group_scoring: entry.useGroupScoring ?? false,
+                case_sensitive: entry.caseSensitive ?? null,
+                automation_id: entry.automationId ?? '',
+                role: entry.role ?? 0,
+                vectorized: entry.vectorized ?? false,
+                sticky: entry.sticky ?? null,
+                cooldown: entry.cooldown ?? null,
+                delay: entry.delay ?? null,
+            },
+        };
+        result.entries.push(originalEntry);
+    }
+    return result;
+}
+// https://github.com/SillyTavern/SillyTavern/blob/1d5cf8d25c738801b8a922df4a4e290122719733/public/scripts/world-info.js#L4661
+function st_convertCharacterBook(characterBook) {
+    const result = { entries: {}, originalData: characterBook };
+    characterBook.entries.forEach((entry, index) => {
+        // Not in the spec, but this is needed to find the entry in the original data
+        if (entry.id === undefined) {
+            entry.id = index;
+        }
+        // @ts-ignore
+        result.entries[entry.id] = {
+            ...newWorldInfoEntryTemplate,
+            uid: entry.id,
+            key: entry.keys,
+            keysecondary: entry.secondary_keys || [],
+            comment: entry.comment || '',
+            content: entry.content,
+            constant: entry.constant || false,
+            selective: entry.selective || false,
+            order: entry.insertion_order,
+            position: entry.extensions?.position ??
+                (entry.position === 'before_char' ? world_info_position.before : world_info_position.after),
+            excludeRecursion: entry.extensions?.exclude_recursion ?? false,
+            preventRecursion: entry.extensions?.prevent_recursion ?? false,
+            delayUntilRecursion: entry.extensions?.delay_until_recursion ?? false,
+            disable: !entry.enabled,
+            addMemo: !!entry.comment,
+            displayIndex: entry.extensions?.display_index ?? index,
+            probability: entry.extensions?.probability ?? 100,
+            useProbability: entry.extensions?.useProbability ?? true,
+            depth: entry.extensions?.depth ?? DEFAULT_DEPTH,
+            selectiveLogic: entry.extensions?.selectiveLogic ?? world_info_logic.AND_ANY,
+            group: entry.extensions?.group ?? '',
+            groupOverride: entry.extensions?.group_override ?? false,
+            groupWeight: entry.extensions?.group_weight ?? DEFAULT_WEIGHT,
+            scanDepth: entry.extensions?.scan_depth ?? null,
+            caseSensitive: entry.extensions?.case_sensitive ?? null,
+            matchWholeWords: entry.extensions?.match_whole_words ?? null,
+            useGroupScoring: entry.extensions?.use_group_scoring ?? null,
+            automationId: entry.extensions?.automation_id ?? '',
+            role: entry.extensions?.role ?? extension_prompt_roles.SYSTEM,
+            vectorized: entry.extensions?.vectorized ?? false,
+            sticky: entry.extensions?.sticky ?? null,
+            cooldown: entry.extensions?.cooldown ?? null,
+            delay: entry.extensions?.delay ?? null,
+            extensions: entry.extensions ?? {},
+        };
+    });
+    return result;
+}
+function st_saveWorldInfo(name, data, immediately = false) {
+    return saveWorldInfo(name, data, immediately);
+}
+// export async function st_updateWorldInfoList() {
+//   return await updateWorldInfoList();
+// }
+function st_setWorldInfoButtonClass(chid, forceValue) {
+    setWorldInfoButtonClass(chid, forceValue);
+}
+function st_getThumbnailUrl(type, file) {
+    return getThumbnailUrl(type, file);
 }
 
 function executeScript(script, answers) {
@@ -329,6 +459,16 @@ const versionUpgrades = [
         },
         exportCallback: (data) => {
             data.version = '0.3.1';
+        },
+    },
+    {
+        from: '0.3.1',
+        to: '0.3.2',
+        createCallback: (data) => {
+            data.version = '0.3.2';
+        },
+        exportCallback: (data) => {
+            data.version = '0.3.2';
         },
     },
 ];
@@ -2875,7 +3015,7 @@ function readScenarioFromPng(image) {
 /**
  * Creates a production-ready version of scenario data without internal state
  */
-function createProductionScenarioData(data, formData) {
+async function createProductionScenarioData(data, formData) {
     const { descriptionScript, firstMessageScript, scenarioScript, personalityScript, characterNote, characterNoteScript, questions, description, firstMessage, scenario, personality, } = data;
     const formEntries = Array.from(formData.entries());
     let jsonData;
@@ -2907,6 +3047,8 @@ function createProductionScenarioData(data, formData) {
         // @ts-ignore
         jsonData.tags = formEntries.find(([key]) => key === 'tags')[1] || [];
         // @ts-ignore
+        jsonData.world = formEntries.find(([key]) => key === 'world')[1] || undefined;
+        // @ts-ignore
         jsonData.data = {};
         // @ts-ignore
         jsonData.data.name = jsonData.name;
@@ -2928,6 +3070,8 @@ function createProductionScenarioData(data, formData) {
         jsonData.data.creator = formEntries.find(([key]) => key === 'creator')[1] || '';
         // @ts-ignore
         jsonData.data.character_version = formEntries.find(([key]) => key === 'character_version')[1] || '';
+        // @ts-ignore
+        jsonData.data.world = formEntries.find(([key]) => key === 'world')[1] || undefined;
         const extensions = JSON.parse(JSON.stringify(st_getcreateCharacterData().extensions));
         extensions.depth_prompt = {
             prompt: characterNote || '',
@@ -2941,7 +3085,16 @@ function createProductionScenarioData(data, formData) {
         // @ts-ignore
         extensions.fav = jsonData.fav;
         // @ts-ignore
+        extensions.world = jsonData.world;
+        // @ts-ignore
         jsonData.data.extensions = extensions;
+    }
+    let character_book;
+    if (jsonData.world) {
+        const file = await st_getWorldInfo(jsonData.world);
+        if (file && file.entries) {
+            character_book = st_server_convertWorldInfoToCharacterBook(jsonData.world, file.entries);
+        }
     }
     const scenarioCreator = {
         descriptionScript: descriptionScript,
@@ -2995,6 +3148,7 @@ function createProductionScenarioData(data, formData) {
             alternate_greetings: jsonData.data.alternate_greetings || [],
             extensions: jsonData.data.extensions || [],
             group_only_greetings: jsonData.data.group_only_greetings || [],
+            character_book: character_book,
         },
         create_date: st_humanizedDateTime(),
         scenario_creator: scenarioCreator,
@@ -3175,14 +3329,10 @@ function getScenarioCreateDataFromUI(popup) {
 async function convertImportedData(importedData) {
     let data;
     // Handle PNG files
+    let buffer;
     if (importedData instanceof File && importedData.type === 'image/png') {
         try {
-            const buffer = await importedData.arrayBuffer();
-            // Update avatar preview
-            if ($('#rm_ch_create_block').is(':visible') && $('#form_create').attr('actiontype') === 'createcharacter') {
-                const base64String = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-                $('#avatar_load_preview').attr('src', `data:image/png;base64,${base64String}`);
-            }
+            buffer = await importedData.arrayBuffer();
             const extracted = readScenarioFromPng(buffer);
             if (!extracted) {
                 await stEcho('error', 'No scenario data found in PNG file.');
@@ -3214,6 +3364,28 @@ async function convertImportedData(importedData) {
     catch (error) {
         await stEcho('error', error.message);
         return null;
+    }
+    // Update avatar preview
+    if (buffer && $('#rm_ch_create_block').is(':visible') && $('#form_create').attr('actiontype') === 'createcharacter') {
+        const bytes = new Uint8Array(buffer);
+        const base64String = btoa(Array.from(bytes)
+            .map((byte) => String.fromCharCode(byte))
+            .join(''));
+        $('#avatar_load_preview').attr('src', `data:image/png;base64,${base64String}`);
+    }
+    // Import world info
+    const worldNames = st_getWorldNames();
+    const worldName = data.data.extensions?.world;
+    if (worldName) {
+        const character_book = data.data.character_book;
+        $('#character_world').val(worldName);
+        if (!worldNames.includes(worldName) && character_book) {
+            const convertedBook = st_convertCharacterBook(character_book);
+            st_saveWorldInfo(character_book.name, convertedBook, true);
+            await stEcho('info', 'Lorebook is imported but you need to refresh the page to see it.');
+            // await st_updateWorldInfoList();
+        }
+        st_setWorldInfoButtonClass(undefined, true);
     }
     const questions = (scenarioCreator.questions || []).map((q) => ({
         ...q,
@@ -3982,7 +4154,7 @@ function setupExportButton(popup) {
             return;
         }
         // If all validations pass, create and download the file
-        const productionData = createProductionScenarioData(currentData, formData);
+        const productionData = await createProductionScenarioData(currentData, formData);
         downloadFile(productionData, `scenario.${format}`, format);
     });
     // Close popup when clicking outside
@@ -4176,7 +4348,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                     formData.append('avatar', newFile, 'scenario.json');
                     formData.append('file_type', 'json');
                 }
-                const headers = getRequestHeaders();
+                const headers = st_getRequestHeaders();
                 delete headers['Content-Type'];
                 const fetchResult = await fetch('/api/characters/import', {
                     method: 'POST',
@@ -4187,8 +4359,60 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                 if (!fetchResult.ok) {
                     throw new Error('Fetch result is not ok');
                 }
-                await st_getCharacters();
-                await stGo(scenarioData.name);
+                const fetchBody = (await fetchResult.json());
+                await st_updateCharacters();
+                if (!fetchBody.file_name) {
+                    await stEcho('error', 'Failed to get file name from server.');
+                    return false;
+                }
+                await stGo(`${fetchBody.file_name}.png`);
+                async function updateAvatar() {
+                    if (fetchBody.file_name) {
+                        let thumbnailUrl = st_getThumbnailUrl('avatar', `${fetchBody.file_name}.png`);
+                        await fetch(thumbnailUrl, {
+                            method: 'GET',
+                            cache: 'no-cache',
+                            headers: {
+                                pragma: 'no-cache',
+                                'cache-control': 'no-cache',
+                            },
+                        });
+                        // Add time query to avoid caching
+                        thumbnailUrl += `&scenarioTime=${new Date().getTime()}`;
+                        $('#avatar_load_preview').attr('src', thumbnailUrl);
+                        $('.mes').each(function () {
+                            const nameMatch = $(this).attr('ch_name') === scenarioData.name;
+                            if ($(this).attr('is_system') == 'true' && !nameMatch) {
+                                return;
+                            }
+                            if ($(this).attr('is_user') == 'true') {
+                                return;
+                            }
+                            if (nameMatch) {
+                                const avatar = $(this).find('.avatar img');
+                                avatar.attr('src', thumbnailUrl);
+                            }
+                        });
+                    }
+                }
+                updateAvatar();
+                // Import world info
+                const chid = $('#set_character_world').data('chid');
+                if (chid) {
+                    const characters = st_getCharacters();
+                    const worldName = characters[chid]?.data?.extensions?.world;
+                    if (worldName) {
+                        const hasEmbed = st_checkEmbeddedWorld(chid);
+                        const worldNames = st_getWorldNames();
+                        if (hasEmbed && !worldNames.includes(worldName)) {
+                            await st_importEmbeddedWorldInfo();
+                            st_saveCharacterDebounced();
+                        }
+                        else {
+                            st_setWorldInfoButtonClass(chid, true);
+                        }
+                    }
+                }
                 return true;
             }
             catch (error) {

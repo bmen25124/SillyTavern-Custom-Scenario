@@ -90,8 +90,8 @@ You also received a card with the following message: Happy birthday! Enjoy your 
 ### Why did you create this?
 I saw this on [AIDungeon](https://play.aidungeon.com/) and liked it. You can see in this [reddit post](https://www.reddit.com/r/SillyTavernAI/comments/1i59jem/scenario_system_similar_to_ai_dungeon_nsfw_for/) with an example.
 
-### Why version is _0.3.1_
+### Why version is _0.3.2_
 It is because of UI, not functionality.
 
 ## Known Issues
-* Exported character lorebook might not work as expected. However, you can reselect this after a new card is created.
+* If you import a file in create dialog, lorebook would be imported but you need to refresh the page to see it.

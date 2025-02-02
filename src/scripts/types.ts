@@ -59,10 +59,12 @@ export interface FullExportData {
     first_mes: string;
     scenario: string;
     personality: string;
+    character_book?: { entries: any[]; name: string };
     extensions?: {
       depth_prompt?: {
         prompt: string;
       };
+      world?: string;
     };
   };
   scenario_creator: ScenarioExportData;
@@ -170,6 +172,16 @@ const versionUpgrades: VersionUpgrade[] = [
     },
     exportCallback: (data: ScenarioExportData) => {
       data.version = '0.3.1';
+    },
+  },
+  {
+    from: '0.3.1',
+    to: '0.3.2',
+    createCallback: (data: ScenarioCreateData) => {
+      data.version = '0.3.2';
+    },
+    exportCallback: (data: ScenarioExportData) => {
+      data.version = '0.3.2';
     },
   },
 ];

@@ -321,7 +321,7 @@ function setupExportButton(popup: JQuery<HTMLElement>) {
     }
 
     // If all validations pass, create and download the file
-    const productionData = createProductionScenarioData(currentData, formData);
+    const productionData = await createProductionScenarioData(currentData, formData);
     downloadFile(productionData, `scenario.${format}`, format);
   });
 

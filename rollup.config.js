@@ -20,6 +20,7 @@ export default {
         '../../../../../script.js',
         '../../../../utils.js',
         '../../../../../lib.js',
+        '../../../../world-info.js',
     ],
     plugins: [
         resolve({

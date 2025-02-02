@@ -8,13 +8,28 @@ import {
   createEmptyScenarioExportData,
   upgradeOrDowngradeData,
 } from '../types';
-import { st_uuidv4, st_humanizedDateTime, st_getcreateCharacterData, extensionVersion, stEcho } from '../config';
+import {
+  st_uuidv4,
+  st_humanizedDateTime,
+  st_getcreateCharacterData,
+  extensionVersion,
+  stEcho,
+  st_getWorldInfo,
+  st_server_convertWorldInfoToCharacterBook,
+  st_getWorldNames,
+  st_convertCharacterBook,
+  st_saveWorldInfo,
+  st_setWorldInfoButtonClass,
+} from '../config';
 import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
 
 /**
  * Creates a production-ready version of scenario data without internal state
  */
-export function createProductionScenarioData(data: ScenarioCreateData, formData: FormData): FullExportData {
+export async function createProductionScenarioData(
+  data: ScenarioCreateData,
+  formData: FormData,
+): Promise<FullExportData> {
   const {
     descriptionScript,
     firstMessageScript,
@@ -59,6 +74,8 @@ export function createProductionScenarioData(data: ScenarioCreateData, formData:
     jsonData.fav = formEntries.find(([key]) => key === 'fav')[1] === 'true' || false;
     // @ts-ignore
     jsonData.tags = formEntries.find(([key]) => key === 'tags')[1] || [];
+    // @ts-ignore
+    jsonData.world = formEntries.find(([key]) => key === 'world')[1] || undefined;
 
     // @ts-ignore
     jsonData.data = {};
@@ -82,6 +99,8 @@ export function createProductionScenarioData(data: ScenarioCreateData, formData:
     jsonData.data.creator = formEntries.find(([key]) => key === 'creator')[1] || '';
     // @ts-ignore
     jsonData.data.character_version = formEntries.find(([key]) => key === 'character_version')[1] || '';
+    // @ts-ignore
+    jsonData.data.world = formEntries.find(([key]) => key === 'world')[1] || undefined;
 
     const extensions = JSON.parse(JSON.stringify(st_getcreateCharacterData().extensions));
     extensions.depth_prompt = {
@@ -96,7 +115,17 @@ export function createProductionScenarioData(data: ScenarioCreateData, formData:
     // @ts-ignore
     extensions.fav = jsonData.fav;
     // @ts-ignore
+    extensions.world = jsonData.world;
+    // @ts-ignore
     jsonData.data.extensions = extensions;
+  }
+
+  let character_book: { entries: any[]; name: string } | undefined;
+  if (jsonData.world) {
+    const file = await st_getWorldInfo(jsonData.world);
+    if (file && file.entries) {
+      character_book = st_server_convertWorldInfoToCharacterBook(jsonData.world, file.entries);
+    }
   }
 
   const scenarioCreator: ScenarioExportData = {
@@ -152,6 +181,7 @@ export function createProductionScenarioData(data: ScenarioCreateData, formData:
       alternate_greetings: jsonData.data.alternate_greetings || [],
       extensions: jsonData.data.extensions || [],
       group_only_greetings: jsonData.data.group_only_greetings || [],
+      character_book: character_book,
     },
     create_date: st_humanizedDateTime(),
     scenario_creator: scenarioCreator,
@@ -351,15 +381,10 @@ export async function convertImportedData(importedData: FullExportData | File): 
   let data: FullExportData;
 
   // Handle PNG files
+  let buffer: ArrayBuffer | undefined;
   if (importedData instanceof File && importedData.type === 'image/png') {
     try {
-      const buffer = await importedData.arrayBuffer();
-
-      // Update avatar preview
-      if ($('#rm_ch_create_block').is(':visible') && $('#form_create').attr('actiontype') === 'createcharacter') {
-        const base64String = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-        $('#avatar_load_preview').attr('src', `data:image/png;base64,${base64String}`);
-      }
+      buffer = await importedData.arrayBuffer();
 
       const extracted = readScenarioFromPng(buffer);
       if (!extracted) {
@@ -391,6 +416,32 @@ export async function convertImportedData(importedData: FullExportData | File): 
   } catch (error: any) {
     await stEcho('error', error.message);
     return null;
+  }
+
+  // Update avatar preview
+  if (buffer && $('#rm_ch_create_block').is(':visible') && $('#form_create').attr('actiontype') === 'createcharacter') {
+    const bytes = new Uint8Array(buffer);
+    const base64String = btoa(
+      Array.from(bytes)
+        .map((byte) => String.fromCharCode(byte))
+        .join(''),
+    );
+    $('#avatar_load_preview').attr('src', `data:image/png;base64,${base64String}`);
+  }
+
+  // Import world info
+  const worldNames = st_getWorldNames();
+  const worldName = data.data.extensions?.world;
+  if (worldName) {
+    const character_book = data.data.character_book;
+    $('#character_world').val(worldName);
+    if (!worldNames.includes(worldName) && character_book) {
+      const convertedBook = st_convertCharacterBook(character_book);
+      st_saveWorldInfo(character_book.name, convertedBook, true);
+      await stEcho('info', 'Lorebook is imported but you need to refresh the page to see it.');
+      // await st_updateWorldInfoList();
+    }
+    st_setWorldInfoButtonClass(undefined, true);
   }
 
   const questions = (scenarioCreator.questions || []).map((q: any) => ({
