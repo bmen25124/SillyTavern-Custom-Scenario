@@ -48,11 +48,14 @@ export interface ScenarioExportData {
 }
 
 export interface FullExportData {
-  name: string;
-  description: string;
-  first_mes: string;
-  scenario: string;
-  personality: string;
+  name?: string;
+  description?: string;
+  first_mes?: string;
+  scenario?: string;
+  personality?: string;
+  creatorcomment?: string;
+  tags?: string[];
+  avatar?: string;
   data: {
     name: string;
     description: string;
@@ -60,14 +63,21 @@ export interface FullExportData {
     scenario: string;
     personality: string;
     character_book?: { entries: any[]; name: string };
+    creator: string;
+    creator_notes: string;
+    tags: string[];
+    character_version?: string;
+    avatar?: string;
     extensions?: {
       depth_prompt?: {
         prompt: string;
+        depth: number;
+        role: string;
       };
       world?: string;
     };
   };
-  scenario_creator: ScenarioExportData;
+  scenario_creator?: ScenarioExportData;
 }
 
 export const STORAGE_KEY = 'scenario_creator_data';
@@ -182,6 +192,16 @@ const versionUpgrades: VersionUpgrade[] = [
     },
     exportCallback: (data: ScenarioExportData) => {
       data.version = '0.3.2';
+    },
+  },
+  {
+    from: '0.3.2',
+    to: '0.3.3',
+    createCallback: (data: ScenarioCreateData) => {
+      data.version = '0.3.3';
+    },
+    exportCallback: (data: ScenarioExportData) => {
+      data.version = '0.3.3';
     },
   },
 ];

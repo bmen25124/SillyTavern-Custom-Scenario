@@ -65,7 +65,12 @@ export async function createProductionScenarioData(
     // @ts-ignore
     jsonData.mes_example = formEntries.find(([key]) => key === 'mes_example')[1] || '';
     // @ts-ignore
-    jsonData.avatar = formEntries.find(([key]) => key === 'avatar')[1] || 'none';
+    const formAvatar = formEntries.find(([key]) => key === 'avatar')[1];
+    if (formAvatar && typeof formAvatar === 'string') {
+      // @ts-ignore
+      jsonData.avatar = formAvatar;
+    }
+
     // @ts-ignore
     jsonData.chat = formEntries.find(([key]) => key === 'chat')[1] || '';
     // @ts-ignore
@@ -85,6 +90,8 @@ export async function createProductionScenarioData(
     jsonData.data.personality = jsonData.personality;
     // @ts-ignore
     jsonData.data.scenario = jsonData.scenario;
+    // @ts-ignore
+    jsonData.data.avatar = jsonData.avatar;
     // @ts-ignore
     jsonData.data.mes_example = jsonData.mes_example;
     // @ts-ignore
@@ -156,12 +163,12 @@ export async function createProductionScenarioData(
     scenario: scenario,
     first_mes: firstMessage,
     mes_example: jsonData.mes_example || '',
-    creatorcomment: jsonData.creatorcomment || '',
+    creatorcomment: jsonData.creatorcomment || jsonData.data.creator_notes || '',
     avatar: jsonData.avatar || 'none',
     chat: jsonData.chat,
     talkativeness: jsonData.talkativeness || '0.5',
     fav: jsonData.fav || false,
-    tags: jsonData.tags || [],
+    tags: jsonData.tags && jsonData.tags.length > 0 ? jsonData.tags.split(',').map((t: string) => t.trim()) : [],
     spec: jsonData.spec || 'chara_card_v3',
     spec_version: jsonData.spec_version || '3.0',
     data: {
@@ -170,12 +177,16 @@ export async function createProductionScenarioData(
       personality: personality,
       scenario: scenario,
       first_mes: firstMessage,
+      avatar: jsonData.data.avatar,
       // @ts-ignore
       mes_example: jsonData.data.mes_example || '',
-      creator_notes: jsonData.data.creator_notes || '',
+      creator_notes: jsonData.data.creator_notes || jsonData.creatorcomment || '',
       system_prompt: jsonData.data.system_prompt || '',
       post_history_instructions: jsonData.data.post_history_instructions || '',
-      tags: jsonData.data.tags || [],
+      tags:
+        jsonData.data.tags && jsonData.data.tags.length > 0
+          ? jsonData.data.tags.split(',').map((t: string) => t.trim())
+          : [],
       creator: jsonData.data.creator || '',
       character_version: jsonData.data.character_version || '',
       alternate_greetings: jsonData.data.alternate_greetings || [],
@@ -419,14 +430,32 @@ export async function convertImportedData(importedData: FullExportData | File): 
   }
 
   // Update avatar preview
-  if (buffer && $('#rm_ch_create_block').is(':visible') && $('#form_create').attr('actiontype') === 'createcharacter') {
-    const bytes = new Uint8Array(buffer);
-    const base64String = btoa(
-      Array.from(bytes)
-        .map((byte) => String.fromCharCode(byte))
-        .join(''),
-    );
-    $('#avatar_load_preview').attr('src', `data:image/png;base64,${base64String}`);
+  if ($('#rm_ch_create_block').is(':visible') && $('#form_create').attr('actiontype') === 'createcharacter') {
+    let src: string | undefined;
+    if (buffer) {
+      const bytes = new Uint8Array(buffer);
+      const base64String = btoa(
+        Array.from(bytes)
+          .map((byte) => String.fromCharCode(byte))
+          .join(''),
+      );
+      src = `data:image/png;base64,${base64String}`;
+    } else {
+      const avatar = data.avatar && data.avatar !== 'none' ? data.avatar : data.data?.avatar;
+      if (
+        avatar &&
+        typeof avatar === 'string' && // I fucked up, this should be string from the beginning but it was object.
+        (avatar.startsWith('data:image/png;base64,') ||
+          avatar.startsWith('data:image/jpeg;base64,') ||
+          avatar.startsWith('https'))
+      ) {
+        src = avatar;
+      }
+    }
+
+    if (src) {
+      $('#avatar_load_preview').attr('src', src);
+    }
   }
 
   // Import world info
@@ -441,8 +470,8 @@ export async function convertImportedData(importedData: FullExportData | File): 
       await stEcho('info', 'Lorebook is imported but you need to refresh the page to see it.');
       // await st_updateWorldInfoList();
     }
-    st_setWorldInfoButtonClass(undefined, true);
   }
+  st_setWorldInfoButtonClass(undefined, !!worldName);
 
   const questions = (scenarioCreator.questions || []).map((q: any) => ({
     ...q,

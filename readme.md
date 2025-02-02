@@ -67,6 +67,16 @@ message: "birthday"
 
 You can write a script for setting `occasionMessage`
 ```js
+variables.occasionMessage = `Happy {{message}}! Enjoy your new {{gift}}`;
+```
+
+Or:
+```js
+variables.occasionMessage = `Happy ${variables.message}! Enjoy your new ${variables.gift}`;
+```
+
+Or:
+```js
 variables.occasionMessage = "Happy " + variables.message + "! Enjoy your new " + variables.gift;
 ```
 
@@ -90,8 +100,9 @@ You also received a card with the following message: Happy birthday! Enjoy your 
 ### Why did you create this?
 I saw this on [AIDungeon](https://play.aidungeon.com/) and liked it. You can see in this [reddit post](https://www.reddit.com/r/SillyTavernAI/comments/1i59jem/scenario_system_similar_to_ai_dungeon_nsfw_for/) with an example.
 
-### Why version is _0.3.2_
+### Why version is _0.3.3_
 It is because of UI, not functionality.
 
 ## Known Issues
-* If you import a file in create dialog, lorebook would be imported but you need to refresh the page to see it.
+* If you import a file in create dialog, lorebook would be imported but you need to refresh the page to see it. I'll fix in next SillyTavern update.
+* Tags are not importing to SillyTavern because I don't want to show `Import Tags` dialog for each play. So I'm planning to add a extension setting to enable/disable this.

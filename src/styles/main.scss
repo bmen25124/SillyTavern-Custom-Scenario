@@ -47,6 +47,7 @@
     #dynamic-tab-buttons {
         display: flex;
         gap: 5px;
+        flex-wrap: inherit;
     }
 
     .tab-button-container {

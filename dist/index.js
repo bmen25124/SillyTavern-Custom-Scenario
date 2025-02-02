@@ -9,7 +9,7 @@ import { checkEmbeddedWorld, importEmbeddedWorldInfo, world_names, loadWorldInfo
 
 // @ts-ignore
 const extensionName = 'SillyTavern-Custom-Scenario';
-const extensionVersion = '0.3.2';
+const extensionVersion = '0.3.3';
 const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
@@ -198,10 +198,12 @@ function st_getThumbnailUrl(type, file) {
 function executeScript(script, answers) {
     // Clone answers to avoid modifying the original object
     const variables = JSON.parse(JSON.stringify(answers));
+    // First interpolate any variables in the script
+    const interpolatedScript = interpolateText(script, variables);
     // Create a function that returns all variables
     const scriptFunction = new Function('answers', `
-        let variables = JSON.parse('${JSON.stringify(variables)}');
-        ${script}
+        let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
+        ${interpolatedScript}
         return variables;
     `);
     return scriptFunction(variables);
@@ -469,6 +471,16 @@ const versionUpgrades = [
         },
         exportCallback: (data) => {
             data.version = '0.3.2';
+        },
+    },
+    {
+        from: '0.3.2',
+        to: '0.3.3',
+        createCallback: (data) => {
+            data.version = '0.3.3';
+        },
+        exportCallback: (data) => {
+            data.version = '0.3.3';
         },
     },
 ];
@@ -3037,7 +3049,11 @@ async function createProductionScenarioData(data, formData) {
         // @ts-ignore
         jsonData.mes_example = formEntries.find(([key]) => key === 'mes_example')[1] || '';
         // @ts-ignore
-        jsonData.avatar = formEntries.find(([key]) => key === 'avatar')[1] || 'none';
+        const formAvatar = formEntries.find(([key]) => key === 'avatar')[1];
+        if (formAvatar && typeof formAvatar === 'string') {
+            // @ts-ignore
+            jsonData.avatar = formAvatar;
+        }
         // @ts-ignore
         jsonData.chat = formEntries.find(([key]) => key === 'chat')[1] || '';
         // @ts-ignore
@@ -3056,6 +3072,8 @@ async function createProductionScenarioData(data, formData) {
         jsonData.data.personality = jsonData.personality;
         // @ts-ignore
         jsonData.data.scenario = jsonData.scenario;
+        // @ts-ignore
+        jsonData.data.avatar = jsonData.avatar;
         // @ts-ignore
         jsonData.data.mes_example = jsonData.mes_example;
         // @ts-ignore
@@ -3123,12 +3141,12 @@ async function createProductionScenarioData(data, formData) {
         scenario: scenario,
         first_mes: firstMessage,
         mes_example: jsonData.mes_example || '',
-        creatorcomment: jsonData.creatorcomment || '',
+        creatorcomment: jsonData.creatorcomment || jsonData.data.creator_notes || '',
         avatar: jsonData.avatar || 'none',
         chat: jsonData.chat,
         talkativeness: jsonData.talkativeness || '0.5',
         fav: jsonData.fav || false,
-        tags: jsonData.tags || [],
+        tags: jsonData.tags && jsonData.tags.length > 0 ? jsonData.tags.split(',').map((t) => t.trim()) : [],
         spec: jsonData.spec || 'chara_card_v3',
         spec_version: jsonData.spec_version || '3.0',
         data: {
@@ -3137,12 +3155,15 @@ async function createProductionScenarioData(data, formData) {
             personality: personality,
             scenario: scenario,
             first_mes: firstMessage,
+            avatar: jsonData.data.avatar,
             // @ts-ignore
             mes_example: jsonData.data.mes_example || '',
-            creator_notes: jsonData.data.creator_notes || '',
+            creator_notes: jsonData.data.creator_notes || jsonData.creatorcomment || '',
             system_prompt: jsonData.data.system_prompt || '',
             post_history_instructions: jsonData.data.post_history_instructions || '',
-            tags: jsonData.data.tags || [],
+            tags: jsonData.data.tags && jsonData.data.tags.length > 0
+                ? jsonData.data.tags.split(',').map((t) => t.trim())
+                : [],
             creator: jsonData.data.creator || '',
             character_version: jsonData.data.character_version || '',
             alternate_greetings: jsonData.data.alternate_greetings || [],
@@ -3366,12 +3387,28 @@ async function convertImportedData(importedData) {
         return null;
     }
     // Update avatar preview
-    if (buffer && $('#rm_ch_create_block').is(':visible') && $('#form_create').attr('actiontype') === 'createcharacter') {
-        const bytes = new Uint8Array(buffer);
-        const base64String = btoa(Array.from(bytes)
-            .map((byte) => String.fromCharCode(byte))
-            .join(''));
-        $('#avatar_load_preview').attr('src', `data:image/png;base64,${base64String}`);
+    if ($('#rm_ch_create_block').is(':visible') && $('#form_create').attr('actiontype') === 'createcharacter') {
+        let src;
+        if (buffer) {
+            const bytes = new Uint8Array(buffer);
+            const base64String = btoa(Array.from(bytes)
+                .map((byte) => String.fromCharCode(byte))
+                .join(''));
+            src = `data:image/png;base64,${base64String}`;
+        }
+        else {
+            const avatar = data.avatar && data.avatar !== 'none' ? data.avatar : data.data?.avatar;
+            if (avatar &&
+                typeof avatar === 'string' && // I fucked up, this should be string from the beginning but it was object.
+                (avatar.startsWith('data:image/png;base64,') ||
+                    avatar.startsWith('data:image/jpeg;base64,') ||
+                    avatar.startsWith('https'))) {
+                src = avatar;
+            }
+        }
+        if (src) {
+            $('#avatar_load_preview').attr('src', src);
+        }
     }
     // Import world info
     const worldNames = st_getWorldNames();
@@ -3385,8 +3422,8 @@ async function convertImportedData(importedData) {
             await stEcho('info', 'Lorebook is imported but you need to refresh the page to see it.');
             // await st_updateWorldInfoList();
         }
-        st_setWorldInfoButtonClass(undefined, true);
     }
+    st_setWorldInfoButtonClass(undefined, !!worldName);
     const questions = (scenarioCreator.questions || []).map((q) => ({
         ...q,
         id: q.id || st_uuidv4(),
@@ -3886,8 +3923,34 @@ function applyScenarioCreateDataToUI(popup, data) {
     updatePreview(popup, 'scenario');
     updatePreview(popup, 'personality');
     updatePreview(popup, 'character-note');
+    // Update script inputs for all existing questions
+    popup.find('.dynamic-input-group').each(function () {
+        updateQuestionScriptInputs($(this));
+        updateQuestionPreview($(this));
+    });
     // Switch to active tab
     switchTab(data.activeTab);
+}
+/**
+ * Only applies necessary fields in the advanced dialog.
+ */
+function applyScenarioExportDataToSidebar(importedData) {
+    if ($('#form_create').attr('actiontype') !== 'createcharacter') {
+        return;
+    }
+    if (importedData.data.extensions?.depth_prompt !== undefined) {
+        $('#depth_prompt_depth').val(importedData.data.extensions.depth_prompt.depth);
+        $('#depth_prompt_role').val(importedData.data.extensions.depth_prompt.role || 'system');
+    }
+    else {
+        $('#depth_prompt_depth').val(4);
+        $('#depth_prompt_role').val('system');
+    }
+    $('#creator_textarea').val(importedData.data.creator || '');
+    $('#creator_notes_textarea').val(importedData.creatorcomment || importedData.data.creator_notes || '');
+    $('#tags_textarea').val((importedData.tags || importedData.data.tags || []).join(', '));
+    $('#character_version_textarea').val(importedData.data.character_version || '');
+    $('#character_world').val(importedData.data.extensions?.world || '');
 }
 
 /**
@@ -4022,6 +4085,8 @@ function setupImportButton(popup) {
             return;
         if (file.type === 'image/png') {
             try {
+                const buffer = await file.arrayBuffer();
+                const importedData = readScenarioFromPng(buffer);
                 const scenarioData = await convertImportedData(file);
                 if (!scenarioData) {
                     return;
@@ -4031,6 +4096,8 @@ function setupImportButton(popup) {
                 popup.find('#dynamic-inputs-container').empty();
                 // Apply imported data
                 applyScenarioCreateDataToUI(popup, scenarioData);
+                // Apply imported data to character sidebar (only neccessary fields)
+                applyScenarioExportDataToSidebar(importedData);
                 // Save imported data
                 saveScenarioCreateData(scenarioData);
             }
@@ -4057,6 +4124,8 @@ function setupImportButton(popup) {
                     popup.find('#dynamic-inputs-container').empty();
                     // Apply imported data
                     applyScenarioCreateDataToUI(popup, scenarioData);
+                    // Apply imported data to character sidebar (only neccessary fields)
+                    applyScenarioExportDataToSidebar(importedData);
                     // Save imported data
                     saveScenarioCreateData(scenarioData);
                 }
@@ -4243,6 +4312,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
     let inputTemplate;
     // Set up pagination variables
     let currentPageIndex = 0;
+    // @ts-ignore - Already checked in upper function
     const layout = scenarioData.scenario_creator.layout || [[...questions.map((q) => q.inputId)]];
     const visitedPages = new Set([0]); // Track visited pages, starting with first page
     callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', {
@@ -4520,6 +4590,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
     }
     // Create all inputs at initialization
     function createAllInputs() {
+        // @ts-ignore - Already checked in upper function
         questions.forEach((question) => {
             const newInput = $(inputTemplate.html());
             newInput.addClass('dynamic-input-wrapper');
@@ -4570,6 +4641,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
             updateQuestionText(newInput, question);
             // Update question text when any input changes
             popup.find('.dynamic-input').on('input change', function () {
+                // @ts-ignore - Already checked in upper function
                 questions.forEach((q) => {
                     const wrapper = dynamicInputsContainer.find(`[data-input-id="${q.inputId}"]`);
                     updateQuestionText(wrapper, q);
@@ -4582,6 +4654,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
         // Hide all inputs first
         dynamicInputsContainer.find('.dynamic-input-wrapper').hide();
         // Show only inputs for current page
+        // @ts-ignore - Already checked in upper function
         const currentPageQuestions = questions.filter((q) => layout[currentPageIndex].includes(q.inputId));
         currentPageQuestions.forEach((question) => {
             const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);

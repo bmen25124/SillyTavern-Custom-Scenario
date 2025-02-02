@@ -39,6 +39,7 @@
 #scenario-create-dialog #dynamic-tab-buttons {
   display: flex;
   gap: 5px;
+  flex-wrap: inherit;
 }
 #scenario-create-dialog .tab-button-container {
   display: flex;

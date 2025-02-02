@@ -1,8 +1,8 @@
 import { addQuestionToUI } from './question-handlers';
-import { updatePreview } from './preview-handlers';
+import { updatePreview, updateQuestionPreview } from './preview-handlers';
 import { switchTab } from './tab-handlers';
-import { updateScriptInputs } from './script-handlers';
-import { ScenarioCreateData } from '../types';
+import { updateQuestionScriptInputs, updateScriptInputs } from './script-handlers';
+import { FullExportData, ScenarioCreateData } from '../types';
 
 /**
  * Applies scenario data to the UI
@@ -41,6 +41,34 @@ export function applyScenarioCreateDataToUI(popup: JQuery<HTMLElement>, data: Sc
   updatePreview(popup, 'personality');
   updatePreview(popup, 'character-note');
 
+  // Update script inputs for all existing questions
+  popup.find('.dynamic-input-group').each(function () {
+    updateQuestionScriptInputs($(this));
+    updateQuestionPreview($(this));
+  });
+
   // Switch to active tab
   switchTab(data.activeTab);
+}
+
+/**
+ * Only applies necessary fields in the advanced dialog.
+ */
+export function applyScenarioExportDataToSidebar(importedData: FullExportData) {
+  if ($('#form_create').attr('actiontype') !== 'createcharacter') {
+    return;
+  }
+
+  if (importedData.data.extensions?.depth_prompt !== undefined) {
+    $('#depth_prompt_depth').val(importedData.data.extensions.depth_prompt.depth);
+    $('#depth_prompt_role').val(importedData.data.extensions.depth_prompt.role || 'system');
+  } else {
+    $('#depth_prompt_depth').val(4);
+    $('#depth_prompt_role').val('system');
+  }
+  $('#creator_textarea').val(importedData.data.creator || '');
+  $('#creator_notes_textarea').val(importedData.creatorcomment || importedData.data.creator_notes || '');
+  $('#tags_textarea').val((importedData.tags || importedData.data.tags || []).join(', '));
+  $('#character_version_textarea').val(importedData.data.character_version || '');
+  $('#character_world').val(importedData.data.extensions?.world || '');
 }

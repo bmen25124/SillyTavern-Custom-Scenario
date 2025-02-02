@@ -2,12 +2,15 @@ export function executeScript(script: string, answers: {}) {
   // Clone answers to avoid modifying the original object
   const variables = JSON.parse(JSON.stringify(answers));
 
+  // First interpolate any variables in the script
+  const interpolatedScript = interpolateText(script, variables);
+
   // Create a function that returns all variables
   const scriptFunction = new Function(
     'answers',
     `
-        let variables = JSON.parse('${JSON.stringify(variables)}');
-        ${script}
+        let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
+        ${interpolatedScript}
         return variables;
     `,
   );

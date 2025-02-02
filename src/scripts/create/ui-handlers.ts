@@ -19,8 +19,9 @@ import {
   convertImportedData,
   removeScenarioCreateData,
 } from './data-handlers';
-import { applyScenarioCreateDataToUI } from './ui-state';
-import { createEmptyScenarioCreateData, upgradeOrDowngradeData } from '../types';
+import { applyScenarioCreateDataToUI, applyScenarioExportDataToSidebar } from './ui-state';
+import { createEmptyScenarioCreateData, FullExportData, upgradeOrDowngradeData } from '../types';
+import { readScenarioFromPng } from '../utils/png-handlers';
 
 /**
  * Prepares and adds the character sidebar icon with click handler
@@ -176,6 +177,9 @@ function setupImportButton(popup: JQuery<HTMLElement>) {
 
     if (file.type === 'image/png') {
       try {
+        const buffer = await file.arrayBuffer();
+        const importedData = readScenarioFromPng(buffer);
+
         const scenarioData = await convertImportedData(file);
         if (!scenarioData) {
           return;
@@ -187,6 +191,9 @@ function setupImportButton(popup: JQuery<HTMLElement>) {
 
         // Apply imported data
         applyScenarioCreateDataToUI(popup, scenarioData);
+
+        // Apply imported data to character sidebar (only neccessary fields)
+        applyScenarioExportDataToSidebar(importedData);
 
         // Save imported data
         saveScenarioCreateData(scenarioData);
@@ -202,7 +209,7 @@ function setupImportButton(popup: JQuery<HTMLElement>) {
           return;
         }
         try {
-          const importedData = JSON.parse(event.target.result as string);
+          const importedData = JSON.parse(event.target.result as string) as FullExportData;
           const scenarioData = await convertImportedData(importedData);
           if (!scenarioData) {
             return;
@@ -214,6 +221,9 @@ function setupImportButton(popup: JQuery<HTMLElement>) {
 
           // Apply imported data
           applyScenarioCreateDataToUI(popup, scenarioData);
+
+          // Apply imported data to character sidebar (only neccessary fields)
+          applyScenarioExportDataToSidebar(importedData);
 
           // Save imported data
           saveScenarioCreateData(scenarioData);

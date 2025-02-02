@@ -110,6 +110,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
   // Set up pagination variables
   let currentPageIndex = 0;
+  // @ts-ignore - Already checked in upper function
   const layout = scenarioData.scenario_creator.layout || [[...questions.map((q) => q.inputId)]];
   const visitedPages = new Set([0]); // Track visited pages, starting with first page
 
@@ -425,6 +426,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
   // Create all inputs at initialization
   function createAllInputs() {
+    // @ts-ignore - Already checked in upper function
     questions.forEach((question) => {
       const newInput = $(inputTemplate.html());
       newInput.addClass('dynamic-input-wrapper');
@@ -483,6 +485,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
       // Update question text when any input changes
       popup.find('.dynamic-input').on('input change', function () {
+        // @ts-ignore - Already checked in upper function
         questions.forEach((q) => {
           const wrapper = dynamicInputsContainer.find(`[data-input-id="${q.inputId}"]`);
           updateQuestionText(wrapper, q);
@@ -497,6 +500,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
     dynamicInputsContainer.find('.dynamic-input-wrapper').hide();
 
     // Show only inputs for current page
+    // @ts-ignore - Already checked in upper function
     const currentPageQuestions = questions.filter((q) => layout[currentPageIndex].includes(q.inputId));
     currentPageQuestions.forEach((question) => {
       const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);
