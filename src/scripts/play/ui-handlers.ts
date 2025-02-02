@@ -18,7 +18,7 @@ import {
   st_getThumbnailUrl,
 } from '../config';
 import { upgradeOrDowngradeData, FullExportData, Question } from '../types';
-import { executeScript, interpolateText } from '../utils';
+import { executeMainScript, executeShowScript, interpolateText } from '../utils';
 import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
 
 /**
@@ -112,20 +112,19 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
   let currentPageIndex = 0;
   // @ts-ignore - Already checked in upper function
   const layout = scenarioData.scenario_creator.layout || [[...questions.map((q) => q.inputId)]];
-  const visitedPages = new Set([0]); // Track visited pages, starting with first page
 
   callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', {
     okButton: true,
     cancelButton: true,
     wider: true,
-    onClosing: async (popupInstance: { result: POPUP_RESULT }) => {
+    onClosing: async (popupInstance) => {
       if (popupInstance.result !== POPUP_RESULT.AFFIRMATIVE) {
         return true;
       }
 
-      // Check if all pages have been visited before allowing cancel
-      if (visitedPages.size < layout.length) {
-        await stEcho('warning', 'Please view all pages before playing');
+      // Check if we are in the last page
+      if (currentPageIndex < layout.length - 1) {
+        await stEcho('warning', 'Please go to the last page before playing');
         return false;
       }
 
@@ -137,6 +136,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
         const $input = $(this);
         const id = $input.data('id');
         const required = $input.data('required');
+        const shouldShow = $input.data('show');
         let value;
 
         // Handle select elements first
@@ -157,7 +157,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
         allAnswers[id] = value;
 
         // Check if required field is empty
-        if (required && (value === '' || value === undefined)) {
+        if (shouldShow && required && (value === '' || value === undefined)) {
           hasValidationErrors = true;
           $input.closest('.dynamic-input-group').find('.validation-error').text('This field is required').show();
         }
@@ -182,19 +182,19 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
       try {
         // Process description and first message with allAnswers
-        const descriptionVars = descriptionScript ? executeScript(descriptionScript, allAnswers) : allAnswers;
+        const descriptionVars = descriptionScript ? executeMainScript(descriptionScript, allAnswers) : allAnswers;
         const description = interpolateText(
           scenarioData.description || scenarioData.data?.description,
           descriptionVars,
         );
 
-        const firstMessageVars = firstMessageScript ? executeScript(firstMessageScript, allAnswers) : allAnswers;
+        const firstMessageVars = firstMessageScript ? executeMainScript(firstMessageScript, allAnswers) : allAnswers;
         const firstMessage = interpolateText(scenarioData.first_mes || scenarioData.data?.first_mes, firstMessageVars);
 
-        const scenarioVars = scenarioScript ? executeScript(scenarioScript, allAnswers) : allAnswers;
+        const scenarioVars = scenarioScript ? executeMainScript(scenarioScript, allAnswers) : allAnswers;
         const processedScenario = interpolateText(scenarioData.scenario || scenarioData.data?.scenario, scenarioVars);
 
-        const personalityVars = personalityScript ? executeScript(personalityScript, allAnswers) : allAnswers;
+        const personalityVars = personalityScript ? executeMainScript(personalityScript, allAnswers) : allAnswers;
         const processedPersonality = interpolateText(
           scenarioData.personality || scenarioData.data?.personality,
           personalityVars,
@@ -210,7 +210,9 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
         // Add character note script processing and update extensions.depth_prompt.prompt
         if (scenarioData.data.extensions && scenarioData.data.extensions.depth_prompt) {
-          const characterNoteVars = characterNoteScript ? executeScript(characterNoteScript, allAnswers) : allAnswers;
+          const characterNoteVars = characterNoteScript
+            ? executeMainScript(characterNoteScript, allAnswers)
+            : allAnswers;
           const processedCharacterNote = interpolateText(
             scenarioData.data.extensions.depth_prompt.prompt,
             characterNoteVars,
@@ -347,7 +349,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
     currentPageInputs.each(function () {
       const $input = $(this);
-      if ($input.data('required')) {
+      if ($input.data('required') && $input.data('show')) {
         let value;
         // Handle select elements first
         if ($input.is('select')) {
@@ -413,7 +415,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
     });
 
     try {
-      const variables = question.script ? executeScript(question.script, answers) : answers;
+      const variables = question.script ? executeMainScript(question.script, answers) : answers;
       const interpolated = interpolateText(question.text, variables);
       questionWrapper.find('.input-question').text(interpolated + (question.required ? ' *' : ''));
     } catch (error: any) {
@@ -436,6 +438,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
       const inputAttrs = {
         'data-id': question.inputId,
         'data-required': question.required || false,
+        'data-show': true, // Default to showing questions, will update when showScript is executed
       };
 
       switch (question.type) {
@@ -502,14 +505,33 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
     // Show only inputs for current page
     // @ts-ignore - Already checked in upper function
     const currentPageQuestions = questions.filter((q) => layout[currentPageIndex].includes(q.inputId));
-    currentPageQuestions.forEach((question) => {
-      const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);
-      wrapper.show();
-      updateQuestionText(wrapper, question);
+
+    // Collect current answers for script execution
+    const answers: Record<string, string | boolean | { label: string; value: string }> = {};
+    popup.find('.dynamic-input').each(function () {
+      const $input = $(this);
+      const id = $input.data('id');
+      if ($input.is('select')) {
+        const label = $input.find('option:selected').text();
+        answers[id] = { label, value: $input.val() as string };
+      } else {
+        answers[id] = $input.attr('type') === 'checkbox' ? $input.prop('checked') : ($input.val() as string);
+      }
     });
 
-    // Update navigation and track visited pages
-    visitedPages.add(currentPageIndex);
+    currentPageQuestions.forEach((question) => {
+      const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);
+      const shouldShow = !question.showScript || executeShowScript(question.showScript, answers);
+
+      // Update the show status and display accordingly
+      wrapper.find('.dynamic-input').data('show', shouldShow);
+      if (shouldShow) {
+        wrapper.show();
+        updateQuestionText(wrapper, question);
+      }
+    });
+
+    // Update navigation
     prevButton.toggle(currentPageIndex > 0);
     nextButton.toggle(currentPageIndex < layout.length - 1);
     pageIndicator.text(`Page ${currentPageIndex + 1} of ${layout.length}`);

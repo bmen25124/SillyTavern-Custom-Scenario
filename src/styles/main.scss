@@ -1,3 +1,7 @@
+.popup-content:has(#scenario-create-dialog) {
+    overflow-y: scroll;
+}
+
 #scenario-create-dialog {
     .tab-navigation {
         gap: 5px;

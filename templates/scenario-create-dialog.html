@@ -28,7 +28,7 @@
     </div>
 
     <!-- Tab Contents -->
-    <div class="tab-contents" style="overflow-y: auto; max-height: calc(100vh - 300px)">
+    <div class="tab-contents">
         <!-- Description Tab -->
         <div class="tab-content" data-tab="description">
             <div class="flex-container flexFlowColumn marginTopBot5">
@@ -328,18 +328,25 @@
                         <textarea
                             class="text_pole textarea_compact question-script"
                             rows="8"
-                            placeholder="Enter your script here..."
+                            placeholder="Enter your main script here..."
                         ></textarea>
+                        <textarea
+                            class="text_pole textarea_compact show-script"
+                            rows="4"
+                            placeholder="Enter your show script here..."
+                        ></textarea>
+                        <label>Preview: </label>
+                        <label class="show-preview">SHOW</label>
                     </div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
                     <label>Preview:</label>
-                    <div
+                    <pre
                         class="question-preview text_pole"
                         style="overflow-y: auto; overflow-x: hidden; max-height: 150px"
                     >
                         Preview will appear here...
-                    </div>
+                    </pre>
                 </div>
                 <div class="flex-container alignItemsCenter marginTop10">
                     <label class="checkbox_label">

@@ -9,7 +9,7 @@ import { checkEmbeddedWorld, importEmbeddedWorldInfo, world_names, loadWorldInfo
 
 // @ts-ignore
 const extensionName = 'SillyTavern-Custom-Scenario';
-const extensionVersion = '0.3.3';
+const extensionVersion = '0.3.4';
 const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
@@ -195,7 +195,7 @@ function st_getThumbnailUrl(type, file) {
     return getThumbnailUrl(type, file);
 }
 
-function executeScript(script, answers) {
+function executeMainScript(script, answers) {
     // Clone answers to avoid modifying the original object
     const variables = JSON.parse(JSON.stringify(answers));
     // First interpolate any variables in the script
@@ -205,6 +205,18 @@ function executeScript(script, answers) {
         let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
         ${interpolatedScript}
         return variables;
+    `);
+    return scriptFunction(variables);
+}
+function executeShowScript(script, answers) {
+    // Clone answers to avoid modifying the original object
+    const variables = JSON.parse(JSON.stringify(answers));
+    // First interpolate any variables in the script
+    const interpolatedScript = interpolateText(script, variables);
+    // Create a function that returns all variables
+    const scriptFunction = new Function('answers', `
+        let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
+        ${interpolatedScript}
     `);
     return scriptFunction(variables);
 }
@@ -318,7 +330,7 @@ function updatePreview(popup, type, rethrowError = false) {
     });
     try {
         // Execute script if exists
-        const variables = script ? executeScript(script, answers) : answers;
+        const variables = script ? executeMainScript(script, answers) : answers;
         // Interpolate content with variables
         const interpolated = interpolateText(content, variables);
         previewDiv.text(interpolated);
@@ -336,8 +348,10 @@ function updatePreview(popup, type, rethrowError = false) {
  */
 function updateQuestionPreview(questionGroup, rethrowError = false) {
     const questionText = questionGroup.find('.input-question').val();
-    const scriptText = questionGroup.find('.question-script').val();
-    const previewDiv = questionGroup.find('.question-preview');
+    const mainScriptText = questionGroup.find('.question-script').val();
+    const showScriptText = questionGroup.find('.show-script').val();
+    const mainPreviewDiv = questionGroup.find('.question-preview');
+    const showPreviewDiv = questionGroup.find('.show-preview');
     const scriptInputsContainer = questionGroup.find('.question-script-inputs-container');
     // Collect answers from script inputs
     const answers = {};
@@ -361,14 +375,27 @@ function updateQuestionPreview(questionGroup, rethrowError = false) {
     });
     try {
         // Execute script if exists
-        const variables = scriptText ? executeScript(scriptText, answers) : answers;
+        const variables = mainScriptText ? executeMainScript(mainScriptText, answers) : answers;
         // Interpolate content with variables
         const interpolated = interpolateText(questionText, variables);
-        previewDiv.text(interpolated);
+        mainPreviewDiv.text(interpolated);
     }
     catch (error) {
         console.error('Question preview update/script execute error:', error);
-        previewDiv.text(`Question preview update/script execute error: ${error.message}`);
+        mainPreviewDiv.text(`Question preview update/script execute error: ${error.message}`);
+        if (rethrowError) {
+            throw error;
+        }
+    }
+    // Update show script preview
+    try {
+        // Execute script if exists
+        const result = showScriptText ? executeShowScript(showScriptText, answers) : true;
+        showPreviewDiv.text(result ? 'SHOW' : 'HIDE');
+    }
+    catch (error) {
+        console.error('Show script preview update/script execute error:', error);
+        showPreviewDiv.text(`Show script preview update/script execute error: ${error.message}`);
         if (rethrowError) {
             throw error;
         }
@@ -481,6 +508,28 @@ const versionUpgrades = [
         },
         exportCallback: (data) => {
             data.version = '0.3.3';
+        },
+    },
+    {
+        from: '0.3.3',
+        to: '0.3.4',
+        createCallback: (data) => {
+            // Add showScript to questions if it doesn't exist
+            data.questions.forEach((question) => {
+                if (!question.showScript) {
+                    question.showScript = '';
+                }
+            });
+            data.version = '0.3.4';
+        },
+        exportCallback: (data) => {
+            // Add showScript to questions if it doesn't exist
+            data.questions.forEach((question) => {
+                if (!question.showScript) {
+                    question.showScript = '';
+                }
+            });
+            data.version = '0.3.4';
         },
     },
 ];
@@ -3120,7 +3169,7 @@ async function createProductionScenarioData(data, formData) {
         scenarioScript: scenarioScript,
         personalityScript: personalityScript,
         characterNoteScript: characterNoteScript,
-        questions: questions.map(({ id, inputId, text, script, type, defaultValue, required, options }) => ({
+        questions: questions.map(({ id, inputId, text, script, type, defaultValue, required, options, showScript }) => ({
             id,
             inputId,
             text,
@@ -3128,6 +3177,7 @@ async function createProductionScenarioData(data, formData) {
             type,
             defaultValue,
             required,
+            showScript,
             ...(options && { options }),
         })),
         layout: data.layout || [[...questions.map((q) => q.inputId)]], // Default to all questions in one page if no layout specified
@@ -3302,6 +3352,8 @@ function getScenarioCreateDataFromUI(popup) {
             type: $(this).find('.input-type-select').val(),
             defaultValue: '',
             required: $(this).find('.input-required').prop('checked'),
+            // @ts-ignore
+            showScript: $(this).find('.show-script').val() || '',
         };
         // @ts-ignore
         const pageNumber = parseInt($(this).find('.input-page').val()) || 1;
@@ -3791,6 +3843,7 @@ function addQuestionToUI(popup, question) {
     newInput.find('.input-type-select').val(question.type).trigger('change');
     newInput.find('.input-question').val(question.text || '');
     newInput.find('.question-script').val(question.script || '');
+    newInput.find('.show-script').val(question.showScript || '');
     newInput.find('.input-required').prop('checked', question.required);
     // Setup question preview refresh button
     newInput.find('.refresh-question-preview').on('click', function () {
@@ -3857,6 +3910,7 @@ function setupDynamicInputs(popup) {
             defaultValue: '',
             script: '',
             required: true,
+            showScript: '',
         };
         addQuestionToUI(popup, question);
         // Save state and switch to new tab
@@ -4314,7 +4368,6 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
     let currentPageIndex = 0;
     // @ts-ignore - Already checked in upper function
     const layout = scenarioData.scenario_creator.layout || [[...questions.map((q) => q.inputId)]];
-    const visitedPages = new Set([0]); // Track visited pages, starting with first page
     callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', {
         okButton: true,
         cancelButton: true,
@@ -4323,9 +4376,9 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
             if (popupInstance.result !== POPUP_RESULT.AFFIRMATIVE) {
                 return true;
             }
-            // Check if all pages have been visited before allowing cancel
-            if (visitedPages.size < layout.length) {
-                await stEcho('warning', 'Please view all pages before playing');
+            // Check if we are in the last page
+            if (currentPageIndex < layout.length - 1) {
+                await stEcho('warning', 'Please go to the last page before playing');
                 return false;
             }
             // On final submission, validate all fields
@@ -4335,6 +4388,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                 const $input = $(this);
                 const id = $input.data('id');
                 const required = $input.data('required');
+                const shouldShow = $input.data('show');
                 let value;
                 // Handle select elements first
                 if ($input.is('select')) {
@@ -4352,7 +4406,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                     }
                 allAnswers[id] = value;
                 // Check if required field is empty
-                if (required && (value === '' || value === undefined)) {
+                if (shouldShow && required && (value === '' || value === undefined)) {
                     hasValidationErrors = true;
                     $input.closest('.dynamic-input-group').find('.validation-error').text('This field is required').show();
                 }
@@ -4375,13 +4429,13 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
             }
             try {
                 // Process description and first message with allAnswers
-                const descriptionVars = descriptionScript ? executeScript(descriptionScript, allAnswers) : allAnswers;
+                const descriptionVars = descriptionScript ? executeMainScript(descriptionScript, allAnswers) : allAnswers;
                 const description = interpolateText(scenarioData.description || scenarioData.data?.description, descriptionVars);
-                const firstMessageVars = firstMessageScript ? executeScript(firstMessageScript, allAnswers) : allAnswers;
+                const firstMessageVars = firstMessageScript ? executeMainScript(firstMessageScript, allAnswers) : allAnswers;
                 const firstMessage = interpolateText(scenarioData.first_mes || scenarioData.data?.first_mes, firstMessageVars);
-                const scenarioVars = scenarioScript ? executeScript(scenarioScript, allAnswers) : allAnswers;
+                const scenarioVars = scenarioScript ? executeMainScript(scenarioScript, allAnswers) : allAnswers;
                 const processedScenario = interpolateText(scenarioData.scenario || scenarioData.data?.scenario, scenarioVars);
-                const personalityVars = personalityScript ? executeScript(personalityScript, allAnswers) : allAnswers;
+                const personalityVars = personalityScript ? executeMainScript(personalityScript, allAnswers) : allAnswers;
                 const processedPersonality = interpolateText(scenarioData.personality || scenarioData.data?.personality, personalityVars);
                 // Update both main and data.scenario fields
                 scenarioData.scenario = processedScenario;
@@ -4391,7 +4445,9 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                 scenarioData.data.personality = processedPersonality;
                 // Add character note script processing and update extensions.depth_prompt.prompt
                 if (scenarioData.data.extensions && scenarioData.data.extensions.depth_prompt) {
-                    const characterNoteVars = characterNoteScript ? executeScript(characterNoteScript, allAnswers) : allAnswers;
+                    const characterNoteVars = characterNoteScript
+                        ? executeMainScript(characterNoteScript, allAnswers)
+                        : allAnswers;
                     const processedCharacterNote = interpolateText(scenarioData.data.extensions.depth_prompt.prompt, characterNoteVars);
                     scenarioData.data.extensions.depth_prompt.prompt = processedCharacterNote;
                 }
@@ -4517,7 +4573,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
             .filter((_, el) => layout[currentPageIndex].includes($(el).data('id')));
         currentPageInputs.each(function () {
             const $input = $(this);
-            if ($input.data('required')) {
+            if ($input.data('required') && $input.data('show')) {
                 let value;
                 // Handle select elements first
                 if ($input.is('select')) {
@@ -4577,7 +4633,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                 }
         });
         try {
-            const variables = question.script ? executeScript(question.script, answers) : answers;
+            const variables = question.script ? executeMainScript(question.script, answers) : answers;
             const interpolated = interpolateText(question.text, variables);
             questionWrapper.find('.input-question').text(interpolated + (question.required ? ' *' : ''));
         }
@@ -4599,6 +4655,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
             const inputAttrs = {
                 'data-id': question.inputId,
                 'data-required': question.required || false,
+                'data-show': true, // Default to showing questions, will update when showScript is executed
             };
             switch (question.type) {
                 case 'checkbox':
@@ -4656,13 +4713,30 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
         // Show only inputs for current page
         // @ts-ignore - Already checked in upper function
         const currentPageQuestions = questions.filter((q) => layout[currentPageIndex].includes(q.inputId));
+        // Collect current answers for script execution
+        const answers = {};
+        popup.find('.dynamic-input').each(function () {
+            const $input = $(this);
+            const id = $input.data('id');
+            if ($input.is('select')) {
+                const label = $input.find('option:selected').text();
+                answers[id] = { label, value: $input.val() };
+            }
+            else {
+                answers[id] = $input.attr('type') === 'checkbox' ? $input.prop('checked') : $input.val();
+            }
+        });
         currentPageQuestions.forEach((question) => {
             const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);
-            wrapper.show();
-            updateQuestionText(wrapper, question);
+            const shouldShow = !question.showScript || executeShowScript(question.showScript, answers);
+            // Update the show status and display accordingly
+            wrapper.find('.dynamic-input').data('show', shouldShow);
+            if (shouldShow) {
+                wrapper.show();
+                updateQuestionText(wrapper, question);
+            }
         });
-        // Update navigation and track visited pages
-        visitedPages.add(currentPageIndex);
+        // Update navigation
         prevButton.toggle(currentPageIndex > 0);
         nextButton.toggle(currentPageIndex < layout.length - 1);
         pageIndicator.text(`Page ${currentPageIndex + 1} of ${layout.length}`);

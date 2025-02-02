@@ -141,7 +141,7 @@ export async function createProductionScenarioData(
     scenarioScript: scenarioScript,
     personalityScript: personalityScript,
     characterNoteScript: characterNoteScript,
-    questions: questions.map(({ id, inputId, text, script, type, defaultValue, required, options }) => ({
+    questions: questions.map(({ id, inputId, text, script, type, defaultValue, required, options, showScript }) => ({
       id,
       inputId,
       text,
@@ -149,6 +149,7 @@ export async function createProductionScenarioData(
       type,
       defaultValue,
       required,
+      showScript,
       ...(options && { options }),
     })),
     layout: data.layout || [[...questions.map((q) => q.inputId)]], // Default to all questions in one page if no layout specified
@@ -337,6 +338,8 @@ export function getScenarioCreateDataFromUI(popup: JQuery<HTMLElement>): Scenari
       type: $(this).find('.input-type-select').val(),
       defaultValue: '',
       required: $(this).find('.input-required').prop('checked'),
+      // @ts-ignore
+      showScript: $(this).find('.show-script').val() || '',
     };
     // @ts-ignore
     const pageNumber = parseInt($(this).find('.input-page').val()) || 1;

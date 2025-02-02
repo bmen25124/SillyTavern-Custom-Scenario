@@ -1,4 +1,7 @@
-export function executeScript(script: string, answers: {}) {
+export function executeMainScript(
+  script: string,
+  answers: {},
+): Record<string, string | boolean | { label: string; value: string }> {
   // Clone answers to avoid modifying the original object
   const variables = JSON.parse(JSON.stringify(answers));
 
@@ -12,6 +15,25 @@ export function executeScript(script: string, answers: {}) {
         let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
         ${interpolatedScript}
         return variables;
+    `,
+  );
+
+  return scriptFunction(variables);
+}
+
+export function executeShowScript(script: string, answers: {}): boolean {
+  // Clone answers to avoid modifying the original object
+  const variables = JSON.parse(JSON.stringify(answers));
+
+  // First interpolate any variables in the script
+  const interpolatedScript = interpolateText(script, variables);
+
+  // Create a function that returns all variables
+  const scriptFunction = new Function(
+    'answers',
+    `
+        let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
+        ${interpolatedScript}
     `,
   );
 

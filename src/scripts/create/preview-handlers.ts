@@ -1,4 +1,4 @@
-import { executeScript, interpolateText } from '../utils';
+import { executeMainScript, executeShowScript, interpolateText } from '../utils';
 
 /**
  * Sets up preview functionality for description, first message, scenario, personality, character note
@@ -98,7 +98,7 @@ export function updatePreview(
 
   try {
     // Execute script if exists
-    const variables = script ? executeScript(script, answers) : answers;
+    const variables = script ? executeMainScript(script, answers) : answers;
 
     // Interpolate content with variables
     const interpolated = interpolateText(content, variables);
@@ -117,8 +117,10 @@ export function updatePreview(
  */
 export function updateQuestionPreview(questionGroup: JQuery<HTMLElement>, rethrowError = false) {
   const questionText = questionGroup.find('.input-question').val() as string;
-  const scriptText = questionGroup.find('.question-script').val() as string;
-  const previewDiv = questionGroup.find('.question-preview');
+  const mainScriptText = questionGroup.find('.question-script').val() as string;
+  const showScriptText = questionGroup.find('.show-script').val() as string;
+  const mainPreviewDiv = questionGroup.find('.question-preview');
+  const showPreviewDiv = questionGroup.find('.show-preview');
   const scriptInputsContainer = questionGroup.find('.question-script-inputs-container');
 
   // Collect answers from script inputs
@@ -144,14 +146,27 @@ export function updateQuestionPreview(questionGroup: JQuery<HTMLElement>, rethro
 
   try {
     // Execute script if exists
-    const variables = scriptText ? executeScript(scriptText, answers) : answers;
+    const variables = mainScriptText ? executeMainScript(mainScriptText, answers) : answers;
 
     // Interpolate content with variables
     const interpolated = interpolateText(questionText, variables);
-    previewDiv.text(interpolated);
+    mainPreviewDiv.text(interpolated);
   } catch (error: any) {
     console.error('Question preview update/script execute error:', error);
-    previewDiv.text(`Question preview update/script execute error: ${error.message}`);
+    mainPreviewDiv.text(`Question preview update/script execute error: ${error.message}`);
+    if (rethrowError) {
+      throw error;
+    }
+  }
+
+  // Update show script preview
+  try {
+    // Execute script if exists
+    const result = showScriptText ? executeShowScript(showScriptText, answers) : true;
+    showPreviewDiv.text(result ? 'SHOW' : 'HIDE');
+  } catch (error: any) {
+    console.error('Show script preview update/script execute error:', error);
+    showPreviewDiv.text(`Show script preview update/script execute error: ${error.message}`);
     if (rethrowError) {
       throw error;
     }

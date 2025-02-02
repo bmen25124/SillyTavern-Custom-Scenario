@@ -17,6 +17,7 @@ export interface Question {
   defaultValue: string | boolean;
   required: boolean;
   options?: Array<{ value: string; label: string }>;
+  showScript: string;
 }
 
 export interface ScenarioCreateData {
@@ -202,6 +203,28 @@ const versionUpgrades: VersionUpgrade[] = [
     },
     exportCallback: (data: ScenarioExportData) => {
       data.version = '0.3.3';
+    },
+  },
+  {
+    from: '0.3.3',
+    to: '0.3.4',
+    createCallback: (data: ScenarioCreateData) => {
+      // Add showScript to questions if it doesn't exist
+      data.questions.forEach((question) => {
+        if (!question.showScript) {
+          question.showScript = '';
+        }
+      });
+      data.version = '0.3.4';
+    },
+    exportCallback: (data: ScenarioExportData) => {
+      // Add showScript to questions if it doesn't exist
+      data.questions.forEach((question) => {
+        if (!question.showScript) {
+          question.showScript = '';
+        }
+      });
+      data.version = '0.3.4';
     },
   },
 ];

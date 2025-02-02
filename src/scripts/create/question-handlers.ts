@@ -88,6 +88,7 @@ export function addQuestionToUI(popup: JQuery<HTMLElement>, question: Question) 
   newInput.find('.input-type-select').val(question.type).trigger('change');
   newInput.find('.input-question').val(question.text || '');
   newInput.find('.question-script').val(question.script || '');
+  newInput.find('.show-script').val(question.showScript || '');
   newInput.find('.input-required').prop('checked', question.required);
 
   // Setup question preview refresh button
@@ -168,6 +169,7 @@ export function setupDynamicInputs(popup: JQuery<HTMLElement>) {
       defaultValue: '',
       script: '',
       required: true,
+      showScript: '',
     };
 
     addQuestionToUI(popup, question);

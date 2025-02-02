@@ -35,7 +35,7 @@ import {
 import { FullExportData } from './types.js';
 
 export const extensionName = 'SillyTavern-Custom-Scenario';
-export const extensionVersion = '0.3.3';
+export const extensionVersion = '0.3.4';
 export const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 
 /**
@@ -78,7 +78,12 @@ export enum POPUP_RESULT {
 }
 
 interface PopupOptions {
-  [key: string]: any;
+  okButton?: boolean;
+  cancelButton?: boolean;
+  wide?: boolean;
+  large?: boolean;
+  wider?: boolean;
+  onClosing?: (popupInstance: { result: POPUP_RESULT }) => void;
 }
 
 export function callGenericPopup(
