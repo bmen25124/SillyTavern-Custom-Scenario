@@ -16,6 +16,7 @@ import {
   st_getWorldNames,
   st_setWorldInfoButtonClass,
   st_getThumbnailUrl,
+  extensionName,
 } from '../config';
 import { upgradeOrDowngradeData, FullExportData, Question } from '../types';
 import { executeMainScript, executeShowScript, interpolateText } from '../utils';
@@ -75,9 +76,8 @@ export async function handlePlayScenarioClick() {
 
       // Check version changes
       if (scenarioData.scenario_creator.version && scenarioData.scenario_creator.version !== extensionVersion) {
-        await stEcho(
-          'info',
-          `Scenario version changed from ${scenarioData.scenario_creator.version} to ${extensionVersion}`,
+        console.debug(
+          `[${extensionName}] Scenario version changed from ${scenarioData.scenario_creator.version} to ${extensionVersion}`,
         );
       }
 
@@ -182,22 +182,38 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
       try {
         // Process description and first message with allAnswers
-        const descriptionVars = descriptionScript ? executeMainScript(descriptionScript, allAnswers) : allAnswers;
+        const descriptionVars = descriptionScript
+          ? executeMainScript(descriptionScript, allAnswers, 'remove')
+          : allAnswers;
         const description = interpolateText(
           scenarioData.description || scenarioData.data?.description,
           descriptionVars,
+          'remove',
         );
 
-        const firstMessageVars = firstMessageScript ? executeMainScript(firstMessageScript, allAnswers) : allAnswers;
-        const firstMessage = interpolateText(scenarioData.first_mes || scenarioData.data?.first_mes, firstMessageVars);
+        const firstMessageVars = firstMessageScript
+          ? executeMainScript(firstMessageScript, allAnswers, 'remove')
+          : allAnswers;
+        const firstMessage = interpolateText(
+          scenarioData.first_mes || scenarioData.data?.first_mes,
+          firstMessageVars,
+          'remove',
+        );
 
-        const scenarioVars = scenarioScript ? executeMainScript(scenarioScript, allAnswers) : allAnswers;
-        const processedScenario = interpolateText(scenarioData.scenario || scenarioData.data?.scenario, scenarioVars);
+        const scenarioVars = scenarioScript ? executeMainScript(scenarioScript, allAnswers, 'remove') : allAnswers;
+        const processedScenario = interpolateText(
+          scenarioData.scenario || scenarioData.data?.scenario,
+          scenarioVars,
+          'remove',
+        );
 
-        const personalityVars = personalityScript ? executeMainScript(personalityScript, allAnswers) : allAnswers;
+        const personalityVars = personalityScript
+          ? executeMainScript(personalityScript, allAnswers, 'remove')
+          : allAnswers;
         const processedPersonality = interpolateText(
           scenarioData.personality || scenarioData.data?.personality,
           personalityVars,
+          'remove',
         );
 
         // Update both main and data.scenario fields
@@ -211,11 +227,12 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
         // Add character note script processing and update extensions.depth_prompt.prompt
         if (scenarioData.data.extensions && scenarioData.data.extensions.depth_prompt) {
           const characterNoteVars = characterNoteScript
-            ? executeMainScript(characterNoteScript, allAnswers)
+            ? executeMainScript(characterNoteScript, allAnswers, 'remove')
             : allAnswers;
           const processedCharacterNote = interpolateText(
             scenarioData.data.extensions.depth_prompt.prompt,
             characterNoteVars,
+            'remove',
           );
           scenarioData.data.extensions.depth_prompt.prompt = processedCharacterNote;
         }
@@ -415,8 +432,8 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
     });
 
     try {
-      const variables = question.script ? executeMainScript(question.script, answers) : answers;
-      const interpolated = interpolateText(question.text, variables);
+      const variables = question.script ? executeMainScript(question.script, answers, 'remove') : answers;
+      const interpolated = interpolateText(question.text, variables, 'remove');
       questionWrapper.find('.input-question').text(interpolated + (question.required ? ' *' : ''));
     } catch (error: any) {
       console.error('Question text update error:', error);
@@ -521,7 +538,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
     currentPageQuestions.forEach((question) => {
       const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);
-      const shouldShow = !question.showScript || executeShowScript(question.showScript, answers);
+      const shouldShow = !question.showScript || executeShowScript(question.showScript, answers, 'remove');
 
       // Update the show status and display accordingly
       wrapper.find('.dynamic-input').data('show', shouldShow);

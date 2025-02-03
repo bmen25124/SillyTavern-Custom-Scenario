@@ -9,7 +9,7 @@ import { checkEmbeddedWorld, importEmbeddedWorldInfo, world_names, loadWorldInfo
 
 // @ts-ignore
 const extensionName = 'SillyTavern-Custom-Scenario';
-const extensionVersion = '0.3.4';
+const extensionVersion = '0.3.5';
 const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
@@ -195,11 +195,14 @@ function st_getThumbnailUrl(type, file) {
     return getThumbnailUrl(type, file);
 }
 
-function executeMainScript(script, answers) {
+/**
+ * @param emptyStrategy if it's variableName, empty values would be shown as `{{variable}}`. Otherwise, empty values would be shown as empty strings.
+ */
+function executeMainScript(script, answers, emptyStrategy) {
     // Clone answers to avoid modifying the original object
     const variables = JSON.parse(JSON.stringify(answers));
     // First interpolate any variables in the script
-    const interpolatedScript = interpolateText(script, variables);
+    const interpolatedScript = interpolateText(script, variables, emptyStrategy);
     // Create a function that returns all variables
     const scriptFunction = new Function('answers', `
         let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
@@ -208,11 +211,14 @@ function executeMainScript(script, answers) {
     `);
     return scriptFunction(variables);
 }
-function executeShowScript(script, answers) {
+/**
+ * @param emptyStrategy if it's variableName, empty values would be shown as `{{variable}}`. Otherwise, empty values would be shown as empty strings.
+ */
+function executeShowScript(script, answers, type) {
     // Clone answers to avoid modifying the original object
     const variables = JSON.parse(JSON.stringify(answers));
     // First interpolate any variables in the script
-    const interpolatedScript = interpolateText(script, variables);
+    const interpolatedScript = interpolateText(script, variables, type);
     // Create a function that returns all variables
     const scriptFunction = new Function('answers', `
         let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
@@ -220,7 +226,10 @@ function executeShowScript(script, answers) {
     `);
     return scriptFunction(variables);
 }
-function interpolateText(template, variables) {
+/**
+ * @param emptyStrategy if it's variableName, empty values would be shown as `{{variable}}`. Otherwise, empty values would be shown as empty strings.
+ */
+function interpolateText(template, variables, type) {
     const newVariables = JSON.parse(JSON.stringify(variables));
     for (const [key, value] of Object.entries(variables)) {
         if (value && typeof value === 'object' && value.hasOwnProperty('label')) {
@@ -233,12 +242,15 @@ function interpolateText(template, variables) {
     let iteration = 0;
     while (result.includes('{{') && iteration < maxIterations) {
         result = result.replace(regex, (match, key) => {
-            const variable = newVariables[key];
-            if (variable === undefined || variable === null || variable === '') {
+            let value = newVariables[key];
+            if (typeof value === 'string') {
+                value = value.trim();
+            }
+            if (value === undefined || value === null || (type === 'variableName' && value === '')) {
                 return match; // Keep original if variable is undefined, null, or empty
             }
             // Recursively interpolate if the variable contains template syntax
-            return variable.toString().includes('{{') ? interpolateText(variable.toString(), newVariables) : variable;
+            return value.toString().includes('{{') ? interpolateText(value.toString(), newVariables, type) : value;
         });
         iteration++;
     }
@@ -330,9 +342,9 @@ function updatePreview(popup, type, rethrowError = false) {
     });
     try {
         // Execute script if exists
-        const variables = script ? executeMainScript(script, answers) : answers;
+        const variables = script ? executeMainScript(script, answers, 'remove') : answers;
         // Interpolate content with variables
-        const interpolated = interpolateText(content, variables);
+        const interpolated = interpolateText(content, variables, 'variableName');
         previewDiv.text(interpolated);
     }
     catch (error) {
@@ -375,9 +387,9 @@ function updateQuestionPreview(questionGroup, rethrowError = false) {
     });
     try {
         // Execute script if exists
-        const variables = mainScriptText ? executeMainScript(mainScriptText, answers) : answers;
+        const variables = mainScriptText ? executeMainScript(mainScriptText, answers, 'remove') : answers;
         // Interpolate content with variables
-        const interpolated = interpolateText(questionText, variables);
+        const interpolated = interpolateText(questionText, variables, 'variableName');
         mainPreviewDiv.text(interpolated);
     }
     catch (error) {
@@ -390,7 +402,7 @@ function updateQuestionPreview(questionGroup, rethrowError = false) {
     // Update show script preview
     try {
         // Execute script if exists
-        const result = showScriptText ? executeShowScript(showScriptText, answers) : true;
+        const result = showScriptText ? executeShowScript(showScriptText, answers, 'remove') : true;
         showPreviewDiv.text(result ? 'SHOW' : 'HIDE');
     }
     catch (error) {
@@ -530,6 +542,16 @@ const versionUpgrades = [
                 }
             });
             data.version = '0.3.4';
+        },
+    },
+    {
+        from: '0.3.4',
+        to: '0.3.5',
+        createCallback: (data) => {
+            data.version = '0.3.5';
+        },
+        exportCallback: (data) => {
+            data.version = '0.3.5';
         },
     },
 ];
@@ -4340,7 +4362,7 @@ async function handlePlayScenarioClick() {
             }
             // Check version changes
             if (scenarioData.scenario_creator.version && scenarioData.scenario_creator.version !== extensionVersion) {
-                await stEcho('info', `Scenario version changed from ${scenarioData.scenario_creator.version} to ${extensionVersion}`);
+                console.debug(`[${extensionName}] Scenario version changed from ${scenarioData.scenario_creator.version} to ${extensionVersion}`);
             }
             scenarioData.scenario_creator = upgradeOrDowngradeData(scenarioData.scenario_creator, 'export');
             setupPlayDialogHandlers(scenarioData, buffer, fileType);
@@ -4429,14 +4451,20 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
             }
             try {
                 // Process description and first message with allAnswers
-                const descriptionVars = descriptionScript ? executeMainScript(descriptionScript, allAnswers) : allAnswers;
-                const description = interpolateText(scenarioData.description || scenarioData.data?.description, descriptionVars);
-                const firstMessageVars = firstMessageScript ? executeMainScript(firstMessageScript, allAnswers) : allAnswers;
-                const firstMessage = interpolateText(scenarioData.first_mes || scenarioData.data?.first_mes, firstMessageVars);
-                const scenarioVars = scenarioScript ? executeMainScript(scenarioScript, allAnswers) : allAnswers;
-                const processedScenario = interpolateText(scenarioData.scenario || scenarioData.data?.scenario, scenarioVars);
-                const personalityVars = personalityScript ? executeMainScript(personalityScript, allAnswers) : allAnswers;
-                const processedPersonality = interpolateText(scenarioData.personality || scenarioData.data?.personality, personalityVars);
+                const descriptionVars = descriptionScript
+                    ? executeMainScript(descriptionScript, allAnswers, 'remove')
+                    : allAnswers;
+                const description = interpolateText(scenarioData.description || scenarioData.data?.description, descriptionVars, 'remove');
+                const firstMessageVars = firstMessageScript
+                    ? executeMainScript(firstMessageScript, allAnswers, 'remove')
+                    : allAnswers;
+                const firstMessage = interpolateText(scenarioData.first_mes || scenarioData.data?.first_mes, firstMessageVars, 'remove');
+                const scenarioVars = scenarioScript ? executeMainScript(scenarioScript, allAnswers, 'remove') : allAnswers;
+                const processedScenario = interpolateText(scenarioData.scenario || scenarioData.data?.scenario, scenarioVars, 'remove');
+                const personalityVars = personalityScript
+                    ? executeMainScript(personalityScript, allAnswers, 'remove')
+                    : allAnswers;
+                const processedPersonality = interpolateText(scenarioData.personality || scenarioData.data?.personality, personalityVars, 'remove');
                 // Update both main and data.scenario fields
                 scenarioData.scenario = processedScenario;
                 scenarioData.data.scenario = processedScenario;
@@ -4446,9 +4474,9 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                 // Add character note script processing and update extensions.depth_prompt.prompt
                 if (scenarioData.data.extensions && scenarioData.data.extensions.depth_prompt) {
                     const characterNoteVars = characterNoteScript
-                        ? executeMainScript(characterNoteScript, allAnswers)
+                        ? executeMainScript(characterNoteScript, allAnswers, 'remove')
                         : allAnswers;
-                    const processedCharacterNote = interpolateText(scenarioData.data.extensions.depth_prompt.prompt, characterNoteVars);
+                    const processedCharacterNote = interpolateText(scenarioData.data.extensions.depth_prompt.prompt, characterNoteVars, 'remove');
                     scenarioData.data.extensions.depth_prompt.prompt = processedCharacterNote;
                 }
                 // Create form data for character creation
@@ -4633,8 +4661,8 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                 }
         });
         try {
-            const variables = question.script ? executeMainScript(question.script, answers) : answers;
-            const interpolated = interpolateText(question.text, variables);
+            const variables = question.script ? executeMainScript(question.script, answers, 'remove') : answers;
+            const interpolated = interpolateText(question.text, variables, 'remove');
             questionWrapper.find('.input-question').text(interpolated + (question.required ? ' *' : ''));
         }
         catch (error) {
@@ -4728,7 +4756,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
         });
         currentPageQuestions.forEach((question) => {
             const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);
-            const shouldShow = !question.showScript || executeShowScript(question.showScript, answers);
+            const shouldShow = !question.showScript || executeShowScript(question.showScript, answers, 'remove');
             // Update the show status and display accordingly
             wrapper.find('.dynamic-input').data('show', shouldShow);
             if (shouldShow) {

@@ -98,10 +98,10 @@ export function updatePreview(
 
   try {
     // Execute script if exists
-    const variables = script ? executeMainScript(script, answers) : answers;
+    const variables = script ? executeMainScript(script, answers, 'remove') : answers;
 
     // Interpolate content with variables
-    const interpolated = interpolateText(content, variables);
+    const interpolated = interpolateText(content, variables, 'variableName');
     previewDiv.text(interpolated);
   } catch (error: any) {
     console.error('Preview update/script execute error:', error);
@@ -146,10 +146,10 @@ export function updateQuestionPreview(questionGroup: JQuery<HTMLElement>, rethro
 
   try {
     // Execute script if exists
-    const variables = mainScriptText ? executeMainScript(mainScriptText, answers) : answers;
+    const variables = mainScriptText ? executeMainScript(mainScriptText, answers, 'remove') : answers;
 
     // Interpolate content with variables
-    const interpolated = interpolateText(questionText, variables);
+    const interpolated = interpolateText(questionText, variables, 'variableName');
     mainPreviewDiv.text(interpolated);
   } catch (error: any) {
     console.error('Question preview update/script execute error:', error);
@@ -162,7 +162,7 @@ export function updateQuestionPreview(questionGroup: JQuery<HTMLElement>, rethro
   // Update show script preview
   try {
     // Execute script if exists
-    const result = showScriptText ? executeShowScript(showScriptText, answers) : true;
+    const result = showScriptText ? executeShowScript(showScriptText, answers, 'remove') : true;
     showPreviewDiv.text(result ? 'SHOW' : 'HIDE');
   } catch (error: any) {
     console.error('Show script preview update/script execute error:', error);

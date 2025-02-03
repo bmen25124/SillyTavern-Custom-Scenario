@@ -1,12 +1,16 @@
+/**
+ * @param emptyStrategy if it's variableName, empty values would be shown as `{{variable}}`. Otherwise, empty values would be shown as empty strings.
+ */
 export function executeMainScript(
   script: string,
   answers: {},
+  emptyStrategy: 'variableName' | 'remove',
 ): Record<string, string | boolean | { label: string; value: string }> {
   // Clone answers to avoid modifying the original object
   const variables = JSON.parse(JSON.stringify(answers));
 
   // First interpolate any variables in the script
-  const interpolatedScript = interpolateText(script, variables);
+  const interpolatedScript = interpolateText(script, variables, emptyStrategy);
 
   // Create a function that returns all variables
   const scriptFunction = new Function(
@@ -21,12 +25,15 @@ export function executeMainScript(
   return scriptFunction(variables);
 }
 
-export function executeShowScript(script: string, answers: {}): boolean {
+/**
+ * @param emptyStrategy if it's variableName, empty values would be shown as `{{variable}}`. Otherwise, empty values would be shown as empty strings.
+ */
+export function executeShowScript(script: string, answers: {}, type: 'variableName' | 'remove'): boolean {
   // Clone answers to avoid modifying the original object
   const variables = JSON.parse(JSON.stringify(answers));
 
   // First interpolate any variables in the script
-  const interpolatedScript = interpolateText(script, variables);
+  const interpolatedScript = interpolateText(script, variables, type);
 
   // Create a function that returns all variables
   const scriptFunction = new Function(
@@ -40,9 +47,13 @@ export function executeShowScript(script: string, answers: {}): boolean {
   return scriptFunction(variables);
 }
 
+/**
+ * @param emptyStrategy if it's variableName, empty values would be shown as `{{variable}}`. Otherwise, empty values would be shown as empty strings.
+ */
 export function interpolateText(
   template: string,
   variables: Record<string, string | boolean | { label: string; value: string }>,
+  type: 'variableName' | 'remove',
 ): string {
   const newVariables = JSON.parse(JSON.stringify(variables));
   for (const [key, value] of Object.entries(variables)) {
@@ -58,12 +69,15 @@ export function interpolateText(
 
   while (result.includes('{{') && iteration < maxIterations) {
     result = result.replace(regex, (match, key) => {
-      const variable = newVariables[key];
-      if (variable === undefined || variable === null || variable === '') {
+      let value = newVariables[key];
+      if (typeof value === 'string') {
+        value = value.trim();
+      }
+      if (value === undefined || value === null || (type === 'variableName' && value === '')) {
         return match; // Keep original if variable is undefined, null, or empty
       }
       // Recursively interpolate if the variable contains template syntax
-      return variable.toString().includes('{{') ? interpolateText(variable.toString(), newVariables) : variable;
+      return value.toString().includes('{{') ? interpolateText(value.toString(), newVariables, type) : value;
     });
     iteration++;
   }

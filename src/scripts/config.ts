@@ -35,7 +35,7 @@ import {
 import { FullExportData } from './types.js';
 
 export const extensionName = 'SillyTavern-Custom-Scenario';
-export const extensionVersion = '0.3.4';
+export const extensionVersion = '0.3.5';
 export const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 
 /**

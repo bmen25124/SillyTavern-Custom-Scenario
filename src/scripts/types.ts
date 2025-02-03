@@ -227,6 +227,16 @@ const versionUpgrades: VersionUpgrade[] = [
       data.version = '0.3.4';
     },
   },
+  {
+    from: '0.3.4',
+    to: '0.3.5',
+    createCallback: (data: ScenarioCreateData) => {
+      data.version = '0.3.5';
+    },
+    exportCallback: (data: ScenarioExportData) => {
+      data.version = '0.3.5';
+    },
+  },
 ];
 
 /**
