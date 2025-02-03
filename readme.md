@@ -94,13 +94,14 @@ You also received a card with the following message: Happy birthday! Enjoy your 
     * If question type is _text_, `variables.gift`
     * If the question type is _dropdown_, `variables.gift.value` and `variables.gift.label`. When creating the card, `variables.gift.label` is used.
     * If question type is _checkbox_, `variables.gift`. (boolean)
+* `Show Script` is a script that decides whether to show the question or not in the play dialog. Example:  `return variables.gift === "birthday"` will show the question only if the answer is "birthday".
 
 
 ## FAQ:
 ### Why did you create this?
 I saw this on [AIDungeon](https://play.aidungeon.com/) and liked it. You can see in this [reddit post](https://www.reddit.com/r/SillyTavernAI/comments/1i59jem/scenario_system_similar_to_ai_dungeon_nsfw_for/) with an example.
 
-### Why version is _0.3.3_
+### Why version is _0.3.4_
 It is because of UI, not functionality.
 
 ## Known Issues
