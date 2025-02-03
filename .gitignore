@@ -8,3 +8,4 @@ public/scripts/extensions/third-party
 .env
 *.map
 repopack-output.txt
+scripts/*.json
