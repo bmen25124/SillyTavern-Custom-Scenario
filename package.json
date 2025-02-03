@@ -21,6 +21,7 @@
         "@rollup/plugin-commonjs": "^28.0.2",
         "@rollup/plugin-node-resolve": "^16.0.0",
         "@rollup/plugin-typescript": "^12.1.2",
+        "@types/jest": "^29.5.14",
         "@types/jquery": "^3.5.32",
         "@types/node": "^22.10.10",
         "@types/png-chunk-text": "^1.0.3",
@@ -33,17 +34,9 @@
         "rollup": "^4.31.0",
         "rollup-plugin-polyfill-node": "^0.13.0",
         "sass": "^1.83.4",
+        "ts-jest": "^29.2.5",
         "tslib": "^2.8.1",
         "typescript": "^5.7.3"
-    },
-    "jest": {
-        "transform": {
-            "^.+\\.js$": "babel-jest"
-        },
-        "testEnvironment": "node",
-        "moduleNameMapper": {
-            "^(\\.{1,2}/.*)\\.js$": "$1"
-        }
     },
     "dependencies": {
         "png-chunk-text": "^1.0.0",

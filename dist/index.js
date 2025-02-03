@@ -196,7 +196,7 @@ function st_getThumbnailUrl(type, file) {
 }
 
 /**
- * @param emptyStrategy if it's variableName, empty values would be shown as `{{variable}}`. Otherwise, empty values would be shown as empty strings.
+ * @param emptyStrategy if it's variableName, null/undefined/empty values would be shown as `{{variable}}`. Otherwise, it will show as empty strings.
  */
 function executeMainScript(script, answers, emptyStrategy) {
     // Clone answers to avoid modifying the original object
@@ -212,13 +212,13 @@ function executeMainScript(script, answers, emptyStrategy) {
     return scriptFunction(variables);
 }
 /**
- * @param emptyStrategy if it's variableName, empty values would be shown as `{{variable}}`. Otherwise, empty values would be shown as empty strings.
+ * @param emptyStrategy if it's variableName, null/undefined/empty values would be shown as `{{variable}}`. Otherwise, it will show as empty strings.
  */
-function executeShowScript(script, answers, type) {
+function executeShowScript(script, answers, emptyStrategy) {
     // Clone answers to avoid modifying the original object
     const variables = JSON.parse(JSON.stringify(answers));
     // First interpolate any variables in the script
-    const interpolatedScript = interpolateText(script, variables, type);
+    const interpolatedScript = interpolateText(script, variables, emptyStrategy);
     // Create a function that returns all variables
     const scriptFunction = new Function('answers', `
         let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
@@ -227,9 +227,9 @@ function executeShowScript(script, answers, type) {
     return scriptFunction(variables);
 }
 /**
- * @param emptyStrategy if it's variableName, empty values would be shown as `{{variable}}`. Otherwise, empty values would be shown as empty strings.
+ * @param emptyStrategy if it's variableName, null/undefined/empty values would be shown as `{{variable}}`. Otherwise, it will show as empty strings.
  */
-function interpolateText(template, variables, type) {
+function interpolateText(template, variables, emptyStrategy) {
     const newVariables = JSON.parse(JSON.stringify(variables));
     for (const [key, value] of Object.entries(variables)) {
         if (value && typeof value === 'object' && value.hasOwnProperty('label')) {
@@ -246,11 +246,14 @@ function interpolateText(template, variables, type) {
             if (typeof value === 'string') {
                 value = value.trim();
             }
-            if (value === undefined || value === null || (type === 'variableName' && value === '')) {
+            if (emptyStrategy === 'variableName' && (value === undefined || value === null || value === '')) {
                 return match; // Keep original if variable is undefined, null, or empty
             }
+            else if (!value) {
+                return '';
+            }
             // Recursively interpolate if the variable contains template syntax
-            return value.toString().includes('{{') ? interpolateText(value.toString(), newVariables, type) : value;
+            return value.toString().includes('{{') ? interpolateText(value.toString(), newVariables, emptyStrategy) : value;
         });
         iteration++;
     }
