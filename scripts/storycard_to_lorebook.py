@@ -1,14 +1,41 @@
 ### Converts story cards(AI Dungeon) to lorebook(SillyTavern) format.
-### Usage: python storycard_to_lorebook.py input.json output.json --remove-braces --description-in-comment
+### Usage: python storycard_to_lorebook.py input.json output.json --remove-braces --description-in-comment --prevent-recursion="type:character" --exclude-recursion="type:character"
 
 import json
 import argparse
 
 
 def convert_story_cards_to_lorebook(
-    story_cards, remove_braces=False, description_in_comment=False
+    story_cards,
+    remove_braces=False,
+    description_in_comment=False,
+    exclude_recursion=None,
+    prevent_recursion=None,
 ):
     lorebook = {"entries": {}}
+
+    # Parse recursion rules
+    def parse_recursion_rule(rule_str):
+        if not rule_str:
+            return None
+        rules = []
+        for rule in rule_str.split(","):
+            if ":" in rule:
+                field, value = rule.split(":", 1)
+                rules.append((field.strip(), value.strip()))
+        return rules
+
+    exclude_rules = parse_recursion_rule(exclude_recursion)
+    prevent_rules = parse_recursion_rule(prevent_recursion)
+
+    # Check if card matches any rules
+    def matches_rules(card, rules):
+        if not rules:
+            return False
+        for field, value in rules:
+            if field in card and str(card[field]) == value:
+                return True
+        return False
 
     for index, card in enumerate(story_cards):
         # Split keys string into list and trim each key
@@ -38,10 +65,10 @@ def convert_story_cards_to_lorebook(
             "selectiveLogic": 0,
             "addMemo": True,
             "order": 100,
-            "position": 4,  # Fixed position to 4
+            "position": 4,
             "disable": False,
-            "excludeRecursion": False,
-            "preventRecursion": False,
+            "excludeRecursion": matches_rules(card, exclude_rules),
+            "preventRecursion": matches_rules(card, prevent_rules),
             "delayUntilRecursion": False,
             "probability": 100,
             "useProbability": True,
@@ -67,7 +94,6 @@ def convert_story_cards_to_lorebook(
 
 
 def main():
-    # Set up argument parser
     parser = argparse.ArgumentParser(
         description="Convert story cards to lorebook format"
     )
@@ -81,6 +107,14 @@ def main():
         action="store_true",
         help="Include description in comment if available",
     )
+    parser.add_argument(
+        "--exclude-recursion",
+        help="Set excludeRecursion for entries matching field:value pairs (comma-separated)",
+    )
+    parser.add_argument(
+        "--prevent-recursion",
+        help="Set preventRecursion for entries matching field:value pairs (comma-separated)",
+    )
 
     args = parser.parse_args()
 
@@ -90,7 +124,11 @@ def main():
 
     # Convert to lorebook format
     lorebook = convert_story_cards_to_lorebook(
-        story_cards, args.remove_braces, args.description_in_comment
+        story_cards,
+        args.remove_braces,
+        args.description_in_comment,
+        args.exclude_recursion,
+        args.prevent_recursion,
     )
 
     # Save to file
