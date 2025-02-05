@@ -21,6 +21,57 @@
         margin-top: 20px;
         border-top: 1px solid var(--accent-color);
         padding-top: 10px;
+
+        .button-group {
+            display: flex;
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 4px;
+            border-radius: 6px;
+            margin-right: 8px;
+
+            .menu_button {
+                min-width: auto;
+                padding: 6px 12px;
+                font-size: 0.9em;
+                height: 32px;
+                line-height: 1;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s ease;
+
+                i {
+                    font-size: 0.9em;
+                }
+
+                &:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                }
+
+                &.primary {
+                    background-color: var(--accent-color);
+                    border-color: var(--accent-color);
+                    color: var(--white-90);
+
+                    &:hover {
+                        background-color: var(--hover-color, #405060);
+                        border-color: var(--hover-color, #405060);
+                    }
+                }
+
+                &.danger {
+                    background-color: var(--error-color);
+                    border-color: var(--error-color);
+
+                    &:hover {
+                        background-color: var(--error-hover-color, #a00);
+                        border-color: var(--error-hover-color, #a00);
+                    }
+                }
+            }
+        }
     }
 
     .questions-container {
@@ -38,6 +89,36 @@
             display: flex;
             gap: 5px;
             flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 4px;
+            border-radius: 6px;
+
+            .menu_button {
+                min-width: auto;
+                padding: 6px 12px;
+                font-size: 0.9em;
+                height: 32px;
+                line-height: 1;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s ease;
+
+                i {
+                    font-size: 0.9em;
+                }
+
+                &:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                }
+            }
         }
     }
 
@@ -53,11 +134,19 @@
 
             .page-button {
                 min-width: auto;
-                padding: 3px 12px;
+                padding: 6px 12px;
                 font-size: 0.9em;
-                margin: 0 1px;
-                height: 26px;
+                height: 32px;
                 line-height: 1;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s ease;
+
+                &:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                }
 
                 &.active {
                     background-color: var(--accent-color);
@@ -71,21 +160,36 @@
 
     .tab-button {
         min-width: auto;
-        padding: 3px 8px;
+        padding: 6px 12px;
         font-size: 0.9em;
-        margin: 0 1px;
-        height: 26px;
+        height: 32px;
         line-height: 1;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+
+        &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
         &.question {
             height: 52px;
+            padding: 6px 16px;
         }
-    }
 
-    .tab-button.active {
-        background-color: var(--accent-color);
-        border-color: var(--accent-color);
-        color: var(--white-90);
-        font-weight: 500;
+        &.active {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: var(--white-90);
+            font-weight: 500;
+
+            &:hover {
+                background-color: var(--hover-color, #405060);
+                border-color: var(--hover-color, #405060);
+            }
+        }
     }
 
     #add-question-btn {

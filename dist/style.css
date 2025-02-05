@@ -19,6 +19,49 @@
   border-top: 1px solid var(--accent-color);
   padding-top: 10px;
 }
+#scenario-create-dialog .page-navigation .button-group {
+  display: flex;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  border-radius: 6px;
+  margin-right: 8px;
+}
+#scenario-create-dialog .page-navigation .button-group .menu_button {
+  min-width: auto;
+  padding: 6px 12px;
+  font-size: 0.9em;
+  height: 32px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+#scenario-create-dialog .page-navigation .button-group .menu_button i {
+  font-size: 0.9em;
+}
+#scenario-create-dialog .page-navigation .button-group .menu_button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+#scenario-create-dialog .page-navigation .button-group .menu_button.primary {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--white-90);
+}
+#scenario-create-dialog .page-navigation .button-group .menu_button.primary:hover {
+  background-color: var(--hover-color, #405060);
+  border-color: var(--hover-color, #405060);
+}
+#scenario-create-dialog .page-navigation .button-group .menu_button.danger {
+  background-color: var(--error-color);
+  border-color: var(--error-color);
+}
+#scenario-create-dialog .page-navigation .button-group .menu_button.danger:hover {
+  background-color: var(--error-hover-color, #a00);
+  border-color: var(--error-hover-color, #a00);
+}
 #scenario-create-dialog .questions-container {
   display: none;
   background: rgba(0, 0, 0, 0.1);
@@ -33,6 +76,32 @@
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
+  flex: 1;
+}
+#scenario-create-dialog .questions-container .button-group {
+  display: flex;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  border-radius: 6px;
+}
+#scenario-create-dialog .questions-container .button-group .menu_button {
+  min-width: auto;
+  padding: 6px 12px;
+  font-size: 0.9em;
+  height: 32px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+#scenario-create-dialog .questions-container .button-group .menu_button i {
+  font-size: 0.9em;
+}
+#scenario-create-dialog .questions-container .button-group .menu_button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 #scenario-create-dialog #page-tab-buttons {
   display: flex;
@@ -46,11 +115,18 @@
 }
 #scenario-create-dialog #page-tab-buttons .page-button-container .page-button {
   min-width: auto;
-  padding: 3px 12px;
+  padding: 6px 12px;
   font-size: 0.9em;
-  margin: 0 1px;
-  height: 26px;
+  height: 32px;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+#scenario-create-dialog #page-tab-buttons .page-button-container .page-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 #scenario-create-dialog #page-tab-buttons .page-button-container .page-button.active {
   background-color: var(--accent-color);
@@ -60,20 +136,32 @@
 }
 #scenario-create-dialog .tab-button {
   min-width: auto;
-  padding: 3px 8px;
+  padding: 6px 12px;
   font-size: 0.9em;
-  margin: 0 1px;
-  height: 26px;
+  height: 32px;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+#scenario-create-dialog .tab-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 #scenario-create-dialog .tab-button.question {
   height: 52px;
+  padding: 6px 16px;
 }
 #scenario-create-dialog .tab-button.active {
   background-color: var(--accent-color);
   border-color: var(--accent-color);
   color: var(--white-90);
   font-weight: 500;
+}
+#scenario-create-dialog .tab-button.active:hover {
+  background-color: var(--hover-color, #405060);
+  border-color: var(--hover-color, #405060);
 }
 #scenario-create-dialog #add-question-btn {
   margin-left: 8px;

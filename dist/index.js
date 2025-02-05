@@ -3722,9 +3722,9 @@ function setupTabFunctionality(popup) {
         switchTab(tabId);
     });
     // Handle page reordering with global move buttons
-    popup.on('click', '#move-page-up-btn, #move-page-down-btn', function (e) {
+    popup.on('click', '#move-page-left-btn, #move-page-right-btn', function (e) {
         e.preventDefault();
-        const isUp = $(this).attr('id') === 'move-page-up-btn';
+        const isUp = $(this).attr('id') === 'move-page-left-btn';
         // Find active page
         const activePageButton = popup.find('.page-button.active');
         if (!activePageButton.length)
@@ -4312,9 +4312,9 @@ function setupPopupHandlers() {
  * Sets up question reordering functionality
  */
 function setupQuestionReordering(popup) {
-    popup.on('click', '#move-question-up-btn, #move-question-down-btn', function (e) {
+    popup.on('click', '#move-question-left-btn, #move-question-right-btn', function (e) {
         e.preventDefault();
-        const isUp = $(this).attr('id') === 'move-question-up-btn';
+        const isUp = $(this).attr('id') === 'move-question-left-btn';
         // Find active question tab
         const activeTab = popup.find('#dynamic-tab-buttons .tab-button.active');
         if (!activeTab.length)

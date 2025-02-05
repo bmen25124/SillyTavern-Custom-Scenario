@@ -118,9 +118,9 @@ function setupPopupHandlers() {
  * Sets up question reordering functionality
  */
 function setupQuestionReordering(popup: JQuery<HTMLElement>) {
-  popup.on('click', '#move-question-up-btn, #move-question-down-btn', function (e) {
+  popup.on('click', '#move-question-left-btn, #move-question-right-btn', function (e) {
     e.preventDefault();
-    const isUp = $(this).attr('id') === 'move-question-up-btn';
+    const isUp = $(this).attr('id') === 'move-question-left-btn';
 
     // Find active question tab
     const activeTab = popup.find('#dynamic-tab-buttons .tab-button.active');
