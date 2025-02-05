@@ -49,9 +49,7 @@
         .page-button-container {
             display: flex;
             gap: 2px;
-            cursor: move;
             position: relative;
-            transition: transform 0.15s ease-in-out;
 
             .page-button {
                 min-width: auto;
@@ -66,51 +64,6 @@
                     border-color: var(--accent-color);
                     color: var(--white-90);
                     font-weight: 500;
-                }
-            }
-
-            &.dragging {
-                opacity: 0.6;
-                .page-button {
-                    background: var(--accent-color);
-                }
-            }
-
-            &.placeholder {
-                opacity: 0.6;
-
-                .page-button {
-                    border: 2px dashed var(--accent-color);
-                    background: var(--background-color);
-                    color: var(--accent-color);
-                    font-style: italic;
-                }
-            }
-
-            &.drop-before::before,
-            &.drop-after::after {
-                content: '';
-                position: absolute;
-                left: -4px;
-                right: -4px;
-                height: 3px;
-                background: var(--accent-color);
-                pointer-events: none;
-                border-radius: 3px;
-                box-shadow: 0 0 5px rgba(var(--accent-color-rgb), 0.5);
-            }
-
-            &.drop-before {
-                transform: translateY(2px);
-                &::before {
-                    top: -4px;
-                }
-            }
-
-            &.drop-after {
-                transform: translateY(-2px);
-                &::after {
-                    bottom: -4px;
                 }
             }
         }
@@ -156,55 +109,6 @@
     .tab-button-container {
         display: flex;
         gap: 2px;
-        cursor: move;
-        position: relative;
-        transition: transform 0.15s ease-in-out;
-
-        &.dragging {
-            opacity: 0.6;
-            .tab-button {
-                background: var(--accent-color);
-            }
-        }
-
-        &.placeholder {
-            opacity: 0.6;
-
-            .tab-button {
-                border: 2px dashed var(--accent-color);
-                background: var(--background-color);
-                color: var(--accent-color);
-                height: 52px;
-                font-style: italic;
-            }
-        }
-
-        &.drop-before::before,
-        &.drop-after::after {
-            content: '';
-            position: absolute;
-            left: -4px;
-            right: -4px;
-            height: 3px;
-            background: var(--accent-color);
-            pointer-events: none;
-            border-radius: 3px;
-            box-shadow: 0 0 5px rgba(var(--accent-color-rgb), 0.5);
-        }
-
-        &.drop-before {
-            transform: translateY(2px);
-            &::before {
-                top: -4px;
-            }
-        }
-
-        &.drop-after {
-            transform: translateY(-2px);
-            &::after {
-                bottom: -4px;
-            }
-        }
     }
 
     .remove-input-btn {

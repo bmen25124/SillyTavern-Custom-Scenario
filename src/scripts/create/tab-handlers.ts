@@ -23,120 +23,55 @@ export function setupTabFunctionality(popup: JQuery<HTMLElement>) {
     switchTab(tabId);
   });
 
-  // Page button handling
-  // Enable drag and drop for page buttons
-  popup.find('#page-tab-buttons').on('mouseenter', '.page-button-container', function () {
-    $(this).attr('draggable', 'true');
-  });
-
-  let draggedItem: HTMLElement | null = null;
-  let originalIndex: number = -1;
-
-  popup.on('dragstart', '.page-button-container', function (e) {
-    draggedItem = this;
-    originalIndex = $(this).index();
-    e.originalEvent?.dataTransfer?.setData('text/plain', '');
-    $(this).addClass('dragging');
-  });
-
-  popup.on('dragend', '.page-button-container', function () {
-    $(this).removeClass('dragging');
-    draggedItem = null;
-  });
-
-  // Create placeholder
-  const placeholder = $(
-    '<div class="page-button-container placeholder"><button class="page-button-placeholder menu_button">Drop Here</button></div>',
-  );
-  placeholder.hide();
-
-  popup.on('dragover', '.page-button-container', function (e) {
+  // Handle page reordering with global move buttons
+  popup.on('click', '#move-page-up-btn, #move-page-down-btn', function (e) {
     e.preventDefault();
-    if (!draggedItem || draggedItem === this) return;
+    const isUp = $(this).attr('id') === 'move-page-up-btn';
 
-    const rect = this.getBoundingClientRect();
-    const dropPosition = e.originalEvent!.clientY - rect.top > rect.height / 2 ? 'after' : 'before';
+    // Find active page
+    const activePageButton = popup.find('.page-button.active');
+    if (!activePageButton.length) return;
 
-    // Remove drop indicators
-    popup.find('.page-button-container').removeClass('drop-before drop-after');
-    $(this).addClass(`drop-${dropPosition}`);
+    const container = activePageButton.closest('.page-button-container');
+    const sibling = isUp ? container.prev('.page-button-container') : container.next('.page-button-container');
 
-    // Position placeholder
-    if (dropPosition === 'before') {
-      $(this).before(placeholder);
+    if (sibling.length === 0) return; // Can't move further
+
+    // Get the page numbers
+    const pageNum = parseInt(activePageButton.data('page'));
+    const siblingPageNum = parseInt(sibling.find('.page-button').data('page'));
+
+    // Swap page numbers in DOM
+    activePageButton.text(`Page ${siblingPageNum}`).attr('data-page', siblingPageNum).data('page', siblingPageNum);
+
+    sibling.find('.page-button').text(`Page ${pageNum}`).attr('data-page', pageNum).data('page', pageNum);
+
+    // Move the container
+    if (isUp) {
+      container.insertBefore(sibling);
     } else {
-      $(this).after(placeholder);
+      container.insertAfter(sibling);
     }
-    placeholder.show();
 
-    // Live preview: Update questions during drag
+    // Move associated questions
     const questions = popup.find('#questions-container');
-    const draggedPageNum = parseInt($(draggedItem).find('.page-button').data('page'));
-    const targetPageNum = parseInt($(this).find('.page-button').data('page'));
-    const draggedQuestions = questions.find(`.tab-button-container[data-page="${draggedPageNum}"]`);
-    const targetQuestions = questions.find(`.tab-button-container[data-page="${targetPageNum}"]`);
+    const movedQuestions = questions.find(`.tab-button-container[data-page="${pageNum}"]`);
+    const siblingQuestions = questions.find(`.tab-button-container[data-page="${siblingPageNum}"]`);
 
-    if (dropPosition === 'before' && targetQuestions.length) {
-      targetQuestions.first().before(draggedQuestions);
-    } else if (targetQuestions.length) {
-      targetQuestions.last().after(draggedQuestions);
-    }
-  });
+    // Update question page numbers
+    movedQuestions.attr('data-page', siblingPageNum).data('page', siblingPageNum);
+    siblingQuestions.attr('data-page', pageNum).data('page', pageNum);
 
-  popup.on('dragleave', '.page-button-container', function (e) {
-    const event = e.originalEvent as DragEvent;
-    if (!event.relatedTarget || !(event.relatedTarget instanceof Element) || !$.contains(this, event.relatedTarget)) {
-      $(this).removeClass('drop-before drop-after');
-      placeholder.hide();
-    }
-  });
-
-  popup.on('drop', '.page-button-container', function (e) {
-    e.preventDefault();
-
-    // Remove indicators
-    $(this).removeClass('drop-before drop-after');
-    placeholder.hide();
-
-    if (!draggedItem || draggedItem === this) return;
-
-    const dropTarget = this;
-    const rect = dropTarget.getBoundingClientRect();
-    const dropAfter = e.originalEvent!.clientY - rect.top > rect.height / 2;
-
-    // Update page button positions
-    if (dropAfter) {
-      $(dropTarget).after(draggedItem);
-    } else {
-      $(dropTarget).before(draggedItem);
-    }
-
-    // Build mapping from old page numbers to new ones
-    const pageMap = new Map<number, number>();
-    const pageButtons = popup.find('#page-tab-buttons .page-button-container:not(.placeholder) .page-button');
-
-    pageButtons.each(function (index) {
-      const oldPageNum = parseInt($(this).data('page'));
-      pageMap.set(oldPageNum, index + 1);
-    });
-
-    // First update all questions to use new page numbers
-    const questions = popup.find('#questions-container');
-    questions.find('.tab-button-container').each(function () {
-      const oldPageNum = parseInt($(this).attr('data-page') || '0');
-      if (oldPageNum > 0) {
-        const newPageNum = pageMap.get(oldPageNum)!;
-        $(this).attr('data-page', newPageNum).data('page', newPageNum);
+    // Move questions in DOM
+    if (movedQuestions.length && siblingQuestions.length) {
+      if (isUp) {
+        siblingQuestions.first().before(movedQuestions);
+      } else {
+        siblingQuestions.last().after(movedQuestions);
       }
-    });
+    }
 
-    // Then update all page buttons
-    pageButtons.each(function (index) {
-      const newPageNum = index + 1;
-      $(this).text(`Page ${newPageNum}`).attr('data-page', newPageNum).data('page', newPageNum);
-    });
-
-    // Save current state before switching tabs
+    // Save current state
     const currentData = getScenarioCreateDataFromUI(popup);
     saveScenarioCreateData(currentData);
   });

@@ -3721,101 +3721,48 @@ function setupTabFunctionality(popup) {
         saveScenarioCreateData(currentData);
         switchTab(tabId);
     });
-    // Page button handling
-    // Enable drag and drop for page buttons
-    popup.find('#page-tab-buttons').on('mouseenter', '.page-button-container', function () {
-        $(this).attr('draggable', 'true');
-    });
-    let draggedItem = null;
-    popup.on('dragstart', '.page-button-container', function (e) {
-        draggedItem = this;
-        $(this).index();
-        e.originalEvent?.dataTransfer?.setData('text/plain', '');
-        $(this).addClass('dragging');
-    });
-    popup.on('dragend', '.page-button-container', function () {
-        $(this).removeClass('dragging');
-        draggedItem = null;
-    });
-    // Create placeholder
-    const placeholder = $('<div class="page-button-container placeholder"><button class="page-button-placeholder menu_button">Drop Here</button></div>');
-    placeholder.hide();
-    popup.on('dragover', '.page-button-container', function (e) {
+    // Handle page reordering with global move buttons
+    popup.on('click', '#move-page-up-btn, #move-page-down-btn', function (e) {
         e.preventDefault();
-        if (!draggedItem || draggedItem === this)
+        const isUp = $(this).attr('id') === 'move-page-up-btn';
+        // Find active page
+        const activePageButton = popup.find('.page-button.active');
+        if (!activePageButton.length)
             return;
-        const rect = this.getBoundingClientRect();
-        const dropPosition = e.originalEvent.clientY - rect.top > rect.height / 2 ? 'after' : 'before';
-        // Remove drop indicators
-        popup.find('.page-button-container').removeClass('drop-before drop-after');
-        $(this).addClass(`drop-${dropPosition}`);
-        // Position placeholder
-        if (dropPosition === 'before') {
-            $(this).before(placeholder);
+        const container = activePageButton.closest('.page-button-container');
+        const sibling = isUp ? container.prev('.page-button-container') : container.next('.page-button-container');
+        if (sibling.length === 0)
+            return; // Can't move further
+        // Get the page numbers
+        const pageNum = parseInt(activePageButton.data('page'));
+        const siblingPageNum = parseInt(sibling.find('.page-button').data('page'));
+        // Swap page numbers in DOM
+        activePageButton.text(`Page ${siblingPageNum}`).attr('data-page', siblingPageNum).data('page', siblingPageNum);
+        sibling.find('.page-button').text(`Page ${pageNum}`).attr('data-page', pageNum).data('page', pageNum);
+        // Move the container
+        if (isUp) {
+            container.insertBefore(sibling);
         }
         else {
-            $(this).after(placeholder);
+            container.insertAfter(sibling);
         }
-        placeholder.show();
-        // Live preview: Update questions during drag
+        // Move associated questions
         const questions = popup.find('#questions-container');
-        const draggedPageNum = parseInt($(draggedItem).find('.page-button').data('page'));
-        const targetPageNum = parseInt($(this).find('.page-button').data('page'));
-        const draggedQuestions = questions.find(`.tab-button-container[data-page="${draggedPageNum}"]`);
-        const targetQuestions = questions.find(`.tab-button-container[data-page="${targetPageNum}"]`);
-        if (dropPosition === 'before' && targetQuestions.length) {
-            targetQuestions.first().before(draggedQuestions);
-        }
-        else if (targetQuestions.length) {
-            targetQuestions.last().after(draggedQuestions);
-        }
-    });
-    popup.on('dragleave', '.page-button-container', function (e) {
-        const event = e.originalEvent;
-        if (!event.relatedTarget || !(event.relatedTarget instanceof Element) || !$.contains(this, event.relatedTarget)) {
-            $(this).removeClass('drop-before drop-after');
-            placeholder.hide();
-        }
-    });
-    popup.on('drop', '.page-button-container', function (e) {
-        e.preventDefault();
-        // Remove indicators
-        $(this).removeClass('drop-before drop-after');
-        placeholder.hide();
-        if (!draggedItem || draggedItem === this)
-            return;
-        const dropTarget = this;
-        const rect = dropTarget.getBoundingClientRect();
-        const dropAfter = e.originalEvent.clientY - rect.top > rect.height / 2;
-        // Update page button positions
-        if (dropAfter) {
-            $(dropTarget).after(draggedItem);
-        }
-        else {
-            $(dropTarget).before(draggedItem);
-        }
-        // Build mapping from old page numbers to new ones
-        const pageMap = new Map();
-        const pageButtons = popup.find('#page-tab-buttons .page-button-container:not(.placeholder) .page-button');
-        pageButtons.each(function (index) {
-            const oldPageNum = parseInt($(this).data('page'));
-            pageMap.set(oldPageNum, index + 1);
-        });
-        // First update all questions to use new page numbers
-        const questions = popup.find('#questions-container');
-        questions.find('.tab-button-container').each(function () {
-            const oldPageNum = parseInt($(this).attr('data-page') || '0');
-            if (oldPageNum > 0) {
-                const newPageNum = pageMap.get(oldPageNum);
-                $(this).attr('data-page', newPageNum).data('page', newPageNum);
+        const movedQuestions = questions.find(`.tab-button-container[data-page="${pageNum}"]`);
+        const siblingQuestions = questions.find(`.tab-button-container[data-page="${siblingPageNum}"]`);
+        // Update question page numbers
+        movedQuestions.attr('data-page', siblingPageNum).data('page', siblingPageNum);
+        siblingQuestions.attr('data-page', pageNum).data('page', pageNum);
+        // Move questions in DOM
+        if (movedQuestions.length && siblingQuestions.length) {
+            if (isUp) {
+                siblingQuestions.first().before(movedQuestions);
             }
-        });
-        // Then update all page buttons
-        pageButtons.each(function (index) {
-            const newPageNum = index + 1;
-            $(this).text(`Page ${newPageNum}`).attr('data-page', newPageNum).data('page', newPageNum);
-        });
-        // Save current state before switching tabs
+            else {
+                siblingQuestions.last().after(movedQuestions);
+            }
+        }
+        // Save current state
         const currentData = getScenarioCreateDataFromUI(popup);
         saveScenarioCreateData(currentData);
     });
@@ -4365,121 +4312,47 @@ function setupPopupHandlers() {
  * Sets up question reordering functionality
  */
 function setupQuestionReordering(popup) {
-    // Enable drag and drop for tab buttons
-    popup.find('#dynamic-tab-buttons').on('mouseenter', '.tab-button-container', function () {
-        $(this).attr('draggable', 'true');
-    });
-    let draggedItem = null;
-    // Handle both drag-drop and button clicks for reordering
-    popup.on('dragstart', '.tab-button-container', function (e) {
-        draggedItem = this;
-        $(this).index();
-        e.originalEvent?.dataTransfer?.setData('text/plain', '');
-        $(this).addClass('dragging');
-    });
-    popup.on('dragend', '.tab-button-container', function () {
-        $(this).removeClass('dragging');
-        draggedItem = null;
-    });
-    // Create placeholder element matching template structure
-    const placeholder = $('<div class="tab-button-container placeholder">' +
-        '<button class="tab-button menu_button question">Drop Here</button>' +
-        '<button class="remove-input-btn menu_button danger" title="Remove Question">🗑️</button>' +
-        '</div>');
-    placeholder.hide();
-    popup.on('dragover', '.tab-button-container', function (e) {
+    popup.on('click', '#move-question-up-btn, #move-question-down-btn', function (e) {
         e.preventDefault();
-        if (!draggedItem || draggedItem === this)
+        const isUp = $(this).attr('id') === 'move-question-up-btn';
+        // Find active question tab
+        const activeTab = popup.find('#dynamic-tab-buttons .tab-button.active');
+        if (!activeTab.length)
             return;
-        const rect = this.getBoundingClientRect();
-        const dropPosition = e.originalEvent.clientY - rect.top > rect.height / 2 ? 'after' : 'before';
-        // Remove drop indicators from all items
-        popup.find('.tab-button-container').removeClass('drop-before drop-after');
-        // Show drop indicator on current target
-        $(this).addClass(`drop-${dropPosition}`);
-        // Position placeholder
-        if (dropPosition === 'before') {
-            $(this).before(placeholder);
-        }
-        else {
-            $(this).after(placeholder);
-        }
-        placeholder.show();
-        // Update input preview position while dragging
-        const draggedTabId = $(draggedItem).find('.tab-button').data('tab');
-        const targetTabId = $(this).find('.tab-button').data('tab');
-        const dynamicInputsContainer = popup.find('#dynamic-inputs-container');
-        const draggedInputGroup = dynamicInputsContainer.find(`[data-tab="${draggedTabId}"]`);
-        const targetInputGroup = dynamicInputsContainer.find(`[data-tab="${targetTabId}"]`);
-        if (dropPosition === 'before') {
-            targetInputGroup.before(draggedInputGroup);
-        }
-        else {
-            targetInputGroup.after(draggedInputGroup);
-        }
-    });
-    popup.on('dragleave', '.tab-button-container', function (e) {
-        const event = e.originalEvent;
-        // Only remove indicators if we're not entering a child element
-        if (!event.relatedTarget || !(event.relatedTarget instanceof Element) || !$.contains(this, event.relatedTarget)) {
-            $(this).removeClass('drop-before drop-after');
-            placeholder.hide();
-        }
-    });
-    // Handle dragend to clean up and reattach event handlers
-    popup.on('dragend', function () {
-        popup.find('.tab-button-container').removeClass('drop-before drop-after dragging');
-        placeholder.hide();
-        // Reattach remove button handlers
-        popup.find('#dynamic-tab-buttons .tab-button-container').each(function () {
-            const container = $(this);
-            // Remove existing handler to prevent duplicates
-            container.find('.remove-input-btn').off('click');
-            // Reattach handler
-            setupRemoveButton(container, popup);
-        });
-    });
-    popup.on('drop', '.tab-button-container', function (e) {
-        e.preventDefault();
-        if (!draggedItem || draggedItem === this)
-            return;
+        const container = activeTab.closest('.tab-button-container');
+        const sibling = isUp ? container.prev('.tab-button-container') : container.next('.tab-button-container');
+        if (sibling.length === 0)
+            return; // Can't move further
         // Get page number and current data
-        const tabContainer = $(draggedItem);
-        const pageNumber = parseInt(tabContainer.attr('data-page')) || 1;
+        const pageNumber = parseInt(container.attr('data-page')) || 1;
         const data = getScenarioCreateDataFromUI(popup);
-        data.layout[pageNumber - 1] || [];
-        const dropTarget = this;
-        const rect = dropTarget.getBoundingClientRect();
-        const dropAfter = e.originalEvent.clientY - rect.top > rect.height / 2;
-        // Remove drop visual indicators
-        $(this).removeClass('drop-before drop-after');
         // Update DOM order
         const dynamicInputsContainer = popup.find('#dynamic-inputs-container');
         const dynamicTabButtons = popup.find('#dynamic-tab-buttons');
-        if (dropAfter) {
-            $(dropTarget).after(draggedItem);
+        if (isUp) {
+            container.insertBefore(sibling);
         }
         else {
-            $(dropTarget).before(draggedItem);
+            container.insertAfter(sibling);
         }
-        // Update input groups order to match tab order
+        // Move the corresponding input group
+        const tabId = activeTab.data('tab');
+        const inputGroup = dynamicInputsContainer.find(`[data-tab="${tabId}"]`);
+        const siblingTabId = sibling.find('.tab-button').data('tab');
+        const siblingInputGroup = dynamicInputsContainer.find(`[data-tab="${siblingTabId}"]`);
+        if (isUp) {
+            inputGroup.insertBefore(siblingInputGroup);
+        }
+        else {
+            inputGroup.insertAfter(siblingInputGroup);
+        }
+        // Update data layout
         const newOrder = dynamicTabButtons
             .children()
             .map(function () {
             return $(this).find('.tab-button').data('tab');
         })
             .get();
-        newOrder.forEach((tabId, index) => {
-            const inputGroup = dynamicInputsContainer.find(`[data-tab="${tabId}"]`);
-            if (index === 0) {
-                dynamicInputsContainer.prepend(inputGroup);
-            }
-            else {
-                const prevInput = dynamicInputsContainer.find(`[data-tab="${newOrder[index - 1]}"]`);
-                prevInput.after(inputGroup);
-            }
-        });
-        // Update data layout
         const newLayout = newOrder.map((tabId) => {
             const inputGroup = dynamicInputsContainer.find(`[data-tab="${tabId}"]`);
             const value = inputGroup.find('.input-id').val();
@@ -4487,14 +4360,6 @@ function setupQuestionReordering(popup) {
         });
         data.layout[pageNumber - 1] = newLayout;
         saveScenarioCreateData(data);
-        // Reattach handlers after all DOM updates are complete
-        popup.find('#dynamic-tab-buttons .tab-button-container').each(function () {
-            const container = $(this);
-            // Remove existing handler to prevent duplicates
-            container.find('.remove-input-btn').off('click');
-            // Reattach handler
-            setupRemoveButton(container, popup);
-        });
     });
 }
 /**

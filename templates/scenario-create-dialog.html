@@ -30,6 +30,8 @@
     <div class="flex-container page-navigation">
         <div class="flex-container">
             <div id="page-tab-buttons"></div>
+            <button id="move-page-up-btn" class="menu_button">↑</button>
+            <button id="move-page-down-btn" class="menu_button">↓</button>
             <button id="add-question-btn" class="menu_button">+ Add Question</button>
             <button id="add-page-btn" class="menu_button">+ Add Page</button>
             <button id="remove-page-btn" class="menu_button danger">- Remove Page</button>
@@ -38,7 +40,11 @@
 
     <!-- Questions Container -->
     <div id="questions-container" class="questions-container">
-        <div id="dynamic-tab-buttons" class="questions-tabs"></div>
+        <div class="flex-container">
+            <div id="dynamic-tab-buttons" class="questions-tabs"></div>
+            <button id="move-question-up-btn" class="menu_button">↑</button>
+            <button id="move-question-down-btn" class="menu_button">↓</button>
+        </div>
     </div>
 
     <!-- Tab Contents -->

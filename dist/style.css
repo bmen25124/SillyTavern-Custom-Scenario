@@ -42,9 +42,7 @@
 #scenario-create-dialog #page-tab-buttons .page-button-container {
   display: flex;
   gap: 2px;
-  cursor: move;
   position: relative;
-  transition: transform 0.15s ease-in-out;
 }
 #scenario-create-dialog #page-tab-buttons .page-button-container .page-button {
   min-width: auto;
@@ -59,44 +57,6 @@
   border-color: var(--accent-color);
   color: var(--white-90);
   font-weight: 500;
-}
-#scenario-create-dialog #page-tab-buttons .page-button-container.dragging {
-  opacity: 0.6;
-}
-#scenario-create-dialog #page-tab-buttons .page-button-container.dragging .page-button {
-  background: var(--accent-color);
-}
-#scenario-create-dialog #page-tab-buttons .page-button-container.placeholder {
-  opacity: 0.6;
-}
-#scenario-create-dialog #page-tab-buttons .page-button-container.placeholder .page-button {
-  border: 2px dashed var(--accent-color);
-  background: var(--background-color);
-  color: var(--accent-color);
-  font-style: italic;
-}
-#scenario-create-dialog #page-tab-buttons .page-button-container.drop-before::before, #scenario-create-dialog #page-tab-buttons .page-button-container.drop-after::after {
-  content: "";
-  position: absolute;
-  left: -4px;
-  right: -4px;
-  height: 3px;
-  background: var(--accent-color);
-  pointer-events: none;
-  border-radius: 3px;
-  box-shadow: 0 0 5px rgba(var(--accent-color-rgb), 0.5);
-}
-#scenario-create-dialog #page-tab-buttons .page-button-container.drop-before {
-  transform: translateY(2px);
-}
-#scenario-create-dialog #page-tab-buttons .page-button-container.drop-before::before {
-  top: -4px;
-}
-#scenario-create-dialog #page-tab-buttons .page-button-container.drop-after {
-  transform: translateY(-2px);
-}
-#scenario-create-dialog #page-tab-buttons .page-button-container.drop-after::after {
-  bottom: -4px;
 }
 #scenario-create-dialog .tab-button {
   min-width: auto;
@@ -132,48 +92,6 @@
 #scenario-create-dialog .tab-button-container {
   display: flex;
   gap: 2px;
-  cursor: move;
-  position: relative;
-  transition: transform 0.15s ease-in-out;
-}
-#scenario-create-dialog .tab-button-container.dragging {
-  opacity: 0.6;
-}
-#scenario-create-dialog .tab-button-container.dragging .tab-button {
-  background: var(--accent-color);
-}
-#scenario-create-dialog .tab-button-container.placeholder {
-  opacity: 0.6;
-}
-#scenario-create-dialog .tab-button-container.placeholder .tab-button {
-  border: 2px dashed var(--accent-color);
-  background: var(--background-color);
-  color: var(--accent-color);
-  height: 52px;
-  font-style: italic;
-}
-#scenario-create-dialog .tab-button-container.drop-before::before, #scenario-create-dialog .tab-button-container.drop-after::after {
-  content: "";
-  position: absolute;
-  left: -4px;
-  right: -4px;
-  height: 3px;
-  background: var(--accent-color);
-  pointer-events: none;
-  border-radius: 3px;
-  box-shadow: 0 0 5px rgba(var(--accent-color-rgb), 0.5);
-}
-#scenario-create-dialog .tab-button-container.drop-before {
-  transform: translateY(2px);
-}
-#scenario-create-dialog .tab-button-container.drop-before::before {
-  top: -4px;
-}
-#scenario-create-dialog .tab-button-container.drop-after {
-  transform: translateY(-2px);
-}
-#scenario-create-dialog .tab-button-container.drop-after::after {
-  bottom: -4px;
 }
 #scenario-create-dialog .remove-input-btn {
   padding: 3px 8px;
