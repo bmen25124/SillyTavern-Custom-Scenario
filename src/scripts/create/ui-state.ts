@@ -1,6 +1,6 @@
 import { addQuestionToUI } from './question-handlers';
 import { updatePreview, updateQuestionPreview } from './preview-handlers';
-import { switchTab } from './tab-handlers';
+import { createPageButton, switchTab, togglePage } from './tab-handlers';
 import { updateQuestionScriptInputs, updateScriptInputs } from './script-handlers';
 import { FullExportData, ScenarioCreateData } from '../types';
 
@@ -19,6 +19,21 @@ export function applyScenarioCreateDataToUI(popup: JQuery<HTMLElement>, data: Sc
   popup.find('#scenario-creator-character-note').val(data.characterNote);
   popup.find('#scenario-creator-character-note-script').val(data.characterNoteScript);
 
+  // Clear existing page buttons
+  popup.find('#page-tab-buttons').empty();
+  popup.find('#dynamic-tab-buttons').empty();
+
+  // Find unique pages from layout
+  const pages = new Set<number>();
+  data.layout.forEach((_, index) => pages.add(index + 1));
+  if (data.questions.length > 0 && pages.size === 0) pages.add(1);
+
+  // Create page buttons
+  pages.forEach((pageNum) => {
+    const pageButton = createPageButton(pageNum);
+    popup.find('#page-tab-buttons').append(pageButton);
+  });
+
   // Sort questions based on layout array
   const sortedQuestions = [...data.questions].sort((a, b) => {
     const aPage = data.layout.findIndex((page) => page.includes(a.inputId)) + 1 || 1;
@@ -34,10 +49,21 @@ export function applyScenarioCreateDataToUI(popup: JQuery<HTMLElement>, data: Sc
   // Restore questions in sorted order
   sortedQuestions.forEach((question) => {
     addQuestionToUI(popup, question);
-    const questionGroup = popup.find(`.dynamic-input-group[data-tab="question-${question.id}"]`);
     const pageNumber = data.layout.findIndex((page) => page.includes(question.inputId)) + 1 || 1;
-    questionGroup.find('.input-page').val(pageNumber);
+
+    // Update tab button container with page attribute
+    const tabButton = popup.find(`.tab-button-container:has([data-tab="question-${question.id}"])`);
+    tabButton.attr('data-page', pageNumber);
   });
+
+  // Show questions container if there are questions
+  if (sortedQuestions.length > 0) {
+    popup.find('#questions-container').addClass('active');
+    // Show first page by default
+    if (pages.size > 0) {
+      togglePage(Math.min(...Array.from(pages)));
+    }
+  }
 
   // Create/update
   updateScriptInputs(popup, 'description');

@@ -3,7 +3,7 @@ import { setupOptionHandlers, setupAddOptionButton, updateDefaultOptions } from 
 import { updateQuestionScriptInputs, updateScriptInputs } from './script-handlers';
 import { updateQuestionPreview } from './preview-handlers';
 import { getScenarioCreateDataFromUI, saveScenarioCreateData } from './data-handlers';
-import { switchTab } from './tab-handlers';
+import { getCurrentPage, switchTab } from './tab-handlers';
 import { Question } from '../types';
 
 /**
@@ -79,7 +79,8 @@ export function addQuestionToUI(popup: JQuery<HTMLElement>, question: Question) 
   const tabHtml = tabButtonTemplate
     .html()
     .replace(/{id}/g, question.id)
-    .replace(/{number}/g, question.inputId || 'unnamed');
+    .replace(/{number}/g, question.inputId || 'unnamed')
+    .replace(/{page}/g, getCurrentPage().toString());
 
   const newInput = $(inputTemplate.html().replace(/{id}/g, question.id));
 
@@ -157,7 +158,7 @@ export function addQuestionToUI(popup: JQuery<HTMLElement>, question: Question) 
  * Sets up dynamic input functionality
  */
 export function setupDynamicInputs(popup: JQuery<HTMLElement>) {
-  const addInputBtn = popup.find('#add-input-btn');
+  const addInputBtn = popup.find('#add-question-btn');
 
   addInputBtn.on('click', () => {
     const id = st_uuidv4();

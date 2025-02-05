@@ -3,7 +3,7 @@
 }
 
 #scenario-create-dialog {
-    .tab-navigation {
+    .tab-navigation, .page-navigation {
         gap: 5px;
         margin-bottom: 10px;
         flex-wrap: wrap;
@@ -14,6 +14,54 @@
             border-radius: 6px;
             display: flex;
             align-items: center;
+        }
+    }
+
+    .page-navigation {
+        margin-top: 20px;
+        border-top: 1px solid var(--accent-color);
+        padding-top: 10px;
+    }
+
+    .questions-container {
+        display: none;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 10px;
+
+        &.active {
+            display: block;
+        }
+
+        .questions-tabs {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+    }
+
+    #page-tab-buttons {
+        display: flex;
+        .page-button-container {
+            display: flex;
+            gap: 2px;
+
+            .page-button {
+                min-width: auto;
+                padding: 3px 12px;
+                font-size: 0.9em;
+                margin: 0 1px;
+                height: 26px;
+                line-height: 1;
+
+                &.active {
+                    background-color: var(--accent-color);
+                    border-color: var(--accent-color);
+                    color: var(--white-90);
+                    font-weight: 500;
+                }
+            }
         }
     }
 
@@ -36,7 +84,7 @@
         font-weight: 500;
     }
 
-    #add-input-btn {
+    #add-question-btn {
         margin-left: 8px;
     }
 
@@ -51,7 +99,7 @@
     #dynamic-tab-buttons {
         display: flex;
         gap: 5px;
-        flex-wrap: inherit;
+        flex-wrap: wrap;
     }
 
     .tab-button-container {

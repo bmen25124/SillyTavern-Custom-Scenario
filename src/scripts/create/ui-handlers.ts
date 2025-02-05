@@ -212,8 +212,8 @@ function setupQuestionReordering(popup: JQuery<HTMLElement>) {
     if (!draggedItem || draggedItem === this) return;
 
     // Get page number and current data
-    const questionGroup = $(draggedItem).find('.tab-button').data('tab');
-    const pageNumber = parseInt(popup.find(`[data-tab="${questionGroup}"]`).find('.input-page').val() as string) || 1;
+    const tabContainer = $(draggedItem);
+    const pageNumber = parseInt(tabContainer.attr('data-page') as string) || 1;
     const data = getScenarioCreateDataFromUI(popup);
     const currentPage = data.layout[pageNumber - 1] || [];
 

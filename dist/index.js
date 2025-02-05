@@ -3363,60 +3363,64 @@ function getScenarioCreateDataFromUI(popup) {
     data.characterNoteScript = popup.find('#scenario-creator-character-note-script').val() || '';
     // Get questions data and build layout
     data.questions = [];
-    const questionsByPage = new Map(); // page number -> {inputId, order}[]
-    popup.find('.dynamic-input-group').each(function () {
-        const question = {
-            id: $(this).data('tab').replace('question-', ''),
-            // @ts-ignore
-            inputId: $(this).find('.input-id').val(),
-            // @ts-ignore
-            text: $(this).find('.input-question').val(),
-            // @ts-ignore
-            script: $(this).find('.question-script').val() || '',
-            // @ts-ignore
-            type: $(this).find('.input-type-select').val(),
-            defaultValue: '',
-            required: $(this).find('.input-required').prop('checked'),
-            // @ts-ignore
-            showScript: $(this).find('.show-script').val() || '',
-        };
-        // @ts-ignore
-        const pageNumber = parseInt($(this).find('.input-page').val()) || 1;
-        switch (question.type) {
-            case 'checkbox':
-                question.defaultValue = $(this).find('.input-default-checkbox').prop('checked');
-                break;
-            case 'select':
+    data.layout = [];
+    // Get all pages from page buttons
+    const pageNumbers = popup
+        .find('.page-button')
+        .map(function () {
+        return $(this).data('page');
+    })
+        .get();
+    // For each page, find its questions in order
+    pageNumbers.forEach((pageNum) => {
+        const pageQuestions = [];
+        // Find all tab containers for this page
+        popup.find(`.tab-button-container[data-page="${pageNum}"]`).each(function () {
+            const questionId = $(this).find('.tab-button').data('tab').replace('question-', '');
+            const questionGroup = popup.find(`.dynamic-input-group[data-tab="question-${questionId}"]`);
+            const question = {
+                id: questionId,
                 // @ts-ignore
-                question.defaultValue = $(this).find('.select-default').val();
-                question.options = [];
-                $(this)
-                    .find('.option-item')
-                    .each(function () {
+                inputId: questionGroup.find('.input-id').val(),
+                // @ts-ignore
+                text: questionGroup.find('.input-question').val(),
+                // @ts-ignore
+                script: questionGroup.find('.question-script').val() || '',
+                // @ts-ignore
+                type: questionGroup.find('.input-type-select').val(),
+                defaultValue: '',
+                required: questionGroup.find('.input-required').prop('checked'),
+                // @ts-ignore
+                showScript: questionGroup.find('.show-script').val() || '',
+            };
+            switch (question.type) {
+                case 'checkbox':
+                    question.defaultValue = questionGroup.find('.input-default-checkbox').prop('checked');
+                    break;
+                case 'select':
                     // @ts-ignore
-                    question.options.push({
+                    question.defaultValue = questionGroup.find('.select-default').val();
+                    question.options = [];
+                    questionGroup.find('.option-item').each(function () {
                         // @ts-ignore
-                        value: $(this).find('.option-value').val(),
-                        // @ts-ignore
-                        label: $(this).find('.option-label').val(),
+                        question.options.push({
+                            // @ts-ignore
+                            value: $(this).find('.option-value').val(),
+                            // @ts-ignore
+                            label: $(this).find('.option-label').val(),
+                        });
                     });
-                });
-                break;
-            default:
-                // @ts-ignore
-                question.defaultValue = $(this).find('.input-default').val();
-        }
-        data.questions.push(question);
-        // Group questions by page number (order is determined by DOM order)
-        if (!questionsByPage.has(pageNumber)) {
-            questionsByPage.set(pageNumber, []);
-        }
-        questionsByPage.get(pageNumber).push(question.inputId);
+                    break;
+                default:
+                    // @ts-ignore
+                    question.defaultValue = questionGroup.find('.input-default').val();
+            }
+            data.questions.push(question);
+            pageQuestions.push(question.inputId);
+        });
+        // Add this page's questions to layout
+        data.layout.push(pageQuestions);
     });
-    // Convert page map to layout array, preserving DOM order
-    data.layout = Array.from(questionsByPage.keys())
-        .sort((a, b) => a - b) // Sort page numbers
-        .map((pageNum) => questionsByPage.get(pageNum)); // Use array order to maintain question order
     return data;
 }
 /**
@@ -3702,16 +3706,67 @@ function updateQuestionScriptInputs(questionGroup) {
     });
 }
 
+const CORE_TABS = ['description', 'first-message', 'scenario', 'personality', 'character-note'];
 /**
  * Sets up tab switching functionality with auto-save
  */
 function setupTabFunctionality(popup) {
+    // Core tab handling
     popup.on('click', '.tab-button', function () {
         const tabId = $(this).data('tab');
+        if (!tabId)
+            return;
         // Save current state before switching tabs
         const currentData = getScenarioCreateDataFromUI(popup);
         saveScenarioCreateData(currentData);
         switchTab(tabId);
+    });
+    // Page button handling
+    popup.on('click', '.page-button', function () {
+        const pageNum = $(this).data('page');
+        if (!pageNum)
+            return;
+        togglePage(pageNum);
+    });
+    // Add page button handling
+    popup.on('click', '#add-page-btn', function () {
+        const pageButtons = popup.find('.page-button');
+        const newPageNum = pageButtons.length + 1;
+        const newPageButton = createPageButton(newPageNum);
+        // Add the new page button
+        popup.find('#page-tab-buttons').append(newPageButton);
+        // Switch to the new page
+        togglePage(newPageNum);
+        // Save the current state
+        const currentData = getScenarioCreateDataFromUI(popup);
+        if (!currentData.layout[newPageNum - 1]) {
+            currentData.layout[newPageNum - 1] = [];
+        }
+        saveScenarioCreateData(currentData);
+    });
+    // Remove page button handling
+    popup.on('click', '#remove-page-btn', function () {
+        const currentPage = getCurrentPage();
+        if (!currentPage)
+            return;
+        // Check if the current page has any questions
+        const questionTabs = popup.find(`.tab-button-container[data-page="${currentPage}"]`);
+        if (questionTabs.length > 0) {
+            alert('Cannot remove a page that contains questions. Please move or delete the questions first.');
+            return;
+        }
+        // Get the current state
+        const currentData = getScenarioCreateDataFromUI(popup);
+        // Remove the page from layout
+        currentData.layout.splice(currentPage - 1, 1);
+        saveScenarioCreateData(currentData);
+        // Remove the page button
+        popup.find(`.page-button[data-page="${currentPage}"]`).parent().remove();
+        // Renumber remaining pages
+        renumberPages(popup, currentPage);
+        // Switch to the previous page or page 1
+        const newPage = Math.max(1, currentPage - 1);
+        togglePage(newPage);
     });
     // Initial state
     switchTab('description');
@@ -3726,25 +3781,89 @@ function setupAccordion(popup) {
     });
 }
 /**
- * Switches to the specified tab
+ * Gets the current active page number
+ */
+function getCurrentPage() {
+    const activePageButton = $('.page-button.active');
+    return activePageButton.length ? parseInt(activePageButton.data('page')) : 1;
+}
+/**
+ * Renumbers pages after a page is removed
+ * @param popup The popup jQuery element
+ * @param removedPageNumber The number of the page that was removed
+ */
+function renumberPages(popup, removedPageNumber) {
+    // First, update questions from the higher pages to have correct page numbers
+    for (let i = removedPageNumber + 1; i <= popup.find('.page-button').length + 1; i++) {
+        // Move questions from higher pages down one number
+        const questionsToUpdate = popup.find(`.tab-button-container[data-page="${i}"]`);
+        questionsToUpdate.attr('data-page', i - 1);
+    }
+    // Then update the page buttons
+    popup.find('.page-button').each(function (index) {
+        const newPageNum = index + 1;
+        const pageButton = $(this);
+        // Update button text and data attribute
+        pageButton.text(`Page ${newPageNum}`).attr('data-page', newPageNum).data('page', newPageNum);
+    });
+}
+/**
+ * Toggles visibility of questions for a specific page
+ */
+function togglePage(pageNum) {
+    const popup = $('#scenario-create-dialog');
+    const container = popup.find('#questions-container');
+    const pageButton = popup.find(`.page-button[data-page="${pageNum}"]`);
+    const questionTabs = popup.find(`.tab-button-container[data-page="${pageNum}"]`);
+    // Toggle active state for page button
+    popup.find('.page-button').removeClass('active');
+    pageButton.addClass('active');
+    // Toggle visibility of questions
+    container.find('.tab-button-container').hide();
+    questionTabs.show();
+    // If there's no active question tab visible, activate the first one
+    const activeTab = container.find('.tab-button.active');
+    if (!activeTab.length || !activeTab.closest('.tab-button-container').is(':visible')) {
+        const firstVisibleTab = questionTabs.first().find('.tab-button');
+        if (firstVisibleTab.length) {
+            switchTab(firstVisibleTab.data('tab'));
+        }
+    }
+    // Save current state before switching tabs
+    const currentData = getScenarioCreateDataFromUI(popup);
+    saveScenarioCreateData(currentData);
+}
+/**
+ * Switches to the specified tab. It is only for core and question tabs. Not page.
  */
 function switchTab(tabId) {
     const popup = $('#scenario-create-dialog');
-    popup.find('.tab-button').removeClass('active');
-    popup.find('.tab-content').removeClass('active');
-    popup.find(`.tab-button[data-tab="${tabId}"]`).addClass('active');
-    popup.find(`.tab-content[data-tab="${tabId}"]`).addClass('active');
+    const $popup = popup;
+    $popup.find('.tab-button').removeClass('active');
+    $popup.find('.tab-content').removeClass('active');
+    $popup.find(`.tab-button[data-tab="${tabId}"]`).addClass('active');
+    $popup.find(`.tab-content[data-tab="${tabId}"]`).addClass('active');
     // Update script inputs based on active tab
-    if (tabId === 'description' ||
-        tabId === 'first-message' ||
-        tabId === 'scenario' ||
-        tabId === 'personality' ||
-        tabId === 'character-note') {
-        updateScriptInputs(popup, tabId);
+    if (CORE_TABS.includes(tabId)) {
+        updateScriptInputs($popup, tabId);
     }
     else {
-        updateQuestionScriptInputs(popup.find(`.dynamic-input-group[data-tab="${tabId}"]`));
+        updateQuestionScriptInputs($popup.find(`.dynamic-input-group[data-tab="${tabId}"]`));
     }
+}
+/**
+ * Creates a new page button
+ */
+function createPageButton(pageNum) {
+    const template = document.querySelector('#page-button-template');
+    if (!template)
+        throw new Error('Page button template not found');
+    const content = template.content.cloneNode(true);
+    const container = content.querySelector('.page-button-container');
+    if (!container)
+        throw new Error('Page button container not found in template');
+    const buttonHtml = container.outerHTML.replace(/\{page\}/g, pageNum.toString());
+    return $(buttonHtml);
 }
 
 /**
@@ -3861,7 +3980,8 @@ function addQuestionToUI(popup, question) {
     const tabHtml = tabButtonTemplate
         .html()
         .replace(/{id}/g, question.id)
-        .replace(/{number}/g, question.inputId || 'unnamed');
+        .replace(/{number}/g, question.inputId || 'unnamed')
+        .replace(/{page}/g, getCurrentPage().toString());
     const newInput = $(inputTemplate.html().replace(/{id}/g, question.id));
     // Set values
     newInput.find('.input-id').val(question.inputId);
@@ -3924,7 +4044,7 @@ function addQuestionToUI(popup, question) {
  * Sets up dynamic input functionality
  */
 function setupDynamicInputs(popup) {
-    const addInputBtn = popup.find('#add-input-btn');
+    const addInputBtn = popup.find('#add-question-btn');
     addInputBtn.on('click', () => {
         const id = st_uuidv4();
         const question = {
@@ -3983,6 +4103,19 @@ function applyScenarioCreateDataToUI(popup, data) {
     popup.find('#scenario-creator-personality-script').val(data.personalityScript);
     popup.find('#scenario-creator-character-note').val(data.characterNote);
     popup.find('#scenario-creator-character-note-script').val(data.characterNoteScript);
+    // Clear existing page buttons
+    popup.find('#page-tab-buttons').empty();
+    popup.find('#dynamic-tab-buttons').empty();
+    // Find unique pages from layout
+    const pages = new Set();
+    data.layout.forEach((_, index) => pages.add(index + 1));
+    if (data.questions.length > 0 && pages.size === 0)
+        pages.add(1);
+    // Create page buttons
+    pages.forEach((pageNum) => {
+        const pageButton = createPageButton(pageNum);
+        popup.find('#page-tab-buttons').append(pageButton);
+    });
     // Sort questions based on layout array
     const sortedQuestions = [...data.questions].sort((a, b) => {
         const aPage = data.layout.findIndex((page) => page.includes(a.inputId)) + 1 || 1;
@@ -3997,10 +4130,19 @@ function applyScenarioCreateDataToUI(popup, data) {
     // Restore questions in sorted order
     sortedQuestions.forEach((question) => {
         addQuestionToUI(popup, question);
-        const questionGroup = popup.find(`.dynamic-input-group[data-tab="question-${question.id}"]`);
         const pageNumber = data.layout.findIndex((page) => page.includes(question.inputId)) + 1 || 1;
-        questionGroup.find('.input-page').val(pageNumber);
+        // Update tab button container with page attribute
+        const tabButton = popup.find(`.tab-button-container:has([data-tab="question-${question.id}"])`);
+        tabButton.attr('data-page', pageNumber);
     });
+    // Show questions container if there are questions
+    if (sortedQuestions.length > 0) {
+        popup.find('#questions-container').addClass('active');
+        // Show first page by default
+        if (pages.size > 0) {
+            togglePage(Math.min(...Array.from(pages)));
+        }
+    }
     // Create/update
     updateScriptInputs(popup, 'description');
     updateScriptInputs(popup, 'first-message');
@@ -4204,8 +4346,8 @@ function setupQuestionReordering(popup) {
         if (!draggedItem || draggedItem === this)
             return;
         // Get page number and current data
-        const questionGroup = $(draggedItem).find('.tab-button').data('tab');
-        const pageNumber = parseInt(popup.find(`[data-tab="${questionGroup}"]`).find('.input-page').val()) || 1;
+        const tabContainer = $(draggedItem);
+        const pageNumber = parseInt(tabContainer.attr('data-page')) || 1;
         const data = getScenarioCreateDataFromUI(popup);
         data.layout[pageNumber - 1] || [];
         const dropTarget = this;

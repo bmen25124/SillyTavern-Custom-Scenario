@@ -323,38 +323,50 @@ export function getScenarioCreateDataFromUI(popup: JQuery<HTMLElement>): Scenari
 
   // Get questions data and build layout
   data.questions = [];
-  const questionsByPage = new Map(); // page number -> {inputId, order}[]
+  data.layout = [];
 
-  popup.find('.dynamic-input-group').each(function () {
-    const question: Question = {
-      id: $(this).data('tab').replace('question-', ''),
-      // @ts-ignore
-      inputId: $(this).find('.input-id').val(),
-      // @ts-ignore
-      text: $(this).find('.input-question').val(),
-      // @ts-ignore
-      script: $(this).find('.question-script').val() || '',
-      // @ts-ignore
-      type: $(this).find('.input-type-select').val(),
-      defaultValue: '',
-      required: $(this).find('.input-required').prop('checked'),
-      // @ts-ignore
-      showScript: $(this).find('.show-script').val() || '',
-    };
-    // @ts-ignore
-    const pageNumber = parseInt($(this).find('.input-page').val()) || 1;
+  // Get all pages from page buttons
+  const pageNumbers = popup
+    .find('.page-button')
+    .map(function () {
+      return $(this).data('page');
+    })
+    .get();
 
-    switch (question.type) {
-      case 'checkbox':
-        question.defaultValue = $(this).find('.input-default-checkbox').prop('checked');
-        break;
-      case 'select':
+  // For each page, find its questions in order
+  pageNumbers.forEach((pageNum) => {
+    const pageQuestions: string[] = [];
+
+    // Find all tab containers for this page
+    popup.find(`.tab-button-container[data-page="${pageNum}"]`).each(function () {
+      const questionId = $(this).find('.tab-button').data('tab').replace('question-', '');
+      const questionGroup = popup.find(`.dynamic-input-group[data-tab="question-${questionId}"]`);
+
+      const question: Question = {
+        id: questionId,
         // @ts-ignore
-        question.defaultValue = $(this).find('.select-default').val();
-        question.options = [];
-        $(this)
-          .find('.option-item')
-          .each(function () {
+        inputId: questionGroup.find('.input-id').val(),
+        // @ts-ignore
+        text: questionGroup.find('.input-question').val(),
+        // @ts-ignore
+        script: questionGroup.find('.question-script').val() || '',
+        // @ts-ignore
+        type: questionGroup.find('.input-type-select').val(),
+        defaultValue: '',
+        required: questionGroup.find('.input-required').prop('checked'),
+        // @ts-ignore
+        showScript: questionGroup.find('.show-script').val() || '',
+      };
+
+      switch (question.type) {
+        case 'checkbox':
+          question.defaultValue = questionGroup.find('.input-default-checkbox').prop('checked');
+          break;
+        case 'select':
+          // @ts-ignore
+          question.defaultValue = questionGroup.find('.select-default').val();
+          question.options = [];
+          questionGroup.find('.option-item').each(function () {
             // @ts-ignore
             question.options.push({
               // @ts-ignore
@@ -363,25 +375,19 @@ export function getScenarioCreateDataFromUI(popup: JQuery<HTMLElement>): Scenari
               label: $(this).find('.option-label').val(),
             });
           });
-        break;
-      default:
-        // @ts-ignore
-        question.defaultValue = $(this).find('.input-default').val();
-    }
+          break;
+        default:
+          // @ts-ignore
+          question.defaultValue = questionGroup.find('.input-default').val();
+      }
 
-    data.questions.push(question);
+      data.questions.push(question);
+      pageQuestions.push(question.inputId);
+    });
 
-    // Group questions by page number (order is determined by DOM order)
-    if (!questionsByPage.has(pageNumber)) {
-      questionsByPage.set(pageNumber, []);
-    }
-    questionsByPage.get(pageNumber).push(question.inputId);
+    // Add this page's questions to layout
+    data.layout.push(pageQuestions);
   });
-
-  // Convert page map to layout array, preserving DOM order
-  data.layout = Array.from(questionsByPage.keys())
-    .sort((a, b) => a - b) // Sort page numbers
-    .map((pageNum) => questionsByPage.get(pageNum)); // Use array order to maintain question order
 
   return data;
 }

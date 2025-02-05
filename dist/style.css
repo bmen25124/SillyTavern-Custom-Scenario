@@ -2,17 +2,58 @@
   overflow-y: scroll;
 }
 
-#scenario-create-dialog .tab-navigation {
+#scenario-create-dialog .tab-navigation, #scenario-create-dialog .page-navigation {
   gap: 5px;
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
-#scenario-create-dialog .tab-navigation .flex-container:first-child {
+#scenario-create-dialog .tab-navigation .flex-container:first-child, #scenario-create-dialog .page-navigation .flex-container:first-child {
   background: rgba(0, 0, 0, 0.2);
   padding: 4px 6px;
   border-radius: 6px;
   display: flex;
   align-items: center;
+}
+#scenario-create-dialog .page-navigation {
+  margin-top: 20px;
+  border-top: 1px solid var(--accent-color);
+  padding-top: 10px;
+}
+#scenario-create-dialog .questions-container {
+  display: none;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+#scenario-create-dialog .questions-container.active {
+  display: block;
+}
+#scenario-create-dialog .questions-container .questions-tabs {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+#scenario-create-dialog #page-tab-buttons {
+  display: flex;
+}
+#scenario-create-dialog #page-tab-buttons .page-button-container {
+  display: flex;
+  gap: 2px;
+}
+#scenario-create-dialog #page-tab-buttons .page-button-container .page-button {
+  min-width: auto;
+  padding: 3px 12px;
+  font-size: 0.9em;
+  margin: 0 1px;
+  height: 26px;
+  line-height: 1;
+}
+#scenario-create-dialog #page-tab-buttons .page-button-container .page-button.active {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--white-90);
+  font-weight: 500;
 }
 #scenario-create-dialog .tab-button {
   min-width: auto;
@@ -31,7 +72,7 @@
   color: var(--white-90);
   font-weight: 500;
 }
-#scenario-create-dialog #add-input-btn {
+#scenario-create-dialog #add-question-btn {
   margin-left: 8px;
 }
 #scenario-create-dialog .tab-content {
@@ -43,7 +84,7 @@
 #scenario-create-dialog #dynamic-tab-buttons {
   display: flex;
   gap: 5px;
-  flex-wrap: inherit;
+  flex-wrap: wrap;
 }
 #scenario-create-dialog .tab-button-container {
   display: flex;
