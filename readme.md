@@ -88,7 +88,7 @@ You also received a card with the following message: Happy birthday! Enjoy your 
 ```
 
 ## Scripting Details
-* `variables` is an object that holds all the variables.
+* `variables` is an object that holds all the variables. Aka the answers to the questions.
 * All variables can be accessed and modified.
 * Example usage: (Let's say question id is `gift`)
     * If question type is _text_, `variables.gift`

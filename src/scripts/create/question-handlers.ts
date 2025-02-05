@@ -47,7 +47,7 @@ function setupInputTypeChangeHandler(newInput: JQuery<HTMLElement>) {
 /**
  * Sets up functionality for removing questions
  */
-function setupRemoveButton(tabContainer: JQuery<HTMLElement>, popup: JQuery<HTMLElement>) {
+export function setupRemoveButton(tabContainer: JQuery<HTMLElement>, popup: JQuery<HTMLElement>) {
   tabContainer.find('.remove-input-btn').on('click', function () {
     const tabId = tabContainer.find('.tab-button').data('tab');
     const isCurrentTabActive = tabContainer.find('.tab-button').hasClass('active');

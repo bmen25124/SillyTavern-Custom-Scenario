@@ -323,7 +323,7 @@ export function getScenarioCreateDataFromUI(popup: JQuery<HTMLElement>): Scenari
 
   // Get questions data and build layout
   data.questions = [];
-  const questionsByPage = new Map(); // page number -> input IDs
+  const questionsByPage = new Map(); // page number -> {inputId, order}[]
 
   popup.find('.dynamic-input-group').each(function () {
     const question: Question = {
@@ -371,17 +371,17 @@ export function getScenarioCreateDataFromUI(popup: JQuery<HTMLElement>): Scenari
 
     data.questions.push(question);
 
-    // Group questions by page number
+    // Group questions by page number (order is determined by DOM order)
     if (!questionsByPage.has(pageNumber)) {
       questionsByPage.set(pageNumber, []);
     }
-    questionsByPage.set(pageNumber, [...questionsByPage.get(pageNumber), question.inputId]);
+    questionsByPage.get(pageNumber).push(question.inputId);
   });
 
-  // Convert page map to layout array
+  // Convert page map to layout array, preserving DOM order
   data.layout = Array.from(questionsByPage.keys())
     .sort((a, b) => a - b) // Sort page numbers
-    .map((pageNum) => questionsByPage.get(pageNum));
+    .map((pageNum) => questionsByPage.get(pageNum)); // Use array order to maintain question order
 
   return data;
 }

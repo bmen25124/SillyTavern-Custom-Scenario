@@ -19,8 +19,20 @@ export function applyScenarioCreateDataToUI(popup: JQuery<HTMLElement>, data: Sc
   popup.find('#scenario-creator-character-note').val(data.characterNote);
   popup.find('#scenario-creator-character-note-script').val(data.characterNoteScript);
 
-  // Restore questions
-  data.questions.forEach((question) => {
+  // Sort questions based on layout array
+  const sortedQuestions = [...data.questions].sort((a, b) => {
+    const aPage = data.layout.findIndex((page) => page.includes(a.inputId)) + 1 || 1;
+    const bPage = data.layout.findIndex((page) => page.includes(b.inputId)) + 1 || 1;
+    if (aPage !== bPage) return aPage - bPage;
+
+    // Sort by position within the page array
+    const pageAIndex = data.layout[aPage - 1]?.indexOf(a.inputId) ?? -1;
+    const pageBIndex = data.layout[bPage - 1]?.indexOf(b.inputId) ?? -1;
+    return pageAIndex - pageBIndex;
+  });
+
+  // Restore questions in sorted order
+  sortedQuestions.forEach((question) => {
     addQuestionToUI(popup, question);
     const questionGroup = popup.find(`.dynamic-input-group[data-tab="question-${question.id}"]`);
     const pageNumber = data.layout.findIndex((page) => page.includes(question.inputId)) + 1 || 1;
