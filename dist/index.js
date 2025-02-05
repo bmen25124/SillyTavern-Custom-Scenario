@@ -3707,6 +3707,8 @@ function updateQuestionScriptInputs(questionGroup) {
 }
 
 const CORE_TABS = ['description', 'first-message', 'scenario', 'personality', 'character-note'];
+const ANIMATION_DURATION = 300; // Match this with CSS animation duration (0.3s = 300ms)
+let isAnimating = false;
 /**
  * Sets up tab switching functionality with auto-save
  */
@@ -3722,49 +3724,69 @@ function setupTabFunctionality(popup) {
         switchTab(tabId);
     });
     // Handle page reordering with global move buttons
-    popup.on('click', '#move-page-left-btn, #move-page-right-btn', function (e) {
+    popup.on('click', '#move-page-left-btn, #move-page-right-btn', async function (e) {
         e.preventDefault();
-        const isUp = $(this).attr('id') === 'move-page-left-btn';
+        // Prevent multiple animations
+        if (isAnimating)
+            return;
+        isAnimating = true;
+        const moveButton = $(this);
+        const isUp = moveButton.attr('id') === 'move-page-left-btn';
+        // Disable move buttons during animation
+        popup.find('#move-page-left-btn, #move-page-right-btn').prop('disabled', true);
         // Find active page
         const activePageButton = popup.find('.page-button.active');
-        if (!activePageButton.length)
+        if (!activePageButton.length) {
+            isAnimating = false;
+            popup.find('#move-page-left-btn, #move-page-right-btn').prop('disabled', false);
             return;
+        }
         const container = activePageButton.closest('.page-button-container');
         const sibling = isUp ? container.prev('.page-button-container') : container.next('.page-button-container');
-        if (sibling.length === 0)
-            return; // Can't move further
+        if (sibling.length === 0) {
+            isAnimating = false;
+            popup.find('#move-page-left-btn, #move-page-right-btn').prop('disabled', false);
+            return;
+        }
         // Get the page numbers
         const pageNum = parseInt(activePageButton.data('page'));
         const siblingPageNum = parseInt(sibling.find('.page-button').data('page'));
-        // Swap page numbers in DOM
-        activePageButton.text(`Page ${siblingPageNum}`).attr('data-page', siblingPageNum).data('page', siblingPageNum);
-        sibling.find('.page-button').text(`Page ${pageNum}`).attr('data-page', pageNum).data('page', pageNum);
-        // Move the container
-        if (isUp) {
-            container.insertBefore(sibling);
-        }
-        else {
-            container.insertAfter(sibling);
-        }
-        // Move associated questions
-        const questions = popup.find('#questions-container');
-        const movedQuestions = questions.find(`.tab-button-container[data-page="${pageNum}"]`);
-        const siblingQuestions = questions.find(`.tab-button-container[data-page="${siblingPageNum}"]`);
-        // Update question page numbers
-        movedQuestions.attr('data-page', siblingPageNum).data('page', siblingPageNum);
-        siblingQuestions.attr('data-page', pageNum).data('page', pageNum);
-        // Move questions in DOM
-        if (movedQuestions.length && siblingQuestions.length) {
+        try {
+            // Add animation class only to active container
+            const moveClass = isUp ? 'moving-left' : 'moving-right';
+            container.addClass(moveClass);
+            // Get associated questions
+            const questions = popup.find('#questions-container');
+            const movedQuestions = questions.find(`.tab-button-container[data-page="${pageNum}"]`);
+            const siblingQuestions = questions.find(`.tab-button-container[data-page="${siblingPageNum}"]`);
+            // Wait for animation
+            await new Promise((resolve) => setTimeout(resolve, ANIMATION_DURATION));
+            // Swap page numbers in DOM
+            activePageButton.text(`Page ${siblingPageNum}`).attr('data-page', siblingPageNum).data('page', siblingPageNum);
+            sibling.find('.page-button').text(`Page ${pageNum}`).attr('data-page', pageNum).data('page', pageNum);
+            // Update question page numbers
+            movedQuestions.attr('data-page', siblingPageNum).data('page', siblingPageNum);
+            siblingQuestions.attr('data-page', pageNum).data('page', pageNum);
+            // Move the containers
             if (isUp) {
-                siblingQuestions.first().before(movedQuestions);
+                container.insertBefore(sibling);
+                movedQuestions.first().before(siblingQuestions);
             }
             else {
+                container.insertAfter(sibling);
                 siblingQuestions.last().after(movedQuestions);
             }
+            // Remove animation class
+            container.removeClass(moveClass);
+            // Save current state
+            const currentData = getScenarioCreateDataFromUI(popup);
+            saveScenarioCreateData(currentData);
         }
-        // Save current state
-        const currentData = getScenarioCreateDataFromUI(popup);
-        saveScenarioCreateData(currentData);
+        finally {
+            // Always cleanup, even if there's an error
+            isAnimating = false;
+            popup.find('#move-page-left-btn, #move-page-right-btn').prop('disabled', false);
+        }
     });
     // Handle regular page button clicks
     popup.on('click', '.page-button', function () {

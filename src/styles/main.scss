@@ -126,11 +126,22 @@
         display: flex;
         gap: 5px;
         flex-wrap: wrap;
+        position: relative;
 
         .page-button-container {
             display: flex;
             gap: 2px;
             position: relative;
+            transition: transform 0.3s ease;
+            will-change: transform;
+
+            &.moving-left {
+                animation: slideLeft 0.3s ease forwards;
+            }
+
+            &.moving-right {
+                animation: slideRight 0.3s ease forwards;
+            }
 
             .page-button {
                 min-width: auto;
@@ -155,6 +166,28 @@
                     font-weight: 500;
                 }
             }
+        }
+    }
+
+    @keyframes slideLeft {
+        0% {
+            transform: translateX(0);
+            z-index: 1;
+        }
+        100% {
+            transform: translateX(-100%);
+            z-index: 1;
+        }
+    }
+
+    @keyframes slideRight {
+        0% {
+            transform: translateX(0);
+            z-index: 1;
+        }
+        100% {
+            transform: translateX(100%);
+            z-index: 1;
         }
     }
 

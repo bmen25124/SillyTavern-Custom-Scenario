@@ -107,11 +107,20 @@
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
+  position: relative;
 }
 #scenario-create-dialog #page-tab-buttons .page-button-container {
   display: flex;
   gap: 2px;
   position: relative;
+  transition: transform 0.3s ease;
+  will-change: transform;
+}
+#scenario-create-dialog #page-tab-buttons .page-button-container.moving-left {
+  animation: slideLeft 0.3s ease forwards;
+}
+#scenario-create-dialog #page-tab-buttons .page-button-container.moving-right {
+  animation: slideRight 0.3s ease forwards;
 }
 #scenario-create-dialog #page-tab-buttons .page-button-container .page-button {
   min-width: auto;
@@ -133,6 +142,26 @@
   border-color: var(--accent-color);
   color: var(--white-90);
   font-weight: 500;
+}
+@keyframes slideLeft {
+  0% {
+    transform: translateX(0);
+    z-index: 1;
+  }
+  100% {
+    transform: translateX(-100%);
+    z-index: 1;
+  }
+}
+@keyframes slideRight {
+  0% {
+    transform: translateX(0);
+    z-index: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    z-index: 1;
+  }
 }
 #scenario-create-dialog .tab-button {
   min-width: auto;
