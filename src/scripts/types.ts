@@ -14,11 +14,13 @@ export type ScriptInputValues = {
   'character-note': Record<string, string>; // inputId -> value
 };
 
+export type QuestionType = 'text' | 'checkbox' | 'select';
+
 export interface Question {
   inputId: string;
   text: string;
   script: string;
-  type: string;
+  type: QuestionType;
   defaultValue: string | boolean;
   required: boolean;
   options?: Array<{ value: string; label: string }>;

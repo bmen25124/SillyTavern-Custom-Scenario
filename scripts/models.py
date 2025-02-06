@@ -1,13 +1,21 @@
 from typing import TypedDict, List, Dict, Optional
 
+class Scenario(TypedDict):
+    id: str
+    shortId: str
+    title: str
+    parentScenarioId: str
+    deletedAt: str | None
+    __typename: str
+
 class StoryCard(TypedDict, total=False):
     """Type definition for story card input format."""
     keys: str
     value: str
     title: str
     description: str
-    type: str  # Optional field used for recursion rules
-    # Any additional fields might be accessed for recursion rules
+    type: str
+    originalScenario: Scenario
 
 class LoreBookEntry(TypedDict):
     """Type definition for lorebook entry format."""

@@ -3,19 +3,11 @@
 import json
 import argparse
 import requests
-from typing import List, TypedDict, cast
+from typing import List, cast
 import os
 from dotenv import load_dotenv
 
-from models import StoryCard
-
-class Scenario(TypedDict):
-    id: str
-    shortId: str
-    title: str
-    parentScenarioId: str
-    deletedAt: str | None
-    __typename: str
+from models import Scenario, StoryCard
 
 GRAPHQL_QUERY = """
 query ScenarioStartViewGetScenario($shortId: String) {
@@ -54,7 +46,7 @@ query ScenarioStartViewGetScenario($shortId: String) {
 }
 """
 
-def get_story_cards(shortId: str, auth_token: str, endpoint: str = "https://api.aidungeon.com/graphql") -> List[StoryCard]:
+def get_story_cards(shortId: str, auth_token: str, scenario: Scenario, endpoint: str = "https://api.aidungeon.com/graphql") -> List[StoryCard]:
     """Fetch story cards for a given scenario shortId."""
     headers = {
         "authorization": auth_token
@@ -73,6 +65,8 @@ def get_story_cards(shortId: str, auth_token: str, endpoint: str = "https://api.
 
     data = response.json()
     story_cards = data.get("data", {}).get("scenario", {}).get("storyCards", [])
+    for card in story_cards:
+        card["originalScenario"] = scenario
     return cast(List[StoryCard], story_cards)
 
 def main() -> None:
@@ -102,7 +96,7 @@ def main() -> None:
     all_story_cards: List[StoryCard] = []
     for scenario in scenarios:
         try:
-            cards = get_story_cards(scenario["shortId"], auth_token, args.endpoint)
+            cards = get_story_cards(scenario["shortId"], auth_token, scenario=scenario, endpoint=args.endpoint)
             all_story_cards.extend(cards)
             print(f"Retrieved {len(cards)} cards for scenario {scenario['shortId']}")
         except Exception as e:
