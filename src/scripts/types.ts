@@ -1,15 +1,20 @@
 import { extensionVersion } from './config';
 
-export interface ScriptInput {
-  id: string;
-  type: string;
-  defaultValue: string | boolean;
-  required: boolean;
-  options?: Array<{ value: string; label: string }>;
-}
+export type CoreTab = 'description' | 'first-message' | 'scenario' | 'personality' | 'character-note';
+export type TabId = CoreTab | string; // question tabs are starting with 'question-'
+
+export const CORE_TABS: CoreTab[] = ['description', 'first-message', 'scenario', 'personality', 'character-note'];
+
+export type ScriptInputValues = {
+  question: Record<string, Record<string, string>>; // questionId -> inputId -> value
+  description: Record<string, string>; // inputId -> value
+  'first-message': Record<string, string>; // inputId -> value
+  scenario: Record<string, string>; // inputId -> value
+  personality: Record<string, string>; // inputId -> value
+  'character-note': Record<string, string>; // inputId -> value
+};
 
 export interface Question {
-  id: string;
   inputId: string;
   text: string;
   script: string;
@@ -18,23 +23,6 @@ export interface Question {
   required: boolean;
   options?: Array<{ value: string; label: string }>;
   showScript: string;
-}
-
-export interface ScenarioCreateData {
-  description: string;
-  descriptionScript: string;
-  firstMessage: string;
-  firstMessageScript: string;
-  scenario: string;
-  scenarioScript: string;
-  personality: string;
-  personalityScript: string;
-  characterNote: string;
-  characterNoteScript: string;
-  questions: Question[];
-  layout: string[][];
-  activeTab: string;
-  version: string;
 }
 
 export interface ScenarioExportData {
@@ -46,6 +34,16 @@ export interface ScenarioExportData {
   questions: Question[];
   layout: string[][];
   version: string;
+}
+
+export interface ScenarioCreateData extends ScenarioExportData {
+  description: string;
+  firstMessage: string;
+  scenario: string;
+  personality: string;
+  characterNote: string;
+  activeTab: TabId;
+  scriptInputValues: ScriptInputValues;
 }
 
 export interface FullExportData {
@@ -98,6 +96,14 @@ export function createEmptyScenarioCreateData(): ScenarioCreateData {
     questions: [],
     layout: [],
     activeTab: 'description',
+    scriptInputValues: {
+      question: {},
+      description: {},
+      'first-message': {},
+      scenario: {},
+      personality: {},
+      'character-note': {},
+    },
     version: extensionVersion,
   };
 }
@@ -235,6 +241,42 @@ const versionUpgrades: VersionUpgrade[] = [
     },
     exportCallback: (data: ScenarioExportData) => {
       data.version = '0.3.5';
+    },
+  },
+  {
+    from: '0.3.5',
+    to: '0.4.0',
+    createCallback: (data: ScenarioCreateData) => {
+      // Add scriptInputValues to data if it doesn't exist
+      if (!data.scriptInputValues) {
+        data.scriptInputValues = {
+          question: {},
+          description: {},
+          'first-message': {},
+          scenario: {},
+          personality: {},
+          'character-note': {},
+        };
+      }
+      if (!data.scriptInputValues.question) {
+        data.scriptInputValues.question = {};
+      }
+      if (!data.scriptInputValues.description) {
+        data.scriptInputValues.description = {};
+      }
+      if (!data.scriptInputValues['first-message']) {
+        data.scriptInputValues['first-message'] = {};
+      }
+      if (!data.scriptInputValues.scenario) {
+        data.scriptInputValues.scenario = {};
+      }
+      if (!data.scriptInputValues.personality) {
+        data.scriptInputValues.personality = {};
+      }
+      data.version = '0.4.0';
+    },
+    exportCallback: (data: ScenarioExportData) => {
+      data.version = '0.4.0';
     },
   },
 ];

@@ -8,7 +8,7 @@ import {
   st_createPopper,
 } from '../config';
 import { setupPreviewFunctionality, updatePreview, updateQuestionPreview } from './preview-handlers';
-import { setupTabFunctionality, setupAccordion, switchTab } from './tab-handlers';
+import { setupTabFunctionality, setupAccordion, switchTab, togglePage } from './tab-handlers';
 import { setupDynamicInputs, setupRemoveButton } from './question-handlers';
 import {
   loadScenarioCreateData,
@@ -57,10 +57,7 @@ async function handleCharacterSidebarClick() {
     wide: true,
   });
 
-  setupPopupHandlers();
-
   // Load saved data after popup is created
-  const popup = $('#scenario-create-dialog');
   let savedData = loadScenarioCreateData();
 
   // Check version changes
@@ -96,20 +93,21 @@ async function handleCharacterSidebarClick() {
     savedData.characterNote = formData.get('depth_prompt_prompt') || '';
   }
 
+  const popup = $('#scenario-create-dialog');
+  setupPopupHandlers(popup);
   applyScenarioCreateDataToUI(popup, savedData);
 }
 
 /**
  * Sets up all event handlers for the scenario creator popup
  */
-function setupPopupHandlers() {
-  const popup = $('#scenario-create-dialog');
-
+function setupPopupHandlers(popup: JQuery<HTMLElement>) {
   setupPreviewFunctionality(popup);
   setupTabFunctionality(popup);
   setupAccordion(popup);
   setupDynamicInputs(popup);
   setupQuestionReordering(popup);
+  setupNewPageSelection(popup);
   setupExportButton(popup);
   setupImportButton(popup);
   setupResetButton(popup);
@@ -127,52 +125,69 @@ function setupQuestionReordering(popup: JQuery<HTMLElement>) {
     if (!activeTab.length) return;
 
     const container = activeTab.closest('.tab-button-container');
-    const sibling = isUp ? container.prev('.tab-button-container') : container.next('.tab-button-container');
+    const siblings = isUp
+      ? container.prevAll('.tab-button-container:visible')
+      : container.nextAll('.tab-button-container:visible');
 
-    if (sibling.length === 0) return; // Can't move further
+    if (siblings.length === 0) return; // Can't move further
+    const sibling = $(siblings.first());
 
-    // Get page number and current data
-    const pageNumber = parseInt(container.attr('data-page') as string) || 1;
-    const data = getScenarioCreateDataFromUI(popup);
-
-    // Update DOM order
     const dynamicInputsContainer = popup.find('#dynamic-inputs-container');
-    const dynamicTabButtons = popup.find('#dynamic-tab-buttons');
+    const tabId = activeTab.data('tab');
+    const inputGroup = dynamicInputsContainer.find(`[data-tab="${tabId}"]`);
 
     if (isUp) {
       container.insertBefore(sibling);
+      inputGroup.insertBefore(dynamicInputsContainer.find(`[data-tab="${sibling.find('.tab-button').data('tab')}"]`));
     } else {
       container.insertAfter(sibling);
+      inputGroup.insertAfter(dynamicInputsContainer.find(`[data-tab="${sibling.find('.tab-button').data('tab')}"]`));
     }
 
-    // Move the corresponding input group
-    const tabId = activeTab.data('tab');
-    const inputGroup = dynamicInputsContainer.find(`[data-tab="${tabId}"]`);
-    const siblingTabId = sibling.find('.tab-button').data('tab');
-    const siblingInputGroup = dynamicInputsContainer.find(`[data-tab="${siblingTabId}"]`);
+    // Save current state
+    saveScenarioCreateData(getScenarioCreateDataFromUI(popup));
+  });
+}
 
-    if (isUp) {
-      inputGroup.insertBefore(siblingInputGroup);
+function setupNewPageSelection(popup: JQuery<HTMLElement>) {
+  const pageSelect = popup.find('#page-select');
+  pageSelect.on('change', function () {
+    const page = pageSelect.val() as string;
+    if (!page) {
+      return;
+    }
+
+    const activeTabButton = popup.find('.tab-button.active');
+    if (!activeTabButton.length) {
+      return;
+    }
+    const activeTab = activeTabButton.data('tab');
+    if (!activeTab.startsWith('question-')) {
+      return;
+    }
+
+    const pageNumber = parseInt(page);
+    const currentQuestionPage = parseInt(popup.find('.page-button.active').data('page'));
+    if (pageNumber === currentQuestionPage) {
+      return;
+    }
+
+    const questionContainer = activeTabButton.closest('.tab-button-container');
+
+    togglePage(popup, pageNumber);
+    questionContainer.removeAttr('style');
+
+    const dynamicTabButtons = popup.find('#dynamic-tab-buttons');
+    const lastVisibleTab = dynamicTabButtons.find('.tab-button-container:visible');
+    if (lastVisibleTab.length > 0) {
+      questionContainer.insertAfter(lastVisibleTab.last());
     } else {
-      inputGroup.insertAfter(siblingInputGroup);
+      dynamicTabButtons.prepend(questionContainer);
     }
 
-    // Update data layout
-    const newOrder = dynamicTabButtons
-      .children()
-      .map(function () {
-        return $(this).find('.tab-button').data('tab');
-      })
-      .get();
+    questionContainer.data('page', page).attr('data-page', page);
 
-    const newLayout = newOrder.map((tabId) => {
-      const inputGroup = dynamicInputsContainer.find(`[data-tab="${tabId}"]`);
-      const value = inputGroup.find('.input-id').val();
-      return value?.toString() || '';
-    });
-
-    data.layout[pageNumber - 1] = newLayout;
-    saveScenarioCreateData(data);
+    saveScenarioCreateData(getScenarioCreateDataFromUI(popup));
   });
 }
 
@@ -211,8 +226,15 @@ function setupResetButton(popup: JQuery<HTMLElement>) {
     popup.find('#personality-preview').text('Preview will appear here...');
     popup.find('#character-note-preview').text('Preview will appear here...');
 
+    // Clear existing page buttons
+    popup.find('#page-tab-buttons').empty();
+    popup.find('#dynamic-tab-buttons').empty();
+
+    // Add page button
+    popup.find('#add-page-btn').trigger('click');
+
     // Switch to description tab
-    switchTab('description');
+    switchTab(popup, 'description');
 
     // Save the empty state
     saveScenarioCreateData(createEmptyScenarioCreateData());
@@ -306,35 +328,7 @@ function setupImportButton(popup: JQuery<HTMLElement>) {
  * Sets up the export button functionality
  */
 function setupExportButton(popup: JQuery<HTMLElement>) {
-  let isExportPopupOpen = false;
-  const exportButton = popup.find('#export-scenario-btn').get(0) as HTMLElement;
-  const formatPopup = popup.find('#export-format-popup').get(0) as HTMLElement;
-
-  // Create popper instance
-  let exportPopper = st_createPopper(exportButton, formatPopup, {
-    placement: 'left-end',
-  });
-
-  popup.find('#export-scenario-btn').on('click', function () {
-    isExportPopupOpen = !isExportPopupOpen;
-    popup.find('#export-format-popup').toggle(isExportPopupOpen);
-    exportPopper.update();
-  });
-
-  popup.find('.export-format').on('click', async function () {
-    const format = $(this).data('format') as 'json' | 'png';
-    if (!format) {
-      return;
-    }
-
-    // Hide popup
-    popup.find('#export-format-popup').hide();
-    isExportPopupOpen = false;
-
-    const currentData = getScenarioCreateDataFromUI(popup);
-    const formElement = $('#form_create').get(0) as HTMLFormElement;
-    const formData = new FormData(formElement);
-
+  function validate(): string[] {
     // Validate all scripts before export
     let errors = [];
 
@@ -379,18 +373,58 @@ function setupExportButton(popup: JQuery<HTMLElement>) {
       const group = $(this);
       const inputId = group.find('.input-id').val();
       try {
-        updateQuestionPreview(group, true);
+        updateQuestionPreview(popup, group, true);
       } catch (error: any) {
         errors.push(`Question "${inputId}" script error: ${error.message}`);
       }
     });
 
-    // If there are any errors, show them and stop export
+    return errors;
+  }
+
+  let isExportPopupOpen = false;
+  const exportButton = popup.find('#export-scenario-btn').get(0) as HTMLElement;
+  const formatPopup = popup.find('#export-format-popup').get(0) as HTMLElement;
+
+  // Create popper instance
+  let exportPopper = st_createPopper(exportButton, formatPopup, {
+    placement: 'left-end',
+  });
+
+  popup.find('#export-scenario-btn').on('click', function () {
+    const errors = validate();
+    if (errors.length > 0) {
+      const errorMessage = 'Export validation failed:\n' + errors.join('\n');
+      stEcho('error', errorMessage);
+      return;
+    }
+
+    isExportPopupOpen = !isExportPopupOpen;
+    popup.find('#export-format-popup').toggle(isExportPopupOpen);
+    exportPopper.update();
+  });
+
+  popup.find('.export-format').on('click', async function () {
+    const format = $(this).data('format') as 'json' | 'png';
+    if (!format) {
+      return;
+    }
+
+    // Hide popup
+    popup.find('#export-format-popup').hide();
+    isExportPopupOpen = false;
+
+    // Validate all scripts before export
+    const errors = validate();
     if (errors.length > 0) {
       const errorMessage = 'Export validation failed:\n' + errors.join('\n');
       await stEcho('error', errorMessage);
       return;
     }
+
+    const currentData = getScenarioCreateDataFromUI(popup);
+    const formElement = $('#form_create').get(0) as HTMLFormElement;
+    const formData = new FormData(formElement);
 
     // If all validations pass, create and download the file
     const productionData = await createProductionScenarioData(currentData, formData);

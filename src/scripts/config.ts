@@ -35,7 +35,7 @@ import {
 import { FullExportData } from './types.js';
 
 export const extensionName = 'SillyTavern-Custom-Scenario';
-export const extensionVersion = '0.3.5';
+export const extensionVersion = '0.4.0';
 export const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 
 /**
@@ -106,11 +106,6 @@ export function st_getcreateCharacterData(): {
   extensions: Record<string, any>;
 } {
   return getContext().createCharacterData;
-}
-
-// TODO: Get from getContext()
-export function st_uuidv4(): string {
-  return uuidv4();
 }
 
 // TODO: Get from getContext()

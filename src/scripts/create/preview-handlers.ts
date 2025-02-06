@@ -1,4 +1,8 @@
+import { stEcho } from '../config';
+import { CoreTab } from '../types';
 import { executeMainScript, executeShowScript, interpolateText } from '../utils';
+import { getScenarioCreateDataFromUI, saveScenarioCreateData } from './data-handlers';
+import { checkDuplicateQuestionIds } from './question-handlers';
 
 /**
  * Sets up preview functionality for description, first message, scenario, personality, character note
@@ -28,11 +32,7 @@ export function setupPreviewFunctionality(popup: JQuery<HTMLElement>) {
 /**
  * Updates the preview for other than question
  */
-export function updatePreview(
-  popup: JQuery<HTMLElement>,
-  type: 'description' | 'first-message' | 'scenario' | 'personality' | 'character-note',
-  rethrowError = false,
-) {
+export function updatePreview(popup: JQuery<HTMLElement>, type: CoreTab, rethrowError = false) {
   const config = {
     description: {
       contentId: '#scenario-creator-character-description',
@@ -96,6 +96,17 @@ export function updatePreview(
     }
   });
 
+  const currentData = getScenarioCreateDataFromUI(popup);
+
+  for (const [key, value] of Object.entries(answers)) {
+    if (typeof value === 'object' && value.value) {
+      currentData.scriptInputValues[type][key] = value.value;
+    } else {
+      currentData.scriptInputValues[type][key] = value.toString();
+    }
+  }
+  saveScenarioCreateData(currentData);
+
   try {
     // Execute script if exists
     const variables = script ? executeMainScript(script, answers, 'remove') : answers;
@@ -115,13 +126,26 @@ export function updatePreview(
 /**
  * Updates the preview for a question
  */
-export function updateQuestionPreview(questionGroup: JQuery<HTMLElement>, rethrowError = false) {
+export function updateQuestionPreview(
+  popup: JQuery<HTMLElement>,
+  questionGroup: JQuery<HTMLElement>,
+  rethrowError = false,
+) {
+  const duplicateId = checkDuplicateQuestionIds(popup);
+  if (duplicateId) {
+    stEcho('error', `Question ID "${duplicateId}" already exists.`);
+    return;
+  }
+
+  const questionId = questionGroup.find('.input-id').val() as string;
   const questionText = questionGroup.find('.input-question').val() as string;
   const mainScriptText = questionGroup.find('.question-script').val() as string;
   const showScriptText = questionGroup.find('.show-script').val() as string;
   const mainPreviewDiv = questionGroup.find('.question-preview');
   const showPreviewDiv = questionGroup.find('.show-preview');
   const scriptInputsContainer = questionGroup.find('.question-script-inputs-container');
+
+  const currentData = getScenarioCreateDataFromUI(popup);
 
   // Collect answers from script inputs
   const answers: Record<string, string | boolean | { label: string; value: string }> = {};
@@ -142,7 +166,15 @@ export function updateQuestionPreview(questionGroup: JQuery<HTMLElement>, rethro
         answers[id] = $(this).find('input[type="text"]').val() as string;
         break;
     }
+
+    if (!currentData.scriptInputValues.question[questionId]) {
+      currentData.scriptInputValues.question[questionId] = {};
+    }
+    let answerValue = typeof answers[id] === 'object' ? answers[id].value : answers[id].toString();
+    currentData.scriptInputValues.question[questionId][id] = answerValue;
   });
+
+  saveScenarioCreateData(currentData);
 
   try {
     // Execute script if exists

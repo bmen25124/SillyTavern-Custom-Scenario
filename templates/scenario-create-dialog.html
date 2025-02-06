@@ -49,7 +49,7 @@
                     <i class="fa-solid fa-plus"></i> Question
                 </button>
                 <button id="add-page-btn" class="menu_button primary" title="Add New Page">
-                    <i class="fa-solid fa-file-plus"></i> Page
+                    <i class="fa-solid fa-plus"></i> Page
                 </button>
                 <button id="remove-page-btn" class="menu_button danger" title="Remove Current Page">
                     <i class="fa-solid fa-trash"></i> Page
@@ -63,12 +63,19 @@
         <div class="flex-container">
             <div id="dynamic-tab-buttons" class="questions-tabs"></div>
             <div class="button-group">
-                <button id="move-question-left-btn" class="menu_button" title="Move Question Left">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-                <button id="move-question-right-btn" class="menu_button" title="Move Question Right">
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
+                <div style="display: flex">
+                    <button id="move-question-left-btn" class="menu_button" title="Move Question Left">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <button id="move-question-right-btn" class="menu_button" title="Move Question Right">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+                <div>
+                    <select id="page-select" class="text_pole" title="Select a page to move question to">
+                        <option value="">None</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -325,6 +332,7 @@
             <div class="flex-container flexFlowColumn marginTop10">
                 <div class="flex-container question-header gap10">
                     <div class="flex1">
+                        <label>Type: </label>
                         <select class="text_pole input-type-select">
                             <option value="text">Text</option>
                             <option value="select">Select</option>
@@ -332,6 +340,7 @@
                         </select>
                     </div>
                     <div class="flex2">
+                        <label>ID: </label>
                         <input
                             type="text"
                             class="text_pole input-id"
@@ -339,7 +348,6 @@
                             title="This ID will be used as {{answer_id}} in templates"
                         />
                     </div>
-                    <div class="flex1"></div>
                 </div>
                 <div class="flex-container flexFlowColumn marginTop10">
                     <label>Question:</label>
@@ -436,8 +444,10 @@
     <!-- Template for tab button -->
     <template id="tab-button-template">
         <div class="tab-button-container" data-page="{page}">
-            <button class="tab-button menu_button question" data-tab="question-{id}">Question {number}</button>
-            <button class="remove-input-btn menu_button danger" title="Remove Question">🗑️</button>
+            <button class="tab-button menu_button question" data-tab="question-{id}">Question {id}</button>
+            <button class="remove-input-btn menu_button danger" title="Remove Question">
+                <i class="fa-solid fa-trash"></i>
+            </button>
         </div>
     </template>
 

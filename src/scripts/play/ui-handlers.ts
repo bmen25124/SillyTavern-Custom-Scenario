@@ -101,8 +101,14 @@ export async function handlePlayScenarioClick() {
  */
 async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: ArrayBuffer, fileType: 'json' | 'png') {
   const scenarioPlayDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-play-dialog'));
-  const { descriptionScript, firstMessageScript, scenarioScript, personalityScript, questions, characterNoteScript } =
-    scenarioData.scenario_creator || {};
+  const {
+    descriptionScript,
+    firstMessageScript,
+    scenarioScript,
+    personalityScript,
+    questions: _questions,
+    characterNoteScript,
+  } = scenarioData.scenario_creator || {};
 
   let popup: JQuery<HTMLElement>;
   let dynamicInputsContainer: JQuery<HTMLElement>;
@@ -111,7 +117,18 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
   // Set up pagination variables
   let currentPageIndex = 0;
   // @ts-ignore - Already checked in upper function
-  const layout = scenarioData.scenario_creator.layout || [[...questions.map((q) => q.inputId)]];
+  const layout = scenarioData.scenario_creator.layout || [[..._questions.map((q) => q.inputId)]];
+
+  const sortedQuestions: Question[] = [];
+  for (const questionIds of layout) {
+    for (const questionId of questionIds) {
+      // @ts-ignore - Already checked in upper function
+      const foundQuestion = _questions.find((q) => q.inputId === questionId);
+      if (foundQuestion) {
+        sortedQuestions.push(foundQuestion);
+      }
+    }
+  }
 
   callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', {
     okButton: true,
@@ -445,8 +462,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
   // Create all inputs at initialization
   function createAllInputs() {
-    // @ts-ignore - Already checked in upper function
-    questions.forEach((question) => {
+    sortedQuestions.forEach((question) => {
       const newInput = $(inputTemplate.html());
       newInput.addClass('dynamic-input-wrapper');
       newInput.attr('data-input-id', question.inputId);
@@ -505,8 +521,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
       // Update question text when any input changes
       popup.find('.dynamic-input').on('input change', function () {
-        // @ts-ignore - Already checked in upper function
-        questions.forEach((q) => {
+        sortedQuestions.forEach((q) => {
           const wrapper = dynamicInputsContainer.find(`[data-input-id="${q.inputId}"]`);
           updateQuestionText(wrapper, q);
         });
@@ -520,8 +535,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
     dynamicInputsContainer.find('.dynamic-input-wrapper').hide();
 
     // Show only inputs for current page
-    // @ts-ignore - Already checked in upper function
-    const currentPageQuestions = questions.filter((q) => layout[currentPageIndex].includes(q.inputId));
+    const currentPageQuestions = sortedQuestions.filter((q) => layout[currentPageIndex].includes(q.inputId));
 
     // Collect current answers for script execution
     const answers: Record<string, string | boolean | { label: string; value: string }> = {};

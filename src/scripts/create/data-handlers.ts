@@ -9,7 +9,6 @@ import {
   upgradeOrDowngradeData,
 } from '../types';
 import {
-  st_uuidv4,
   st_humanizedDateTime,
   st_getcreateCharacterData,
   extensionVersion,
@@ -141,8 +140,7 @@ export async function createProductionScenarioData(
     scenarioScript: scenarioScript,
     personalityScript: personalityScript,
     characterNoteScript: characterNoteScript,
-    questions: questions.map(({ id, inputId, text, script, type, defaultValue, required, options, showScript }) => ({
-      id,
+    questions: questions.map(({ inputId, text, script, type, defaultValue, required, options, showScript }) => ({
       inputId,
       text,
       script: script || '',
@@ -293,10 +291,11 @@ export function saveScenarioCreateData(data: ScenarioCreateData) {
 }
 
 /**
- * Extracts current scenario data from the UI
+ * Extracts current scenario data from the UI. Except for scriptInputValues.
  */
 export function getScenarioCreateDataFromUI(popup: JQuery<HTMLElement>): ScenarioCreateData {
   const data = createEmptyScenarioCreateData();
+  data.scriptInputValues = loadScenarioCreateData().scriptInputValues;
 
   // @ts-ignore
   data.description = popup.find('#scenario-creator-character-description').val() || '';
@@ -339,13 +338,11 @@ export function getScenarioCreateDataFromUI(popup: JQuery<HTMLElement>): Scenari
 
     // Find all tab containers for this page
     popup.find(`.tab-button-container[data-page="${pageNum}"]`).each(function () {
-      const questionId = $(this).find('.tab-button').data('tab').replace('question-', '');
-      const questionGroup = popup.find(`.dynamic-input-group[data-tab="question-${questionId}"]`);
+      const inputId = $(this).find('.tab-button').data('tab').replace('question-', '');
+      const questionGroup = popup.find(`.dynamic-input-group[data-tab="question-${inputId}"]`);
 
       const question: Question = {
-        id: questionId,
-        // @ts-ignore
-        inputId: questionGroup.find('.input-id').val(),
+        inputId,
         // @ts-ignore
         text: questionGroup.find('.input-question').val(),
         // @ts-ignore
@@ -484,7 +481,6 @@ export async function convertImportedData(importedData: FullExportData | File): 
 
   const questions = (scenarioCreator.questions || []).map((q: any) => ({
     ...q,
-    id: q.id || st_uuidv4(),
   }));
 
   // Handle layout information
@@ -510,6 +506,14 @@ export async function convertImportedData(importedData: FullExportData | File): 
     questions,
     layout,
     activeTab: 'description',
+    scriptInputValues: {
+      question: {},
+      description: {},
+      'first-message': {},
+      scenario: {},
+      personality: {},
+      'character-note': {},
+    },
     version: scenarioCreator.version,
   };
 }

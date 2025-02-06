@@ -63,7 +63,6 @@
   border-color: var(--error-hover-color, #a00);
 }
 #scenario-create-dialog .questions-container {
-  display: none;
   background: rgba(0, 0, 0, 0.1);
   border-radius: 6px;
   padding: 10px;
@@ -84,6 +83,7 @@
   background: rgba(0, 0, 0, 0.15);
   padding: 4px;
   border-radius: 6px;
+  flex-direction: column;
 }
 #scenario-create-dialog .questions-container .button-group .menu_button {
   min-width: auto;
@@ -211,6 +211,7 @@
   gap: 2px;
 }
 #scenario-create-dialog .remove-input-btn {
+  height: fit-content;
   padding: 3px 8px;
   min-width: auto;
   line-height: 1;

@@ -30,7 +30,7 @@ export function applyScenarioCreateDataToUI(popup: JQuery<HTMLElement>, data: Sc
 
   // Create page buttons
   pages.forEach((pageNum) => {
-    const pageButton = createPageButton(pageNum);
+    const pageButton = createPageButton(popup, pageNum);
     popup.find('#page-tab-buttons').append(pageButton);
   });
 
@@ -52,7 +52,7 @@ export function applyScenarioCreateDataToUI(popup: JQuery<HTMLElement>, data: Sc
     const pageNumber = data.layout.findIndex((page) => page.includes(question.inputId)) + 1 || 1;
 
     // Update tab button container with page attribute
-    const tabButton = popup.find(`.tab-button-container:has([data-tab="question-${question.id}"])`);
+    const tabButton = popup.find(`.tab-button-container:has([data-tab="question-${question.inputId}"])`);
     tabButton.attr('data-page', pageNumber);
   });
 
@@ -61,16 +61,22 @@ export function applyScenarioCreateDataToUI(popup: JQuery<HTMLElement>, data: Sc
     popup.find('#questions-container').addClass('active');
     // Show first page by default
     if (pages.size > 0) {
-      togglePage(Math.min(...Array.from(pages)));
+      togglePage(popup, Math.min(...Array.from(pages)));
     }
   }
 
+  // Update script inputs for all existing questions
+  popup.find('.dynamic-input-group').each(function () {
+    updateQuestionScriptInputs(popup, $(this), data.scriptInputValues);
+    updateQuestionPreview(popup, $(this));
+  });
+
   // Create/update
-  updateScriptInputs(popup, 'description');
-  updateScriptInputs(popup, 'first-message');
-  updateScriptInputs(popup, 'scenario');
-  updateScriptInputs(popup, 'personality');
-  updateScriptInputs(popup, 'character-note');
+  updateScriptInputs(popup, 'description', data.scriptInputValues);
+  updateScriptInputs(popup, 'first-message', data.scriptInputValues);
+  updateScriptInputs(popup, 'scenario', data.scriptInputValues);
+  updateScriptInputs(popup, 'personality', data.scriptInputValues);
+  updateScriptInputs(popup, 'character-note', data.scriptInputValues);
 
   // Update previews
   updatePreview(popup, 'description');
@@ -79,14 +85,8 @@ export function applyScenarioCreateDataToUI(popup: JQuery<HTMLElement>, data: Sc
   updatePreview(popup, 'personality');
   updatePreview(popup, 'character-note');
 
-  // Update script inputs for all existing questions
-  popup.find('.dynamic-input-group').each(function () {
-    updateQuestionScriptInputs($(this));
-    updateQuestionPreview($(this));
-  });
-
   // Switch to active tab
-  switchTab(data.activeTab);
+  switchTab(popup, data.activeTab);
 }
 
 /**

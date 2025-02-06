@@ -1,10 +1,10 @@
-import { st_uuidv4 } from '../config';
 import { setupOptionHandlers, setupAddOptionButton, updateDefaultOptions } from './option-handlers';
 import { updateQuestionScriptInputs, updateScriptInputs } from './script-handlers';
 import { updateQuestionPreview } from './preview-handlers';
 import { getScenarioCreateDataFromUI, saveScenarioCreateData } from './data-handlers';
 import { getCurrentPage, switchTab } from './tab-handlers';
 import { Question } from '../types';
+import { stEcho } from '../config';
 
 /**
  * Sets up change handler for input type selection
@@ -58,7 +58,7 @@ export function setupRemoveButton(tabContainer: JQuery<HTMLElement>, popup: JQue
 
     // If removing active tab that's not question, switch to description
     if (isCurrentTabActive && !isNotQuestion) {
-      switchTab('description');
+      switchTab(popup, 'description');
     }
     // If not a question tab, update script inputs
     else if (isNotQuestion) {
@@ -78,11 +78,10 @@ export function addQuestionToUI(popup: JQuery<HTMLElement>, question: Question) 
 
   const tabHtml = tabButtonTemplate
     .html()
-    .replace(/{id}/g, question.id)
-    .replace(/{number}/g, question.inputId || 'unnamed')
+    .replace(/{id}/g, question.inputId)
     .replace(/{page}/g, getCurrentPage().toString());
 
-  const newInput = $(inputTemplate.html().replace(/{id}/g, question.id));
+  const newInput = $(inputTemplate.html().replace(/{id}/g, question.inputId));
 
   // Set values
   newInput.find('.input-id').val(question.inputId);
@@ -94,7 +93,7 @@ export function addQuestionToUI(popup: JQuery<HTMLElement>, question: Question) 
 
   // Setup question preview refresh button
   newInput.find('.refresh-question-preview').on('click', function () {
-    updateQuestionPreview($(this).closest('.dynamic-input-group'));
+    updateQuestionPreview(popup, $(this).closest('.dynamic-input-group'));
   });
 
   const accordionToggles = newInput.find('.accordion-toggle');
@@ -161,10 +160,12 @@ export function setupDynamicInputs(popup: JQuery<HTMLElement>) {
   const addInputBtn = popup.find('#add-question-btn');
 
   addInputBtn.on('click', () => {
-    const id = st_uuidv4();
+    let idNumber = 1;
+    while (popup.find(`.dynamic-input-group[data-tab="question-id_${idNumber}"]`).length > 0) {
+      idNumber++;
+    }
     const question: Question = {
-      id,
-      inputId: '',
+      inputId: `id_${idNumber}`,
       text: '',
       type: 'text',
       defaultValue: '',
@@ -174,10 +175,7 @@ export function setupDynamicInputs(popup: JQuery<HTMLElement>) {
     };
 
     addQuestionToUI(popup, question);
-    // Save state and switch to new tab
-    const currentData = getScenarioCreateDataFromUI(popup);
-    saveScenarioCreateData(currentData);
-    switchTab(`question-${id}`);
+    switchTab(popup, `question-${question.inputId}`);
   });
 }
 
@@ -186,26 +184,72 @@ export function setupDynamicInputs(popup: JQuery<HTMLElement>) {
  */
 function setupScriptInputsUpdateHandlers(newInput: JQuery<HTMLElement>, popup: JQuery<HTMLElement>) {
   // Update tab name when input ID changes
-  newInput.find('.input-id').on('change', function () {
-    const tabId = newInput.data('tab');
-    const newInputId = $(this).val() || 'unnamed';
+  newInput.find('.input-id').on('change', async function () {
+    const tabId = newInput.data('tab') as string;
     const tabButtonContainer = popup.find(`.tab-button-container:has(.tab-button[data-tab="${tabId}"])`);
     const tabButton = tabButtonContainer.find('.tab-button');
 
-    // Create new tab button HTML preserving the data-tab attribute
+    const oldInputId = tabId.replace('question-', '');
+    const newInputId = $(this).val();
+    if (!newInputId) {
+      await stEcho('error', 'Question ID cannot be empty.');
+      $(this).val(oldInputId);
+      return;
+    }
+
+    const idExists = popup.find(`.dynamic-input-group[data-tab="question-${newInputId}"]`).length > 0;
+    if (idExists) {
+      await stEcho('error', `Question ID "${newInputId}" already exists.`);
+      $(this).val(oldInputId);
+      return;
+    }
+
+    // Update tab name
     tabButton.html(`Question ${newInputId}`);
 
+    // Update tab data
+    tabButton.data('tab', `question-${newInputId}`).attr('data-tab', `question-${newInputId}`);
+
+    // Update input group
+    popup
+      .find(`.dynamic-input-group[data-tab="${tabId}"]`)
+      .attr('data-tab', `question-${newInputId}`)
+      .data('tab', `question-${newInputId}`);
+
     // Update script inputs when ID changes
-    updateQuestionScriptInputs(newInput);
+    updateQuestionScriptInputs(popup, newInput);
   });
 
   // Initial script inputs setup
-  updateQuestionScriptInputs(newInput);
+  updateQuestionScriptInputs(popup, newInput);
 
   // Update script inputs when any question changes
   newInput
     .find('.input-type-select, .input-default, .input-default-checkbox, .select-default')
     .on('change', function () {
-      updateQuestionScriptInputs(newInput);
+      updateQuestionScriptInputs(popup, newInput);
     });
+}
+
+export function checkDuplicateQuestionIds(popup: JQuery<HTMLElement>): string | null {
+  const uniqueIdMap = new Map<string, number>();
+  let hasDuplicate = false;
+  let duplicateId = '';
+  popup.find('.dynamic-input-group').each(function () {
+    const group = $(this);
+    const inputId = group.find('.input-id').val() as string;
+    if (inputId && uniqueIdMap.has(inputId)) {
+      hasDuplicate = true;
+      duplicateId = inputId;
+      return false; // Break the loop
+    }
+    uniqueIdMap.set(inputId, 1);
+  });
+
+  if (hasDuplicate) {
+    stEcho('error', `Question ID "${duplicateId}" already exists.`);
+    return duplicateId;
+  }
+
+  return null;
 }

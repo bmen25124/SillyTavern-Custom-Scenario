@@ -1,11 +1,10 @@
+import { stEcho } from '../config';
+import { CORE_TABS, CoreTab, TabId } from '../types';
 import { saveScenarioCreateData, getScenarioCreateDataFromUI } from './data-handlers';
+import { checkDuplicateQuestionIds } from './question-handlers';
 import { updateScriptInputs } from './script-handlers';
 import { updateQuestionScriptInputs } from './script-handlers';
 
-type CoreTab = 'description' | 'first-message' | 'scenario' | 'personality' | 'character-note';
-type TabId = CoreTab | string;
-
-const CORE_TABS: CoreTab[] = ['description', 'first-message', 'scenario', 'personality', 'character-note'];
 const ANIMATION_DURATION = 300; // Match this with CSS animation duration (0.3s = 300ms)
 
 let isAnimating = false;
@@ -19,11 +18,7 @@ export function setupTabFunctionality(popup: JQuery<HTMLElement>) {
     const tabId = $(this).data('tab');
     if (!tabId) return;
 
-    // Save current state before switching tabs
-    const currentData = getScenarioCreateDataFromUI(popup);
-    saveScenarioCreateData(currentData);
-
-    switchTab(tabId);
+    switchTab(popup, tabId);
   });
 
   // Handle page reordering with global move buttons
@@ -95,8 +90,7 @@ export function setupTabFunctionality(popup: JQuery<HTMLElement>) {
       container.removeClass(moveClass);
 
       // Save current state
-      const currentData = getScenarioCreateDataFromUI(popup);
-      saveScenarioCreateData(currentData);
+      saveScenarioCreateData(getScenarioCreateDataFromUI(popup));
     } finally {
       // Always cleanup, even if there's an error
       isAnimating = false;
@@ -109,27 +103,27 @@ export function setupTabFunctionality(popup: JQuery<HTMLElement>) {
     const pageNum = $(this).data('page');
     if (!pageNum) return;
 
-    togglePage(pageNum);
+    togglePage(popup, pageNum);
   });
 
   // Add page button handling
   popup.on('click', '#add-page-btn', function () {
     const pageButtons = popup.find('.page-button');
     const newPageNum = pageButtons.length + 1;
-    const newPageButton = createPageButton(newPageNum);
+    const newPageButton = createPageButton(popup, newPageNum);
 
     // Add the new page button
     popup.find('#page-tab-buttons').append(newPageButton);
 
     // Switch to the new page
-    togglePage(newPageNum);
+    togglePage(popup, newPageNum);
+
+    // Update the page select dropdown
+    const pageSelect = popup.find('#page-select');
+    pageSelect.append($('<option>').val(newPageNum).text(`Page ${newPageNum}`));
 
     // Save the current state
-    const currentData = getScenarioCreateDataFromUI(popup);
-    if (!currentData.layout[newPageNum - 1]) {
-      currentData.layout[newPageNum - 1] = [];
-    }
-    saveScenarioCreateData(currentData);
+    saveScenarioCreateData(getScenarioCreateDataFromUI(popup));
   });
 
   // Remove page button handling
@@ -143,13 +137,11 @@ export function setupTabFunctionality(popup: JQuery<HTMLElement>) {
       alert('Cannot remove a page that contains questions. Please move or delete the questions first.');
       return;
     }
-
-    // Get the current state
-    const currentData = getScenarioCreateDataFromUI(popup);
-
-    // Remove the page from layout
-    currentData.layout.splice(currentPage - 1, 1);
-    saveScenarioCreateData(currentData);
+    const totalPages = popup.find('.page-button').length;
+    if (totalPages === 1) {
+      alert('Cannot remove the last page.');
+      return;
+    }
 
     // Remove the page button
     popup.find(`.page-button[data-page="${currentPage}"]`).parent().remove();
@@ -159,11 +151,14 @@ export function setupTabFunctionality(popup: JQuery<HTMLElement>) {
 
     // Switch to the previous page or page 1
     const newPage = Math.max(1, currentPage - 1);
-    togglePage(newPage);
+    togglePage(popup, newPage);
+
+    // Save the current state
+    saveScenarioCreateData(getScenarioCreateDataFromUI(popup));
   });
 
   // Initial state
-  switchTab('description');
+  switchTab(popup, 'description');
 }
 
 /**
@@ -198,6 +193,12 @@ function renumberPages(popup: JQuery<HTMLElement>, removedPageNumber: number) {
     questionsToUpdate.attr('data-page', i - 1);
   }
 
+  const pageSelect = popup.find('#page-select');
+  const oldSelectedValue = pageSelect.val() as string;
+  if (oldSelectedValue) {
+    pageSelect.empty();
+  }
+
   // Then update the page buttons
   popup.find('.page-button').each(function (index) {
     const newPageNum = index + 1;
@@ -205,14 +206,25 @@ function renumberPages(popup: JQuery<HTMLElement>, removedPageNumber: number) {
 
     // Update button text and data attribute
     pageButton.text(`Page ${newPageNum}`).attr('data-page', newPageNum).data('page', newPageNum);
+
+    if (oldSelectedValue) {
+      const option = $('<option>').val(newPageNum).text(`Page ${newPageNum}`);
+      pageSelect.append(option);
+    }
   });
+
+  // Restore the selected value
+  if (oldSelectedValue) {
+    pageSelect.empty();
+    const oldSelectedPage = parseInt(oldSelectedValue);
+    pageSelect.val(oldSelectedPage > removedPageNumber ? oldSelectedPage - 1 : oldSelectedPage);
+  }
 }
 
 /**
  * Toggles visibility of questions for a specific page
  */
-export function togglePage(pageNum: number) {
-  const popup = $('#scenario-create-dialog');
+export function togglePage(popup: JQuery<HTMLElement>, pageNum: number) {
   const container = popup.find('#questions-container');
   const pageButton = popup.find(`.page-button[data-page="${pageNum}"]`);
   const questionTabs = popup.find(`.tab-button-container[data-page="${pageNum}"]`);
@@ -224,52 +236,76 @@ export function togglePage(pageNum: number) {
   // Toggle visibility of questions
   container.find('.tab-button-container').hide();
   questionTabs.show();
-
-  // If there's no active question tab visible, activate the first one
-  const activeTab = container.find('.tab-button.active');
-  if (!activeTab.length || !activeTab.closest('.tab-button-container').is(':visible')) {
-    const firstVisibleTab = questionTabs.first().find('.tab-button');
-    if (firstVisibleTab.length) {
-      switchTab(firstVisibleTab.data('tab'));
-    }
-  }
-
-  // Save current state before switching tabs
-  const currentData = getScenarioCreateDataFromUI(popup);
-  saveScenarioCreateData(currentData);
 }
 
 /**
- * Switches to the specified tab. It is only for core and question tabs. Not page.
+ * Switches to the specified tab. Handles both core tabs and question tabs.
  */
-export function switchTab(tabId: TabId) {
-  const popup = $('#scenario-create-dialog');
-  const $popup = popup as JQuery<HTMLElement>;
+export async function switchTab(popup: JQuery<HTMLElement>, tabId: TabId) {
+  // Check duplicate question ids
+  const activeTabButton = popup.find(`.tab-button.active`);
+  if (activeTabButton.length) {
+    const tabData = activeTabButton.data('tab');
+    if (tabData && tabData.startsWith('question-')) {
+      const inputId = tabData.replace('question-', '');
+      if (!inputId) {
+        await stEcho('error', 'Empty question IDs are not allowed.');
+        return;
+      }
+      // Check for duplicate IDs before proceeding
+      const duplicateId = checkDuplicateQuestionIds(popup);
+      if (duplicateId) {
+        await stEcho('error', `Question ID "${duplicateId}" already exists.`);
+        return;
+      }
+    }
+  }
 
-  $popup.find('.tab-button').removeClass('active');
-  $popup.find('.tab-content').removeClass('active');
-  $popup.find(`.tab-button[data-tab="${tabId}"]`).addClass('active');
-  $popup.find(`.tab-content[data-tab="${tabId}"]`).addClass('active');
+  popup.find('.tab-button').removeClass('active');
+  popup.find('.tab-content').removeClass('active');
+  popup.find(`.tab-button[data-tab="${tabId}"]`).addClass('active');
+  popup.find(`.tab-content[data-tab="${tabId}"]`).addClass('active');
+
+  const currentData = getScenarioCreateDataFromUI(popup);
+  currentData.activeTab = tabId;
+
+  const pageSelect = popup.find('#page-select');
+  pageSelect.empty();
 
   // Update script inputs based on active tab
   if (CORE_TABS.includes(tabId as CoreTab)) {
-    updateScriptInputs($popup, tabId as CoreTab);
+    pageSelect.prepend($('<option>').val('').text('None'));
+    pageSelect.val('');
+    popup.find('#questions-container .button-group').hide();
+    updateScriptInputs(popup, tabId as CoreTab);
   } else {
-    updateQuestionScriptInputs($popup.find(`.dynamic-input-group[data-tab="${tabId}"]`));
+    // For question tabs, preserve the page number in activeTab
+    const questionElement = popup.find(`.tab-button[data-tab="${tabId}"]`).closest('.tab-button-container');
+    const pageNum = parseInt(questionElement.attr('data-page') as string);
+    togglePage(popup, pageNum);
+    popup.find('.page-button').each(function (index) {
+      const page = index + 1;
+      pageSelect.append($('<option>').val(page).text(`Page ${page}`));
+    });
+    pageSelect.val(pageNum);
+    popup.find('#questions-container .button-group').show();
+    updateQuestionScriptInputs(popup, popup.find(`.dynamic-input-group[data-tab="${tabId}"]`));
   }
+
+  // Save updated state
+  saveScenarioCreateData(currentData);
 }
 
 /**
  * Creates a new page button
  */
-export function createPageButton(pageNum: number): JQuery<HTMLElement> {
-  const template = document.querySelector<HTMLTemplateElement>('#page-button-template');
-  if (!template) throw new Error('Page button template not found');
+export function createPageButton(popup: JQuery<HTMLElement>, pageNum: number): JQuery<HTMLElement> {
+  const template = popup.find('#page-button-template');
+  if (template.length === 0) throw new Error('Page button template not found');
 
-  const content = template.content.cloneNode(true) as DocumentFragment;
-  const container = content.querySelector('.page-button-container');
-  if (!container) throw new Error('Page button container not found in template');
+  const buttonHtml = template.html()?.replace(/\{page\}/g, pageNum.toString());
+  if (!buttonHtml) throw new Error('Page button template is empty');
 
-  const buttonHtml = container.outerHTML.replace(/\{page\}/g, pageNum.toString());
-  return $(buttonHtml) as JQuery<HTMLElement>;
+  const container = $('<div>').html(buttonHtml);
+  return container.children().first();
 }
