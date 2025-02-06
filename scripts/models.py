@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Dict, Optional, Any
+from typing import TypedDict, List, Dict, Optional
 
 class StoryCard(TypedDict, total=False):
     """Type definition for story card input format."""

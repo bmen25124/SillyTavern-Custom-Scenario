@@ -9,3 +9,4 @@ public/scripts/extensions/third-party
 *.map
 repopack-output.txt
 scripts/*.json
+__pycache__
