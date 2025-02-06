@@ -3,57 +3,71 @@
 
 import json
 import argparse
+from typing import Optional, List, Any, cast, Union
+
+from models import StoryCard, LoreBook, RecursionRule, LoreBookEntry
+
+
+def parse_recursion_rule(rule_str: Optional[str]) -> Optional[RecursionRule]:
+    """Parse recursion rule string into a list of field-value tuples."""
+    if not rule_str:
+        return None
+    rules = []
+    for rule in rule_str.split(","):
+        if ":" in rule:
+            field, value = rule.split(":", 1)
+            rules.append((field.strip(), value.strip()))
+    return rules
+
+
+def matches_rules(
+    card: Union[StoryCard, dict[str, Any]], rules: Optional[RecursionRule]
+) -> bool:
+    """Check if card matches any of the provided rules."""
+    if not rules:
+        return False
+    for field, value in rules:
+        card_value = card.get(field)
+        if card_value is not None and str(card_value) == value:
+            return True
+    return False
 
 
 def convert_story_cards_to_lorebook(
-    story_cards,
-    remove_braces=False,
-    description_in_comment=False,
-    exclude_recursion=None,
-    prevent_recursion=None,
-):
-    lorebook = {"entries": {}}
+    story_cards: List[StoryCard],
+    remove_braces: bool = False,
+    description_in_comment: bool = False,
+    exclude_recursion: Optional[str] = None,
+    prevent_recursion: Optional[str] = None,
+) -> LoreBook:
+    """Convert story cards to lorebook format."""
+    lorebook: LoreBook = {"entries": {}}
 
     # Parse recursion rules
-    def parse_recursion_rule(rule_str):
-        if not rule_str:
-            return None
-        rules = []
-        for rule in rule_str.split(","):
-            if ":" in rule:
-                field, value = rule.split(":", 1)
-                rules.append((field.strip(), value.strip()))
-        return rules
-
     exclude_rules = parse_recursion_rule(exclude_recursion)
     prevent_rules = parse_recursion_rule(prevent_recursion)
 
-    # Check if card matches any rules
-    def matches_rules(card, rules):
-        if not rules:
-            return False
-        for field, value in rules:
-            if field in card and str(card[field]) == value:
-                return True
-        return False
-
     for index, card in enumerate(story_cards):
         # Split keys string into list and trim each key
-        keys = [key.strip() for key in card["keys"].split(",")] if card["keys"] else []
+        keys = (
+            [key.strip() for key in card.get("keys", "").split(",")]
+            if card.get("keys")
+            else []
+        )
 
         # Handle value text
-        content = card["value"]
+        content = card.get("value", "")
         if remove_braces:
             if content.startswith("{") and content.endswith("}"):
                 content = content[1:-1]
 
         # Handle comment
-        comment = card["title"]
-        if description_in_comment and card["description"]:
-            comment = f"{card['title']} ({card['description'].strip()})"
+        comment = card.get("title", "")
+        if description_in_comment and card.get("description"):
+            comment = f"{card.get('title', '')} ({card.get('description', '').strip()})"
 
         # Create lorebook entry
-        entry = {
+        entry: LoreBookEntry = {
             "uid": index,
             "key": keys,
             "keysecondary": [],
@@ -93,7 +107,7 @@ def convert_story_cards_to_lorebook(
     return lorebook
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Convert story cards to lorebook format"
     )
@@ -120,7 +134,7 @@ def main():
 
     # Read story cards from file
     with open(args.input, "r", encoding="utf-8") as f:
-        story_cards = json.load(f)
+        story_cards = cast(List[StoryCard], json.load(f))
 
     # Convert to lorebook format
     lorebook = convert_story_cards_to_lorebook(
