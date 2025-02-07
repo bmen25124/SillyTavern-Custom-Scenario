@@ -1,6 +1,4 @@
 // @ts-ignore
-import { uuidv4 } from '../../../../utils.js';
-// @ts-ignore
 import {
   getCharacters,
   saveCharacterDebounced,
@@ -17,8 +15,7 @@ import { getContext } from '../../../../extensions.js';
 
 import {
   world_names,
-  checkEmbeddedWorld,
-  importEmbeddedWorldInfo,
+  selected_world_info,
   loadWorldInfo,
   // convertCharacterBook, // not exported
   saveWorldInfo,
@@ -35,7 +32,7 @@ import {
 import { FullExportData } from './types.js';
 
 export const extensionName = 'SillyTavern-Custom-Scenario';
-export const extensionVersion = '0.4.0';
+export const extensionVersion = '0.4.1';
 export const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 
 /**
@@ -141,14 +138,6 @@ export function st_createPopper(
  */
 export function st_getCharacters(): FullExportData[] {
   return getContext().characters;
-}
-
-export function st_checkEmbeddedWorld(chid: string): boolean {
-  return checkEmbeddedWorld(chid);
-}
-
-export async function st_importEmbeddedWorldInfo(skipPopup = false) {
-  return await importEmbeddedWorldInfo(skipPopup);
 }
 
 export function st_saveCharacterDebounced() {
@@ -279,9 +268,35 @@ export function st_saveWorldInfo(name: string, data: any, immediately = false) {
   return saveWorldInfo(name, data, immediately);
 }
 
-// export async function st_updateWorldInfoList() {
-//   return await updateWorldInfoList();
-// }
+export async function st_updateWorldInfoList() {
+  const result = await fetch('/api/settings/get', {
+    method: 'POST',
+    headers: st_getRequestHeaders(),
+    body: JSON.stringify({}),
+  });
+
+  if (result.ok) {
+    var data = await result.json();
+    const new_world_names = data.world_names?.length ? data.world_names : [];
+    $('#world_info').find('option[value!=""]').remove();
+    $('#world_editor_select').find('option[value!=""]').remove();
+
+    new_world_names.forEach((item: string, i: number) => {
+      $('#world_info').append(
+        `<option value='${i}'${selected_world_info.includes(item) ? ' selected' : ''}>${item}</option>`,
+      );
+      $('#world_editor_select').append(`<option value='${i}'>${item}</option>`);
+    });
+
+    let oldCount = world_names.length;
+    for (let i = 0; i < oldCount; i++) {
+      world_names.pop();
+    }
+    for (const new_world_name of new_world_names) {
+      world_names.push(new_world_name);
+    }
+  }
+}
 
 export function st_setWorldInfoButtonClass(chid: string | undefined, forceValue?: boolean | undefined) {
   setWorldInfoButtonClass(chid, forceValue);
@@ -289,4 +304,43 @@ export function st_setWorldInfoButtonClass(chid: string | undefined, forceValue?
 
 export function st_getThumbnailUrl(type: string, file: string): string {
   return getThumbnailUrl(type, file);
+}
+
+/**
+ * @returns True if user accepts it.
+ */
+export async function st_popupConfirm(header: string, text?: string): Promise<boolean> {
+  return await getContext().Popup.show.confirm(header, text);
+}
+
+/**
+ * @returns True if added or already exist. False if user rejected the popup
+ */
+export async function st_addWorldInfo(
+  worldName: string,
+  character_book:
+    | {
+        entries: any[];
+        name: string;
+      }
+    | undefined,
+  skipPopup: boolean,
+): Promise<boolean> {
+  const worldNames = st_getWorldNames();
+  if (!worldNames.includes(worldName) && character_book) {
+    if (!skipPopup) {
+      const confirmation = await st_popupConfirm(
+        `Are you sure you want to import '${worldName}'?`,
+        `Without lorebook, it will not work as expected.`,
+      );
+      if (!confirmation) {
+        return false;
+      }
+    }
+    const convertedBook = st_convertCharacterBook(character_book);
+    st_saveWorldInfo(character_book.name, convertedBook, true);
+    await st_updateWorldInfoList();
+  }
+
+  return true;
 }

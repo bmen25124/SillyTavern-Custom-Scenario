@@ -96,15 +96,28 @@ You also received a card with the following message: Happy birthday! Enjoy your 
     * If question type is _checkbox_, `variables.gift`. (boolean)
 * `Show Script` is a script that decides whether to show the question or not in the play dialog. Example:  `return variables.gift === "birthday"` will show the question only if the answer is "birthday".
 * In preview, empty strings are showing as `{{variable}}` but in the created card, they are not shown.
+* We can get single lorebook entry by `await world.getFirst({name?: string, keyword: string})`. Example usage:
+```js
+const info = await world.getFirst({keyword: "triggerWord"}); // name is optional, default name is character lorebook
+if (info) {
+    variables.f_companion_content = info.content;
+}
+```
+* We can get all lorebook entries by `await world.getAll({name?: string, keyword: string})`. Example usage:
+```js
+const infos = await world.getAll({keyword: "triggerWord"}); // name is optional, default name is character lorebook
+if (infos && infos.length > 0) {
+    variables.f_companion_content = infos[0].content;
+}
+```
 
 
 ## FAQ:
 ### Why did you create this?
 I saw this on [AIDungeon](https://play.aidungeon.com/) and liked it. You can see in this [reddit post](https://www.reddit.com/r/SillyTavernAI/comments/1i59jem/scenario_system_similar_to_ai_dungeon_nsfw_for/) with an example.
 
-### Why version is _0.4.0_
+### Why version is _0.4.1_
 It is because of UI, not functionality.
 
 ## Known Issues
-* If you import a file in create dialog, lorebook would be imported but you need to refresh the page to see it. I'll fix in next SillyTavern update.
 * Tags are not importing to SillyTavern because I don't want to show `Import Tags` dialog for each play. So I'm planning to add a extension setting to enable/disable this.

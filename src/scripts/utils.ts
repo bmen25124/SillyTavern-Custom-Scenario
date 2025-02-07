@@ -1,11 +1,14 @@
+import { st_getWorldInfo } from './config';
+
 /**
  * @param emptyStrategy if it's variableName, null/undefined/empty values would be shown as `{{variable}}`. Otherwise, it will show as empty strings.
  */
-export function executeMainScript(
+export async function executeMainScript(
   script: string,
   answers: {},
   emptyStrategy: 'variableName' | 'remove',
-): Record<string, string | boolean | { label: string; value: string }> {
+  worldName: string | undefined,
+): Promise<Record<string, string | boolean | { label: string; value: string }>> {
   // Clone answers to avoid modifying the original object
   const variables = JSON.parse(JSON.stringify(answers));
 
@@ -14,21 +17,39 @@ export function executeMainScript(
 
   // Create a function that returns all variables
   const scriptFunction = new Function(
-    'answers',
+    'variables',
+    'world',
     `
-        let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
-        ${interpolatedScript}
-        return variables;
+        return (async () => {
+            ${interpolatedScript}
+            return await Promise.resolve(variables);
+        })();
     `,
   );
 
-  return scriptFunction(variables);
+  return scriptFunction(JSON.parse(JSON.stringify(variables)), {
+    getAll: async (params: { name?: string; keyword: string }) =>
+      await getWorldInfoContent({
+        name: params.name ?? worldName,
+        keyword: params.keyword,
+      }),
+    getFirst: async (params: { name?: string; keyword: string }) =>
+      await getFirstWorldInfoContent({
+        name: params.name ?? worldName,
+        keyword: params.keyword,
+      }),
+  });
 }
 
 /**
  * @param emptyStrategy if it's variableName, null/undefined/empty values would be shown as `{{variable}}`. Otherwise, it will show as empty strings.
  */
-export function executeShowScript(script: string, answers: {}, emptyStrategy: 'variableName' | 'remove'): boolean {
+export function executeShowScript(
+  script: string,
+  answers: {},
+  emptyStrategy: 'variableName' | 'remove',
+  _worldName: string | undefined,
+): boolean {
   // Clone answers to avoid modifying the original object
   const variables = JSON.parse(JSON.stringify(answers));
 
@@ -37,14 +58,13 @@ export function executeShowScript(script: string, answers: {}, emptyStrategy: 'v
 
   // Create a function that returns all variables
   const scriptFunction = new Function(
-    'answers',
+    'variables',
     `
-        let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
         ${interpolatedScript}
     `,
   );
 
-  return scriptFunction(variables);
+  return scriptFunction(JSON.parse(JSON.stringify(variables)));
 }
 
 /**
@@ -85,4 +105,45 @@ export function interpolateText(
   }
 
   return result;
+}
+
+interface WIEntry {
+  id: string;
+  keys: string[];
+  content: string;
+}
+
+/**
+ * Checks if keyword is matching the entry keys.
+ * @returns null if world info is not found.
+ */
+export async function getWorldInfoContent(params: { name?: string; keyword: string }): Promise<WIEntry[] | null> {
+  if (!params.name) {
+    return null;
+  }
+  const worldInfo = await st_getWorldInfo(params.name);
+  if (!worldInfo) {
+    return null;
+  }
+
+  const result: WIEntry[] = [];
+  for (const entry of Object.values(worldInfo.entries)) {
+    for (const key of entry.key) {
+      if (key.toLowerCase().includes(params.keyword.toLowerCase())) {
+        result.push({
+          id: entry.uid,
+          keys: entry.key,
+          content: entry.content,
+        });
+        break;
+      }
+    }
+  }
+
+  return result;
+}
+
+export async function getFirstWorldInfoContent(params: { name?: string; keyword: string }): Promise<WIEntry | null> {
+  const result = await getWorldInfoContent(params);
+  return result?.[0] ?? null;
 }

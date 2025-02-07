@@ -46,6 +46,7 @@ export interface ScenarioCreateData extends ScenarioExportData {
   characterNote: string;
   activeTab: TabId;
   scriptInputValues: ScriptInputValues;
+  worldName?: string;
 }
 
 export interface FullExportData {
@@ -107,6 +108,7 @@ export function createEmptyScenarioCreateData(): ScenarioCreateData {
       'character-note': {},
     },
     version: extensionVersion,
+    worldName: undefined,
   };
 }
 
@@ -279,6 +281,16 @@ const versionUpgrades: VersionUpgrade[] = [
     },
     exportCallback: (data: ScenarioExportData) => {
       data.version = '0.4.0';
+    },
+  },
+  {
+    from: '0.4.0',
+    to: '0.4.1',
+    createCallback: (data: ScenarioCreateData) => {
+      data.version = '0.4.1';
+    },
+    exportCallback: (data: ScenarioExportData) => {
+      data.version = '0.4.1';
     },
   },
 ];

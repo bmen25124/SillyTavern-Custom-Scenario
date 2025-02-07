@@ -10,8 +10,7 @@ import {
   stGo,
   extensionVersion,
   st_getCharacters,
-  st_checkEmbeddedWorld,
-  st_importEmbeddedWorldInfo,
+  st_addWorldInfo,
   st_saveCharacterDebounced,
   st_getWorldNames,
   st_setWorldInfoButtonClass,
@@ -130,6 +129,8 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
     }
   }
 
+  const worldName = scenarioData.data.extensions?.world;
+
   callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', {
     okButton: true,
     cancelButton: true,
@@ -197,10 +198,14 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
         return false;
       }
 
+      if (worldName) {
+        await st_addWorldInfo(worldName, scenarioData.data.character_book, false);
+      }
+
       try {
         // Process description and first message with allAnswers
         const descriptionVars = descriptionScript
-          ? executeMainScript(descriptionScript, allAnswers, 'remove')
+          ? await executeMainScript(descriptionScript, allAnswers, 'remove', worldName)
           : allAnswers;
         const description = interpolateText(
           scenarioData.description || scenarioData.data?.description,
@@ -209,7 +214,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
         );
 
         const firstMessageVars = firstMessageScript
-          ? executeMainScript(firstMessageScript, allAnswers, 'remove')
+          ? await executeMainScript(firstMessageScript, allAnswers, 'remove', worldName)
           : allAnswers;
         const firstMessage = interpolateText(
           scenarioData.first_mes || scenarioData.data?.first_mes,
@@ -217,7 +222,9 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
           'remove',
         );
 
-        const scenarioVars = scenarioScript ? executeMainScript(scenarioScript, allAnswers, 'remove') : allAnswers;
+        const scenarioVars = scenarioScript
+          ? await executeMainScript(scenarioScript, allAnswers, 'remove', worldName)
+          : allAnswers;
         const processedScenario = interpolateText(
           scenarioData.scenario || scenarioData.data?.scenario,
           scenarioVars,
@@ -225,7 +232,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
         );
 
         const personalityVars = personalityScript
-          ? executeMainScript(personalityScript, allAnswers, 'remove')
+          ? await executeMainScript(personalityScript, allAnswers, 'remove', worldName)
           : allAnswers;
         const processedPersonality = interpolateText(
           scenarioData.personality || scenarioData.data?.personality,
@@ -244,7 +251,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
         // Add character note script processing and update extensions.depth_prompt.prompt
         if (scenarioData.data.extensions && scenarioData.data.extensions.depth_prompt) {
           const characterNoteVars = characterNoteScript
-            ? executeMainScript(characterNoteScript, allAnswers, 'remove')
+            ? await executeMainScript(characterNoteScript, allAnswers, 'remove', worldName)
             : allAnswers;
           const processedCharacterNote = interpolateText(
             scenarioData.data.extensions.depth_prompt.prompt,
@@ -329,20 +336,16 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
         }
         updateAvatar();
 
-        // Import world info
+        // Activate world info
         const chid = $('#set_character_world').data('chid');
         if (chid) {
           const characters = st_getCharacters();
           const worldName = characters[chid]?.data?.extensions?.world;
-          if (worldName) {
-            const hasEmbed = st_checkEmbeddedWorld(chid);
-            const worldNames = st_getWorldNames();
-            if (hasEmbed && !worldNames.includes(worldName)) {
-              await st_importEmbeddedWorldInfo();
-              st_saveCharacterDebounced();
-            } else {
-              st_setWorldInfoButtonClass(chid, true);
-            }
+          const worldNames = st_getWorldNames();
+          if (worldName && worldNames.includes(worldName)) {
+            $('#character_world').val(worldName);
+            st_saveCharacterDebounced();
+            st_setWorldInfoButtonClass(chid, true);
           }
         }
         return true;
@@ -427,7 +430,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
    * Updates the question text based on dynamic input values and script execution.
    * @throws {Error} When script execution fails
    */
-  function updateQuestionText(questionWrapper: JQuery<HTMLElement>, question: Question) {
+  async function updateQuestionText(questionWrapper: JQuery<HTMLElement>, question: Question) {
     const answers: Record<string, string | boolean | { label: string; value: string }> = {};
     popup.find('.dynamic-input').each(function () {
       const $input = $(this);
@@ -449,7 +452,9 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
     });
 
     try {
-      const variables = question.script ? executeMainScript(question.script, answers, 'remove') : answers;
+      const variables = question.script
+        ? await executeMainScript(question.script, answers, 'remove', worldName)
+        : answers;
       const interpolated = interpolateText(question.text, variables, 'remove');
       questionWrapper.find('.input-question').text(interpolated + (question.required ? ' *' : ''));
     } catch (error: any) {
@@ -462,7 +467,7 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
 
   // Create all inputs at initialization
   function createAllInputs() {
-    sortedQuestions.forEach((question) => {
+    sortedQuestions.forEach(async (question) => {
       const newInput = $(inputTemplate.html());
       newInput.addClass('dynamic-input-wrapper');
       newInput.attr('data-input-id', question.inputId);
@@ -517,13 +522,13 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
       dynamicInputsContainer.append(newInput);
 
       // Set initial question text
-      updateQuestionText(newInput, question);
+      await updateQuestionText(newInput, question);
 
       // Update question text when any input changes
       popup.find('.dynamic-input').on('input change', function () {
-        sortedQuestions.forEach((q) => {
+        sortedQuestions.forEach(async (q) => {
           const wrapper = dynamicInputsContainer.find(`[data-input-id="${q.inputId}"]`);
-          updateQuestionText(wrapper, q);
+          await updateQuestionText(wrapper, q);
         });
       });
     });
@@ -550,15 +555,15 @@ async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: Arr
       }
     });
 
-    currentPageQuestions.forEach((question) => {
+    currentPageQuestions.forEach(async (question) => {
       const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);
-      const shouldShow = !question.showScript || executeShowScript(question.showScript, answers, 'remove');
+      const shouldShow = !question.showScript || executeShowScript(question.showScript, answers, 'remove', worldName);
 
       // Update the show status and display accordingly
       wrapper.find('.dynamic-input').data('show', shouldShow);
       if (shouldShow) {
         wrapper.show();
-        updateQuestionText(wrapper, question);
+        await updateQuestionText(wrapper, question);
       }
     });
 

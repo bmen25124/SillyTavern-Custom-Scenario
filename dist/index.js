@@ -1,14 +1,14 @@
 var global = typeof global !== "undefined" ? global : typeof window !== "undefined" ? window : typeof self !== "undefined" ? self : undefined;
 
-import { getCharacters, saveCharacterDebounced, extension_prompt_roles, getThumbnailUrl } from '../../../../../script.js';
+import { getCharacters, saveCharacterDebounced, getThumbnailUrl, extension_prompt_roles } from '../../../../../script.js';
 import { humanizedDateTime } from '../../../../RossAscends-mods.js';
 import { Popper } from '../../../../../lib.js';
 import { getContext } from '../../../../extensions.js';
-import { checkEmbeddedWorld, importEmbeddedWorldInfo, world_names, loadWorldInfo, newWorldInfoEntryTemplate, world_info_position, DEFAULT_DEPTH, world_info_logic, DEFAULT_WEIGHT, saveWorldInfo, setWorldInfoButtonClass } from '../../../../world-info.js';
+import { world_names, loadWorldInfo, setWorldInfoButtonClass, newWorldInfoEntryTemplate, world_info_position, DEFAULT_DEPTH, world_info_logic, DEFAULT_WEIGHT, saveWorldInfo, selected_world_info } from '../../../../world-info.js';
 
 // @ts-ignore
 const extensionName = 'SillyTavern-Custom-Scenario';
-const extensionVersion = '0.4.0';
+const extensionVersion = '0.4.1';
 const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
@@ -65,12 +65,6 @@ function st_createPopper(reference, popper, options) {
  */
 function st_getCharacters() {
     return getContext().characters;
-}
-function st_checkEmbeddedWorld(chid) {
-    return checkEmbeddedWorld(chid);
-}
-async function st_importEmbeddedWorldInfo(skipPopup = false) {
-    return await importEmbeddedWorldInfo(skipPopup);
 }
 function st_saveCharacterDebounced() {
     return saveCharacterDebounced();
@@ -180,46 +174,100 @@ function st_convertCharacterBook(characterBook) {
 function st_saveWorldInfo(name, data, immediately = false) {
     return saveWorldInfo(name, data, immediately);
 }
-// export async function st_updateWorldInfoList() {
-//   return await updateWorldInfoList();
-// }
+async function st_updateWorldInfoList() {
+    const result = await fetch('/api/settings/get', {
+        method: 'POST',
+        headers: st_getRequestHeaders(),
+        body: JSON.stringify({}),
+    });
+    if (result.ok) {
+        var data = await result.json();
+        const new_world_names = data.world_names?.length ? data.world_names : [];
+        $('#world_info').find('option[value!=""]').remove();
+        $('#world_editor_select').find('option[value!=""]').remove();
+        new_world_names.forEach((item, i) => {
+            $('#world_info').append(`<option value='${i}'${selected_world_info.includes(item) ? ' selected' : ''}>${item}</option>`);
+            $('#world_editor_select').append(`<option value='${i}'>${item}</option>`);
+        });
+        let oldCount = world_names.length;
+        for (let i = 0; i < oldCount; i++) {
+            world_names.pop();
+        }
+        for (const new_world_name of new_world_names) {
+            world_names.push(new_world_name);
+        }
+    }
+}
 function st_setWorldInfoButtonClass(chid, forceValue) {
     setWorldInfoButtonClass(chid, forceValue);
 }
 function st_getThumbnailUrl(type, file) {
     return getThumbnailUrl(type, file);
 }
+/**
+ * @returns True if user accepts it.
+ */
+async function st_popupConfirm(header, text) {
+    return await getContext().Popup.show.confirm(header, text);
+}
+/**
+ * @returns True if added or already exist. False if user rejected the popup
+ */
+async function st_addWorldInfo(worldName, character_book, skipPopup) {
+    const worldNames = st_getWorldNames();
+    if (!worldNames.includes(worldName) && character_book) {
+        if (!skipPopup) {
+            const confirmation = await st_popupConfirm(`Are you sure you want to import '${worldName}'?`, `Without lorebook, it will not work as expected.`);
+            if (!confirmation) {
+                return false;
+            }
+        }
+        const convertedBook = st_convertCharacterBook(character_book);
+        st_saveWorldInfo(character_book.name, convertedBook, true);
+        await st_updateWorldInfoList();
+    }
+    return true;
+}
 
 /**
  * @param emptyStrategy if it's variableName, null/undefined/empty values would be shown as `{{variable}}`. Otherwise, it will show as empty strings.
  */
-function executeMainScript(script, answers, emptyStrategy) {
+async function executeMainScript(script, answers, emptyStrategy, worldName) {
     // Clone answers to avoid modifying the original object
     const variables = JSON.parse(JSON.stringify(answers));
     // First interpolate any variables in the script
     const interpolatedScript = interpolateText(script, variables, emptyStrategy);
     // Create a function that returns all variables
-    const scriptFunction = new Function('answers', `
-        let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
-        ${interpolatedScript}
-        return variables;
+    const scriptFunction = new Function('variables', 'world', `
+        return (async () => {
+            ${interpolatedScript}
+            return await Promise.resolve(variables);
+        })();
     `);
-    return scriptFunction(variables);
+    return scriptFunction(JSON.parse(JSON.stringify(variables)), {
+        getAll: async (params) => await getWorldInfoContent({
+            name: params.name ?? worldName,
+            keyword: params.keyword,
+        }),
+        getFirst: async (params) => await getFirstWorldInfoContent({
+            name: params.name ?? worldName,
+            keyword: params.keyword,
+        }),
+    });
 }
 /**
  * @param emptyStrategy if it's variableName, null/undefined/empty values would be shown as `{{variable}}`. Otherwise, it will show as empty strings.
  */
-function executeShowScript(script, answers, emptyStrategy) {
+function executeShowScript(script, answers, emptyStrategy, _worldName) {
     // Clone answers to avoid modifying the original object
     const variables = JSON.parse(JSON.stringify(answers));
     // First interpolate any variables in the script
     const interpolatedScript = interpolateText(script, variables, emptyStrategy);
     // Create a function that returns all variables
-    const scriptFunction = new Function('answers', `
-        let variables = JSON.parse(JSON.stringify(${JSON.stringify(variables)}));
+    const scriptFunction = new Function('variables', `
         ${interpolatedScript}
     `);
-    return scriptFunction(variables);
+    return scriptFunction(JSON.parse(JSON.stringify(variables)));
 }
 /**
  * @param emptyStrategy if it's variableName, null/undefined/empty values would be shown as `{{variable}}`. Otherwise, it will show as empty strings.
@@ -254,6 +302,37 @@ function interpolateText(template, variables, emptyStrategy) {
     }
     return result;
 }
+/**
+ * Checks if keyword is matching the entry keys.
+ * @returns null if world info is not found.
+ */
+async function getWorldInfoContent(params) {
+    if (!params.name) {
+        return null;
+    }
+    const worldInfo = await st_getWorldInfo(params.name);
+    if (!worldInfo) {
+        return null;
+    }
+    const result = [];
+    for (const entry of Object.values(worldInfo.entries)) {
+        for (const key of entry.key) {
+            if (key.toLowerCase().includes(params.keyword.toLowerCase())) {
+                result.push({
+                    id: entry.uid,
+                    keys: entry.key,
+                    content: entry.content,
+                });
+                break;
+            }
+        }
+    }
+    return result;
+}
+async function getFirstWorldInfoContent(params) {
+    const result = await getWorldInfoContent(params);
+    return result?.[0] ?? null;
+}
 
 const CORE_TABS = ['description', 'first-message', 'scenario', 'personality', 'character-note'];
 const STORAGE_KEY = 'scenario_creator_data';
@@ -281,6 +360,7 @@ function createEmptyScenarioCreateData() {
             'character-note': {},
         },
         version: extensionVersion,
+        worldName: undefined,
     };
 }
 function createEmptyScenarioExportData() {
@@ -438,6 +518,16 @@ const versionUpgrades = [
         },
         exportCallback: (data) => {
             data.version = '0.4.0';
+        },
+    },
+    {
+        from: '0.4.0',
+        to: '0.4.1',
+        createCallback: (data) => {
+            data.version = '0.4.1';
+        },
+        exportCallback: (data) => {
+            data.version = '0.4.1';
         },
     },
 ];
@@ -3244,6 +3334,8 @@ function getScenarioCreateDataFromUI(popup) {
     data.characterNote = popup.find('#scenario-creator-character-note').val() || '';
     // @ts-ignore
     data.characterNoteScript = popup.find('#scenario-creator-character-note-script').val() || '';
+    // @ts-ignore
+    data.worldName = $('#character_world').val() || undefined;
     // Get questions data and build layout
     data.questions = [];
     data.layout = [];
@@ -3373,17 +3465,10 @@ async function convertImportedData(importedData) {
         }
     }
     // Import world info
-    const worldNames = st_getWorldNames();
     const worldName = data.data.extensions?.world;
     if (worldName) {
-        const character_book = data.data.character_book;
         $('#character_world').val(worldName);
-        if (!worldNames.includes(worldName) && character_book) {
-            const convertedBook = st_convertCharacterBook(character_book);
-            st_saveWorldInfo(character_book.name, convertedBook, true);
-            await stEcho('info', 'Lorebook is imported but you need to refresh the page to see it.');
-            // await st_updateWorldInfoList();
-        }
+        await st_addWorldInfo(worldName, data.data.character_book, true);
     }
     st_setWorldInfoButtonClass(undefined, !!worldName);
     const questions = (scenarioCreator.questions || []).map((q) => ({
@@ -3421,6 +3506,7 @@ async function convertImportedData(importedData) {
             'character-note': {},
         },
         version: scenarioCreator.version,
+        worldName: data.data?.extensions?.world,
     };
 }
 
@@ -4172,7 +4258,7 @@ function setupPreviewFunctionality(popup) {
 /**
  * Updates the preview for other than question
  */
-function updatePreview(popup, type, rethrowError = false) {
+async function updatePreview(popup, type, rethrowError = false) {
     const config = {
         description: {
             contentId: '#scenario-creator-character-description',
@@ -4244,7 +4330,7 @@ function updatePreview(popup, type, rethrowError = false) {
     saveScenarioCreateData(currentData);
     try {
         // Execute script if exists
-        const variables = script ? executeMainScript(script, answers, 'remove') : answers;
+        const variables = script ? await executeMainScript(script, answers, 'remove', currentData.worldName) : answers;
         // Interpolate content with variables
         const interpolated = interpolateText(content, variables, 'variableName');
         previewDiv.text(interpolated);
@@ -4260,7 +4346,7 @@ function updatePreview(popup, type, rethrowError = false) {
 /**
  * Updates the preview for a question
  */
-function updateQuestionPreview(popup, questionGroup, rethrowError = false) {
+async function updateQuestionPreview(popup, questionGroup, rethrowError = false) {
     const duplicateId = checkDuplicateQuestionIds(popup);
     if (duplicateId) {
         stEcho('error', `Question ID "${duplicateId}" already exists.`);
@@ -4302,7 +4388,9 @@ function updateQuestionPreview(popup, questionGroup, rethrowError = false) {
     saveScenarioCreateData(currentData);
     try {
         // Execute script if exists
-        const variables = mainScriptText ? executeMainScript(mainScriptText, answers, 'remove') : answers;
+        const variables = mainScriptText
+            ? await executeMainScript(mainScriptText, answers, 'remove', currentData.worldName)
+            : answers;
         // Interpolate content with variables
         const interpolated = interpolateText(questionText, variables, 'variableName');
         mainPreviewDiv.text(interpolated);
@@ -4317,7 +4405,7 @@ function updateQuestionPreview(popup, questionGroup, rethrowError = false) {
     // Update show script preview
     try {
         // Execute script if exists
-        const result = showScriptText ? executeShowScript(showScriptText, answers, 'remove') : true;
+        const result = showScriptText ? executeShowScript(showScriptText, answers, 'remove', currentData.worldName) : true;
         showPreviewDiv.text(result ? 'SHOW' : 'HIDE');
     }
     catch (error) {
@@ -4880,6 +4968,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
             }
         }
     }
+    const worldName = scenarioData.data.extensions?.world;
     callGenericPopup(scenarioPlayDialogHtml, POPUP_TYPE.TEXT, '', {
         okButton: true,
         cancelButton: true,
@@ -4939,20 +5028,25 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                 }
                 return false;
             }
+            if (worldName) {
+                await st_addWorldInfo(worldName, scenarioData.data.character_book, false);
+            }
             try {
                 // Process description and first message with allAnswers
                 const descriptionVars = descriptionScript
-                    ? executeMainScript(descriptionScript, allAnswers, 'remove')
+                    ? await executeMainScript(descriptionScript, allAnswers, 'remove', worldName)
                     : allAnswers;
                 const description = interpolateText(scenarioData.description || scenarioData.data?.description, descriptionVars, 'remove');
                 const firstMessageVars = firstMessageScript
-                    ? executeMainScript(firstMessageScript, allAnswers, 'remove')
+                    ? await executeMainScript(firstMessageScript, allAnswers, 'remove', worldName)
                     : allAnswers;
                 const firstMessage = interpolateText(scenarioData.first_mes || scenarioData.data?.first_mes, firstMessageVars, 'remove');
-                const scenarioVars = scenarioScript ? executeMainScript(scenarioScript, allAnswers, 'remove') : allAnswers;
+                const scenarioVars = scenarioScript
+                    ? await executeMainScript(scenarioScript, allAnswers, 'remove', worldName)
+                    : allAnswers;
                 const processedScenario = interpolateText(scenarioData.scenario || scenarioData.data?.scenario, scenarioVars, 'remove');
                 const personalityVars = personalityScript
-                    ? executeMainScript(personalityScript, allAnswers, 'remove')
+                    ? await executeMainScript(personalityScript, allAnswers, 'remove', worldName)
                     : allAnswers;
                 const processedPersonality = interpolateText(scenarioData.personality || scenarioData.data?.personality, personalityVars, 'remove');
                 // Update both main and data.scenario fields
@@ -4964,7 +5058,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                 // Add character note script processing and update extensions.depth_prompt.prompt
                 if (scenarioData.data.extensions && scenarioData.data.extensions.depth_prompt) {
                     const characterNoteVars = characterNoteScript
-                        ? executeMainScript(characterNoteScript, allAnswers, 'remove')
+                        ? await executeMainScript(characterNoteScript, allAnswers, 'remove', worldName)
                         : allAnswers;
                     const processedCharacterNote = interpolateText(scenarioData.data.extensions.depth_prompt.prompt, characterNoteVars, 'remove');
                     scenarioData.data.extensions.depth_prompt.prompt = processedCharacterNote;
@@ -5040,21 +5134,16 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                     }
                 }
                 updateAvatar();
-                // Import world info
+                // Activate world info
                 const chid = $('#set_character_world').data('chid');
                 if (chid) {
                     const characters = st_getCharacters();
                     const worldName = characters[chid]?.data?.extensions?.world;
-                    if (worldName) {
-                        const hasEmbed = st_checkEmbeddedWorld(chid);
-                        const worldNames = st_getWorldNames();
-                        if (hasEmbed && !worldNames.includes(worldName)) {
-                            await st_importEmbeddedWorldInfo();
-                            st_saveCharacterDebounced();
-                        }
-                        else {
-                            st_setWorldInfoButtonClass(chid, true);
-                        }
+                    const worldNames = st_getWorldNames();
+                    if (worldName && worldNames.includes(worldName)) {
+                        $('#character_world').val(worldName);
+                        st_saveCharacterDebounced();
+                        st_setWorldInfoButtonClass(chid, true);
                     }
                 }
                 return true;
@@ -5130,7 +5219,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
      * Updates the question text based on dynamic input values and script execution.
      * @throws {Error} When script execution fails
      */
-    function updateQuestionText(questionWrapper, question) {
+    async function updateQuestionText(questionWrapper, question) {
         const answers = {};
         popup.find('.dynamic-input').each(function () {
             const $input = $(this);
@@ -5151,7 +5240,9 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                 }
         });
         try {
-            const variables = question.script ? executeMainScript(question.script, answers, 'remove') : answers;
+            const variables = question.script
+                ? await executeMainScript(question.script, answers, 'remove', worldName)
+                : answers;
             const interpolated = interpolateText(question.text, variables, 'remove');
             questionWrapper.find('.input-question').text(interpolated + (question.required ? ' *' : ''));
         }
@@ -5164,7 +5255,7 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
     }
     // Create all inputs at initialization
     function createAllInputs() {
-        sortedQuestions.forEach((question) => {
+        sortedQuestions.forEach(async (question) => {
             const newInput = $(inputTemplate.html());
             newInput.addClass('dynamic-input-wrapper');
             newInput.attr('data-input-id', question.inputId);
@@ -5212,12 +5303,12 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
             }
             dynamicInputsContainer.append(newInput);
             // Set initial question text
-            updateQuestionText(newInput, question);
+            await updateQuestionText(newInput, question);
             // Update question text when any input changes
             popup.find('.dynamic-input').on('input change', function () {
-                sortedQuestions.forEach((q) => {
+                sortedQuestions.forEach(async (q) => {
                     const wrapper = dynamicInputsContainer.find(`[data-input-id="${q.inputId}"]`);
-                    updateQuestionText(wrapper, q);
+                    await updateQuestionText(wrapper, q);
                 });
             });
         });
@@ -5241,14 +5332,14 @@ async function setupPlayDialogHandlers(scenarioData, buffer, fileType) {
                 answers[id] = $input.attr('type') === 'checkbox' ? $input.prop('checked') : $input.val();
             }
         });
-        currentPageQuestions.forEach((question) => {
+        currentPageQuestions.forEach(async (question) => {
             const wrapper = dynamicInputsContainer.find(`[data-input-id="${question.inputId}"]`);
             const shouldShow = !question.showScript || executeShowScript(question.showScript, answers, 'remove');
             // Update the show status and display accordingly
             wrapper.find('.dynamic-input').data('show', shouldShow);
             if (shouldShow) {
                 wrapper.show();
-                updateQuestionText(wrapper, question);
+                await updateQuestionText(wrapper, question);
             }
         });
         // Update navigation

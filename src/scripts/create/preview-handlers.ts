@@ -32,7 +32,7 @@ export function setupPreviewFunctionality(popup: JQuery<HTMLElement>) {
 /**
  * Updates the preview for other than question
  */
-export function updatePreview(popup: JQuery<HTMLElement>, type: CoreTab, rethrowError = false) {
+export async function updatePreview(popup: JQuery<HTMLElement>, type: CoreTab, rethrowError = false) {
   const config = {
     description: {
       contentId: '#scenario-creator-character-description',
@@ -109,7 +109,7 @@ export function updatePreview(popup: JQuery<HTMLElement>, type: CoreTab, rethrow
 
   try {
     // Execute script if exists
-    const variables = script ? executeMainScript(script, answers, 'remove') : answers;
+    const variables = script ? await executeMainScript(script, answers, 'remove', currentData.worldName) : answers;
 
     // Interpolate content with variables
     const interpolated = interpolateText(content, variables, 'variableName');
@@ -126,7 +126,7 @@ export function updatePreview(popup: JQuery<HTMLElement>, type: CoreTab, rethrow
 /**
  * Updates the preview for a question
  */
-export function updateQuestionPreview(
+export async function updateQuestionPreview(
   popup: JQuery<HTMLElement>,
   questionGroup: JQuery<HTMLElement>,
   rethrowError = false,
@@ -178,7 +178,9 @@ export function updateQuestionPreview(
 
   try {
     // Execute script if exists
-    const variables = mainScriptText ? executeMainScript(mainScriptText, answers, 'remove') : answers;
+    const variables = mainScriptText
+      ? await executeMainScript(mainScriptText, answers, 'remove', currentData.worldName)
+      : answers;
 
     // Interpolate content with variables
     const interpolated = interpolateText(questionText, variables, 'variableName');
@@ -194,7 +196,7 @@ export function updateQuestionPreview(
   // Update show script preview
   try {
     // Execute script if exists
-    const result = showScriptText ? executeShowScript(showScriptText, answers, 'remove') : true;
+    const result = showScriptText ? executeShowScript(showScriptText, answers, 'remove', currentData.worldName) : true;
     showPreviewDiv.text(result ? 'SHOW' : 'HIDE');
   } catch (error: any) {
     console.error('Show script preview update/script execute error:', error);

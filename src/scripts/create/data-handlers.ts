@@ -15,10 +15,8 @@ import {
   stEcho,
   st_getWorldInfo,
   st_server_convertWorldInfoToCharacterBook,
-  st_getWorldNames,
-  st_convertCharacterBook,
-  st_saveWorldInfo,
   st_setWorldInfoButtonClass,
+  st_addWorldInfo,
 } from '../config';
 import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
 
@@ -319,6 +317,8 @@ export function getScenarioCreateDataFromUI(popup: JQuery<HTMLElement>): Scenari
   data.characterNote = popup.find('#scenario-creator-character-note').val() || '';
   // @ts-ignore
   data.characterNoteScript = popup.find('#scenario-creator-character-note-script').val() || '';
+  // @ts-ignore
+  data.worldName = $('#character_world').val() || undefined;
 
   // Get questions data and build layout
   data.questions = [];
@@ -465,17 +465,10 @@ export async function convertImportedData(importedData: FullExportData | File): 
   }
 
   // Import world info
-  const worldNames = st_getWorldNames();
   const worldName = data.data.extensions?.world;
   if (worldName) {
-    const character_book = data.data.character_book;
     $('#character_world').val(worldName);
-    if (!worldNames.includes(worldName) && character_book) {
-      const convertedBook = st_convertCharacterBook(character_book);
-      st_saveWorldInfo(character_book.name, convertedBook, true);
-      await stEcho('info', 'Lorebook is imported but you need to refresh the page to see it.');
-      // await st_updateWorldInfoList();
-    }
+    await st_addWorldInfo(worldName, data.data.character_book, true);
   }
   st_setWorldInfoButtonClass(undefined, !!worldName);
 
@@ -515,5 +508,6 @@ export async function convertImportedData(importedData: FullExportData | File): 
       'character-note': {},
     },
     version: scenarioCreator.version,
+    worldName: data.data?.extensions?.world,
   };
 }

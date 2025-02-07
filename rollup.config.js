@@ -18,7 +18,6 @@ export default {
         '../../../../extensions.js',
         '../../../../RossAscends-mods.js',
         '../../../../../script.js',
-        '../../../../utils.js',
         '../../../../../lib.js',
         '../../../../world-info.js',
     ],
