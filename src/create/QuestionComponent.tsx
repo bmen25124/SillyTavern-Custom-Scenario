@@ -159,12 +159,12 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
 
       <div className="flex-container flexFlowColumn marginTop10">
         <label>Preview:</label>
-        <pre
-          className="question-preview text_pole"
-          style={{ overflowY: 'auto', overflowX: 'hidden', maxHeight: '150px' }}
-        >
-          {questionPreview || 'Preview will appear here...'}
-        </pre>
+        <textarea
+          className="text_pole"
+          rows={2}
+          readOnly={true}
+          value={questionPreview || 'Preview will appear here...'}
+        ></textarea>
       </div>
 
       <div className="flex-container alignItemsCenter marginTop10">
@@ -189,16 +189,18 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
                   <input
                     type="text"
                     className="text_pole flex1"
-                    placeholder="Value"
-                    value={option.value}
-                    onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
+                    placeholder="Label"
+                    title={`Label of the option. This is what the user will see. Access with variables.${inputId}.label`}
+                    value={option.label}
+                    onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
                   />
                   <input
                     type="text"
                     className="text_pole flex1"
-                    placeholder="Label"
-                    value={option.label}
-                    onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
+                    placeholder="Value"
+                    title={`Value of the option. This is what the user will select. Access with variables.${inputId}.value`}
+                    value={option.value}
+                    onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
                   />
                 </div>
               ))}

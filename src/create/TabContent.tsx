@@ -79,9 +79,12 @@ export const TabContent: React.FC<TabContentProps> = ({
       </div>
       <div className="flex-container flexFlowColumn marginTop10">
         <label>Preview:</label>
-        <div className="text_pole" style={{ overflowY: 'auto', overflowX: 'hidden', maxHeight: '150px' }}>
-          {previewContent || 'Preview will appear here...'}
-        </div>
+        <textarea
+          className="text_pole"
+          rows={4}
+          readOnly={true}
+          value={previewContent || 'Preview will appear here...'}
+        ></textarea>
       </div>
     </div>
   );

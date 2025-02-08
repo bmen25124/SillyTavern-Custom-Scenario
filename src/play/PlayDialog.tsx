@@ -403,7 +403,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
 
   if (!scenarioData) {
     return (
-      <div className="scenario-play-dialog">
+      <div id="scenario-play-dialog">
         <h2>Scenario Player</h2>
         <div className="flex-container justifyCenter marginTop10"></div>
       </div>
@@ -411,7 +411,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
   }
 
   return (
-    <div className="scenario-play-dialog">
+    <div id="scenario-play-dialog">
       <h2>Scenario Player</h2>
 
       <form id="dynamic-inputs-container" className="flex-container flexFlowColumn marginTop10">

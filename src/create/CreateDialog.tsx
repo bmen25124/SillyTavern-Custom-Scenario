@@ -24,7 +24,7 @@ import { readScenarioFromPng } from '../utils/png-handlers';
 import { QuestionComponent } from './QuestionComponent';
 import { QuestionTabButton } from './QuestionTabButton';
 import { PageTabButton } from './PageTabButton';
-import { extensionVersion, st_createPopper, st_echo, st_uuidv4 } from '../config';
+import { extensionVersion, st_createPopper, st_echo, st_popupConfirm, st_uuidv4 } from '../config';
 
 import { executeMainScript, executeShowScript, interpolateText } from '../utils/script-utils';
 import { ScriptInput } from './ScriptInputs';
@@ -618,7 +618,11 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
     saveQuestionChanges(updatedQuestions);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    if (!(await st_popupConfirm('Reset all data?', 'All tabs will be reset.'))) {
+      return;
+    }
+
     const emptyData = createEmptyScenarioCreateData();
 
     // Reset all state variables

@@ -1,5 +1,9 @@
 .popup-content:has(#scenario-create-dialog) {
-    overflow-y: scroll;
+    overflow-y: auto;
+}
+
+.popup-content:has(#scenario-play-dialog) {
+    overflow-y: auto;
 }
 
 #scenario-create-dialog {
