@@ -8,14 +8,22 @@ import {
   FullExportData,
   ScriptInputValues,
   Question as ScenarioQuestion,
+  upgradeOrDowngradeData,
 } from './scripts/types';
-import { convertImportedData, loadScenarioCreateData, saveScenarioCreateData } from './scripts/create/data-handlers';
+import {
+  convertImportedData,
+  createProductionScenarioData,
+  downloadFile,
+  loadScenarioCreateData,
+  removeScenarioCreateData,
+  saveScenarioCreateData,
+} from './scripts/create/data-handlers';
 import { applyScenarioExportDataToSidebar } from './scripts/create/ui-state';
 import { readScenarioFromPng } from './scripts/utils/png-handlers';
 import { QuestionTabButton } from './QuestionTabButton';
 import { QuestionComponent } from './QuestionComponent';
 import { PageTabButton } from './PageTabButton';
-import { stEcho } from './scripts/config';
+import { extensionVersion, st_createPopper, stEcho } from './scripts/config';
 
 // @ts-ignore
 import { uuidv4 } from '../../../../utils.js';
@@ -41,8 +49,20 @@ interface Question {
 interface CreateDialogProps {}
 
 export const CreateDialog: React.FC<CreateDialogProps> = () => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const initialData = loadScenarioCreateData();
+  let initialData = loadScenarioCreateData();
+  // Check version changes
+  if (initialData.version && initialData.version !== extensionVersion) {
+    stEcho('info', `Version of cache data changed from ${initialData.version} to ${extensionVersion}`);
+  }
+
+  try {
+    initialData = upgradeOrDowngradeData(initialData, 'create');
+    saveScenarioCreateData(initialData);
+  } catch (error) {
+    stEcho('error', 'Cache data is not compatible. Removing cache data.');
+    removeScenarioCreateData();
+  }
+
   const [scriptInputValues, setScriptInputValues] = React.useState<ScriptInputValues>(initialData.scriptInputValues);
 
   const [description, setDescription] = React.useState(initialData.description);
@@ -169,6 +189,12 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
   const [pages, setPages] = React.useState(initialData.layout.map((_, index) => index + 1));
   const [isAnimating, setIsAnimating] = React.useState(false);
   const ANIMATION_DURATION = 300; // Match this with CSS animation duration (0.3s = 300ms)
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const exportButtonRef = useRef<HTMLDivElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  const exportPopper = useRef<{ update: () => void } | null>(null);
+  const [isExportVisible, setIsExportVisible] = React.useState(false);
 
   const getWorldName = () => ($('#character_world').val() as string) || undefined;
 
@@ -625,6 +651,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
     content: string,
     setContentPreview?: (value: string) => void,
     newQuestions?: Question[],
+    rethrowError = false,
   ): Promise<string> => {
     const answers = mapValuesToAnswers(values, newQuestions);
 
@@ -639,6 +666,9 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
     } catch (error: any) {
       console.error('Preview update/script execute error:', error);
       setContentPreview ? setContentPreview(`Preview update/script execute error: ${error.message}`) : undefined;
+      if (rethrowError) {
+        throw error;
+      }
       return `Preview update/script execute error: ${error.message}`;
     }
   };
@@ -647,6 +677,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
     values: Record<string, string>,
     script: string,
     newQuestions?: Question[],
+    rethrowError = false,
   ): Promise<string> => {
     const answers = mapValuesToAnswers(values, newQuestions);
 
@@ -656,9 +687,141 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
       return result ? 'SHOW' : 'HIDE';
     } catch (error: any) {
       console.error('Show script preview update/script execute error:', error);
+      if (rethrowError) {
+        throw error;
+      }
       return `Show script preview update/script execute error: ${error.message}`;
     }
   };
+
+  const validateExport = async (): Promise<string[]> => {
+    const errors: string[] = [];
+
+    // Check all scripts for errors
+    try {
+      await updatePreview(
+        scriptInputValues.description,
+        descriptionScript,
+        description,
+        setDescriptionPreview,
+        undefined,
+        true,
+      );
+    } catch (error: any) {
+      errors.push('Description script error: ' + error.message);
+    }
+
+    try {
+      await updatePreview(
+        scriptInputValues['first-message'],
+        firstMessageScript,
+        firstMessage,
+        setFirstMessagePreview,
+        undefined,
+        true,
+      );
+    } catch (error: any) {
+      errors.push('First message script error: ' + error.message);
+    }
+
+    try {
+      await updatePreview(scriptInputValues.scenario, scenarioScript, scenario, setScenarioPreview, undefined, true);
+    } catch (error: any) {
+      errors.push('Scenario script error: ' + error.message);
+    }
+
+    try {
+      await updatePreview(
+        scriptInputValues.personality,
+        personalityScript,
+        personality,
+        setPersonalityPreview,
+        undefined,
+        true,
+      );
+    } catch (error: any) {
+      errors.push('Personality script error: ' + error.message);
+    }
+
+    try {
+      await updatePreview(
+        scriptInputValues['character-note'],
+        characterNoteScript,
+        characterNote,
+        setCharacterNotePreview,
+        undefined,
+        true,
+      );
+    } catch (error: any) {
+      errors.push('Character note script error: ' + error.message);
+    }
+
+    // Check all question scripts
+    for (const q of questions) {
+      try {
+        await updatePreview(
+          scriptInputValues.question[q.inputId],
+          q.mainScript,
+          q.question,
+          undefined,
+          undefined,
+          true,
+        );
+        await updateShowScriptPreview(scriptInputValues.question[q.inputId], q.showScript, undefined, true);
+      } catch (error: any) {
+        errors.push(`Question "${q.inputId}" script error: ${error.message}`);
+      }
+    }
+
+    return errors;
+  };
+
+  const handleExportClick = async () => {
+    const errors = await validateExport();
+    if (errors.length > 0) {
+      stEcho('error', 'Export validation failed:\n' + errors.join('\n'));
+      return;
+    }
+    setIsExportVisible(!isExportVisible);
+    exportPopper.current?.update();
+  };
+
+  const handleExportFormat = async (format: 'json' | 'png') => {
+    setIsExportVisible(false);
+    exportPopper.current?.update();
+
+    const errors = await validateExport();
+    if (errors.length > 0) {
+      stEcho('error', 'Export validation failed:\n' + errors.join('\n'));
+      return;
+    }
+
+    const formElement = $('#form_create').get(0) as HTMLFormElement;
+    const formData = new FormData(formElement);
+    const productionData = await createProductionScenarioData(createScenarioData(), formData);
+    downloadFile(productionData, `scenario.${format}`, format);
+  };
+
+  // Set up popper for export dropdown and handle click outside
+  React.useEffect(() => {
+    if (!exportButtonRef.current || !exportMenuRef.current) return;
+
+    exportPopper.current = st_createPopper(exportButtonRef.current, exportMenuRef.current, {
+      placement: 'left-end',
+    });
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportButtonRef.current && !exportButtonRef.current.contains(event.target as Node)) {
+        setIsExportVisible(false);
+        exportPopper.current?.update();
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div id="scenario-create-dialog">
@@ -707,16 +870,37 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
           <button className="menu_button" onClick={() => fileInputRef.current?.click()}>
             Import
           </button>
-          <div className="export-container" style={{ position: 'relative', paddingTop: '5px', paddingBottom: '5px' }}>
+          <div
+            ref={exportButtonRef}
+            className="export-container"
+            style={{ position: 'relative', paddingTop: '5px', paddingBottom: '5px' }}
+          >
             <button
               className="menu_button"
               style={{ height: '100%', paddingTop: '0px', paddingBottom: '0px', margin: '0' }}
+              onClick={handleExportClick}
             >
               Export
             </button>
-            <div className="list-group" style={{ display: 'none', position: 'absolute', zIndex: 9999 }}>
-              <div className="export-format list-group-item">PNG</div>
-              <div className="export-format list-group-item">JSON</div>
+            <div
+              ref={exportMenuRef}
+              className="list-group"
+              style={{ display: isExportVisible ? 'block' : 'none', position: 'absolute', zIndex: 9999 }}
+            >
+              <div
+                className="export-format list-group-item"
+                onClick={() => handleExportFormat('png')}
+                style={{ cursor: 'pointer' }}
+              >
+                PNG
+              </div>
+              <div
+                className="export-format list-group-item"
+                onClick={() => handleExportFormat('json')}
+                style={{ cursor: 'pointer' }}
+              >
+                JSON
+              </div>
             </div>
           </div>
           <button className="menu_button" onClick={handleReset} title="Only resets Scenario Creator fields.">
