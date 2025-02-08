@@ -86,6 +86,7 @@ export const ScriptInputs: React.FC<ScriptInputsProps> = ({
                 onChange={(e) => handleChange(input.id, e.target.value)}
                 title={helpText}
               >
+                <option value="">Select an option</option>
                 {input.selectOptions?.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}

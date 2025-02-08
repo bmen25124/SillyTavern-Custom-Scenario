@@ -80,38 +80,79 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
 
   const [questionAccordionStates, setQuestionAccordionStates] = React.useState<Record<string, boolean>>({});
 
-  const [questions, setQuestions] = React.useState<Question[]>(
-    initialData.questions
-      .map((q) => {
-        // initialData.layout is an array of arrays of question IDs
-        const page = initialData.layout.findIndex((page) => page.includes(q.inputId)) + 1;
-        if (page === 0) {
-          return null;
-        }
+  const [questions, setQuestions] = React.useState<Question[]>([]);
 
-        const uuid = questionInputIdAndIdMap.get(q.inputId);
-        if (!uuid) {
-          throw new Error(`Question ID "${q.inputId}" not found in questionInputIdAndIdMap`);
-        }
+  React.useEffect(() => {
+    const initializeQuestions = async () => {
+      let initialQuestions = initialData.questions
+        .map((q) => {
+          const page = initialData.layout.findIndex((page) => page.includes(q.inputId)) + 1;
+          const uuid = questionInputIdAndIdMap.get(q.inputId);
 
-        return {
-          id: uuid,
-          inputId: q.inputId,
-          type: q.type,
-          question: q.text,
-          mainScript: q.script,
-          showScript: q.showScript,
-          showPreview: 'SHOW',
-          questionPreview: '',
-          isRequired: q.required,
-          options: q.options ?? [],
-          defaultValue: typeof q.defaultValue === 'string' ? q.defaultValue : '',
-          isDefaultChecked: q.defaultValue === true,
-          page,
-        };
-      })
-      .filter((q) => q !== null),
-  );
+          if (page === 0 || !uuid) return null;
+
+          return {
+            id: uuid,
+            inputId: q.inputId,
+            type: q.type,
+            question: q.text,
+            mainScript: q.script,
+            showScript: q.showScript,
+            showPreview: 'SHOW',
+            questionPreview: '',
+            isRequired: q.required,
+            options: q.options ?? [],
+            defaultValue: typeof q.defaultValue === 'string' ? q.defaultValue : '',
+            isDefaultChecked: q.defaultValue === true,
+            page,
+          } as Question;
+        })
+        .filter((q) => q !== null);
+
+      // Extend scriptInputValues with initialQuestions. It should be empty string or scriptInputValues.question[q.inputId]
+      const newScriptInputValues: ScriptInputValues = {
+        ...scriptInputValues,
+      };
+      initialQuestions.forEach((q1) => {
+        initialQuestions.forEach((q2) => {
+          if (q1.inputId === q2.inputId) {
+            return;
+          }
+          if (!newScriptInputValues.question[q1.inputId]) {
+            newScriptInputValues.question[q1.inputId] = {};
+          }
+          if (!newScriptInputValues.question[q1.inputId][q2.inputId]) {
+            newScriptInputValues.question[q1.inputId][q2.inputId] = q2.defaultValue;
+          }
+        });
+      });
+      setScriptInputValues(newScriptInputValues);
+
+      initialQuestions = await Promise.all(
+        initialQuestions.map(async (q) => {
+          const newQuestion = {
+            ...q,
+            showPreview: await updateShowScriptPreview(
+              newScriptInputValues.question[q.inputId],
+              q.showScript,
+              initialQuestions,
+            ),
+            questionPreview: await updatePreview(
+              newScriptInputValues.question[q.inputId],
+              q.mainScript,
+              q.question,
+              undefined,
+              initialQuestions,
+            ),
+          };
+          return newQuestion;
+        }),
+      );
+
+      setQuestions(initialQuestions);
+    };
+    initializeQuestions();
+  }, []);
 
   const [activeTab, setActiveTab] = React.useState<TabId>(
     initialData.activeTab.startsWith('question-')
@@ -156,25 +197,47 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
         setScriptInputValues(scenarioData.scriptInputValues);
 
         // Update questions
-        const newQuestions = scenarioData.questions
-          .map((q) => ({
+        let newQuestions = scenarioData.questions.map((q) => {
+          const newQuestion: Question = {
             id: uuidv4(),
             inputId: q.inputId,
-            type: q.type,
+            type: q.type as QuestionType,
             page: scenarioData.layout.findIndex((page) => page.includes(q.inputId)) + 1,
             question: q.text,
             mainScript: q.script,
             showScript: q.showScript,
             showPreview: 'SHOW',
-            questionPreview: '',
+            questionPreview: 'Preview will appear here...',
             isRequired: q.required,
             options: q.options ?? [],
             defaultValue: typeof q.defaultValue === 'string' ? q.defaultValue : '',
             isDefaultChecked: q.defaultValue === true,
-          }))
-          .filter((q) => q.page > 0);
-
-        setQuestions(newQuestions);
+          };
+          return newQuestion;
+        });
+        const filteredResults = newQuestions.filter((q): q is Question => q !== null);
+        // Update showPreview and questionPreview
+        newQuestions = await Promise.all(
+          filteredResults.map(async (q) => {
+            const newQuestion = {
+              ...q,
+              showPreview: await updateShowScriptPreview(
+                scriptInputValues.question[q.inputId],
+                q.showScript,
+                newQuestions,
+              ),
+              questionPreview: await updatePreview(
+                scriptInputValues.question[q.inputId],
+                q.mainScript,
+                q.question,
+                undefined,
+                newQuestions,
+              ),
+            };
+            return newQuestion;
+          }),
+        );
+        setQuestions(filteredResults);
 
         // Apply imported data to character sidebar
         applyScenarioExportDataToSidebar(importedData);
@@ -443,7 +506,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
         layout: [[]],
         scriptInputValues: emptyData.scriptInputValues,
         version: emptyData.version,
-        worldName: emptyData.worldName,
+        worldName: getWorldName(),
       }),
     );
   };
@@ -523,16 +586,17 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
         : activeTab,
       scriptInputValues,
       version: initialData.version,
-      worldName: initialData.worldName,
+      worldName: getWorldName(),
     };
 
     return { ...baseData, ...override };
   };
 
-  const mapValuesToAnswers = (values: Record<string, string>) => {
+  const mapValuesToAnswers = (values: Record<string, string> | undefined, newQuestions?: Question[]) => {
+    if (!values) return {};
     const answers: Record<string, string | boolean | { label: string; value: string }> = {};
     for (const [key, value] of Object.entries(values)) {
-      const question = questions.find((q) => q.inputId === key);
+      const question = (newQuestions ?? questions).find((q) => q.inputId === key);
       if (!question) continue;
 
       if (question.type === 'select') {
@@ -541,6 +605,11 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
           answers[key] = {
             label: option.label,
             value,
+          };
+        } else if (!value) {
+          answers[key] = {
+            label: '',
+            value: '',
           };
         }
       } else {
@@ -555,8 +624,9 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
     script: string,
     content: string,
     setContentPreview?: (value: string) => void,
+    newQuestions?: Question[],
   ): Promise<string> => {
-    const answers = mapValuesToAnswers(values);
+    const answers = mapValuesToAnswers(values, newQuestions);
 
     try {
       // Execute script if exists
@@ -576,13 +646,13 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
   const updateShowScriptPreview = async (
     values: Record<string, string>,
     script: string,
-    content: string,
+    newQuestions?: Question[],
   ): Promise<string> => {
-    const answers = mapValuesToAnswers(values);
+    const answers = mapValuesToAnswers(values, newQuestions);
 
     try {
       // Execute script if exists
-      const result = script ? executeShowScript(script, answers, 'remove', getWorldName()) : true;
+      const result = executeShowScript(script, answers, 'remove', getWorldName());
       return result ? 'SHOW' : 'HIDE';
     } catch (error: any) {
       console.error('Show script preview update/script execute error:', error);
@@ -955,7 +1025,6 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
                     const newShowPreview = await updateShowScriptPreview(
                       scriptInputValues.question[question.inputId],
                       question.showScript,
-                      question.showPreview,
                     );
 
                     setQuestions(
