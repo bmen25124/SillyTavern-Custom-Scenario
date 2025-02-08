@@ -9,6 +9,7 @@ import {
   ScriptInputValues,
   Question as ScenarioQuestion,
   upgradeOrDowngradeData,
+  CORE_TABS,
 } from './scripts/types';
 import {
   convertImportedData,
@@ -144,9 +145,63 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
           if (!newScriptInputValues.question[q1.inputId][q2.inputId]) {
             newScriptInputValues.question[q1.inputId][q2.inputId] = q2.defaultValue;
           }
+          if (
+            !newScriptInputValues.question[q1.inputId][q2.inputId] &&
+            q2.type === 'select' &&
+            q2.options &&
+            q2.options.length > 0
+          ) {
+            newScriptInputValues.question[q1.inputId][q2.inputId] = q2.options[0].value;
+          }
+        });
+        CORE_TABS.forEach((tab) => {
+          if (!newScriptInputValues[tab]) {
+            newScriptInputValues[tab] = {};
+          }
+          if (!newScriptInputValues[tab][q1.inputId]) {
+            newScriptInputValues[tab][q1.inputId] = q1.defaultValue;
+          }
+          if (!newScriptInputValues[tab][q1.inputId] && q1.type === 'select' && q1.options && q1.options.length > 0) {
+            newScriptInputValues[tab][q1.inputId] = q1.options[0].value;
+          }
         });
       });
-      setScriptInputValues(newScriptInputValues);
+
+      updatePreview(
+        newScriptInputValues.description,
+        initialData.descriptionScript,
+        initialData.description,
+        setDescriptionPreview,
+        initialQuestions,
+      );
+      updatePreview(
+        newScriptInputValues['first-message'],
+        initialData.firstMessageScript,
+        initialData.firstMessage,
+        setFirstMessagePreview,
+        initialQuestions,
+      );
+      updatePreview(
+        newScriptInputValues.scenario,
+        initialData.scenarioScript,
+        initialData.scenario,
+        setScenarioPreview,
+        initialQuestions,
+      );
+      updatePreview(
+        newScriptInputValues.personality,
+        initialData.personalityScript,
+        initialData.personality,
+        setPersonalityPreview,
+        initialQuestions,
+      );
+      updatePreview(
+        newScriptInputValues['character-note'],
+        initialData.characterNoteScript,
+        initialData.characterNote,
+        setCharacterNotePreview,
+        initialQuestions,
+      );
 
       initialQuestions = await Promise.all(
         initialQuestions.map(async (q) => {
@@ -169,6 +224,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
         }),
       );
 
+      setScriptInputValues(newScriptInputValues);
       setQuestions(initialQuestions);
     };
     initializeQuestions();
@@ -209,7 +265,12 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
         setPages(newPages);
         setCurrentPage(1); // Reset to first page
 
-        // Update all state with imported data
+        // Set up script input values with new questions
+        const newScriptInputValues: ScriptInputValues = {
+          ...scenarioData.scriptInputValues,
+        };
+
+        // Update all state with imported data and initialize previews
         setDescription(scenarioData.description);
         setDescriptionScript(scenarioData.descriptionScript);
         setFirstMessage(scenarioData.firstMessage);
@@ -220,40 +281,110 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
         setPersonalityScript(scenarioData.personalityScript);
         setCharacterNote(scenarioData.characterNote);
         setCharacterNoteScript(scenarioData.characterNoteScript);
-        setScriptInputValues(scenarioData.scriptInputValues);
 
         // Update questions
-        let newQuestions = scenarioData.questions.map((q) => {
-          const newQuestion: Question = {
-            id: uuidv4(),
-            inputId: q.inputId,
-            type: q.type as QuestionType,
-            page: scenarioData.layout.findIndex((page) => page.includes(q.inputId)) + 1,
-            question: q.text,
-            mainScript: q.script,
-            showScript: q.showScript,
-            showPreview: 'SHOW',
-            questionPreview: 'Preview will appear here...',
-            isRequired: q.required,
-            options: q.options ?? [],
-            defaultValue: typeof q.defaultValue === 'string' ? q.defaultValue : '',
-            isDefaultChecked: q.defaultValue === true,
-          };
-          return newQuestion;
+        let newQuestions = scenarioData.questions
+          .map((q) => {
+            const newQuestion: Question = {
+              id: uuidv4(),
+              inputId: q.inputId,
+              type: q.type as QuestionType,
+              page: scenarioData.layout.findIndex((page) => page.includes(q.inputId)) + 1,
+              question: q.text,
+              mainScript: q.script,
+              showScript: q.showScript,
+              showPreview: 'SHOW',
+              questionPreview: 'Preview will appear here...',
+              isRequired: q.required,
+              options: q.options ?? [],
+              defaultValue: typeof q.defaultValue === 'string' ? q.defaultValue : '',
+              isDefaultChecked: q.defaultValue === true,
+            };
+            return newQuestion;
+          })
+          .filter((q) => q !== null);
+
+        newQuestions.forEach((q1) => {
+          newQuestions.forEach((q2) => {
+            if (q1.inputId === q2.inputId) {
+              return;
+            }
+            if (!newScriptInputValues.question[q1.inputId]) {
+              newScriptInputValues.question[q1.inputId] = {};
+            }
+            if (!newScriptInputValues.question[q1.inputId][q2.inputId]) {
+              newScriptInputValues.question[q1.inputId][q2.inputId] = q2.defaultValue;
+            }
+            if (
+              !newScriptInputValues.question[q1.inputId][q2.inputId] &&
+              q2.type === 'select' &&
+              q2.options &&
+              q2.options.length > 0
+            ) {
+              newScriptInputValues.question[q1.inputId][q2.inputId] = q2.options[0].value;
+            }
+          });
+          CORE_TABS.forEach((tab) => {
+            if (!newScriptInputValues[tab]) {
+              newScriptInputValues[tab] = {};
+            }
+            if (!newScriptInputValues[tab][q1.inputId]) {
+              newScriptInputValues[tab][q1.inputId] = q1.defaultValue;
+            }
+            if (!newScriptInputValues[tab][q1.inputId] && q1.type === 'select' && q1.options && q1.options.length > 0) {
+              newScriptInputValues[tab][q1.inputId] = q1.options[0].value;
+            }
+          });
         });
-        const filteredResults = newQuestions.filter((q): q is Question => q !== null);
+
+        updatePreview(
+          newScriptInputValues.description,
+          scenarioData.descriptionScript,
+          scenarioData.description,
+          setDescriptionPreview,
+          newQuestions,
+        );
+        updatePreview(
+          newScriptInputValues['first-message'],
+          scenarioData.firstMessageScript,
+          scenarioData.firstMessage,
+          setFirstMessagePreview,
+          newQuestions,
+        );
+        updatePreview(
+          newScriptInputValues.scenario,
+          scenarioData.scenarioScript,
+          scenarioData.scenario,
+          setScenarioPreview,
+          newQuestions,
+        );
+        updatePreview(
+          newScriptInputValues.personality,
+          scenarioData.personalityScript,
+          scenarioData.personality,
+          setPersonalityPreview,
+          newQuestions,
+        );
+        updatePreview(
+          newScriptInputValues['character-note'],
+          scenarioData.characterNoteScript,
+          scenarioData.characterNote,
+          setCharacterNotePreview,
+          newQuestions,
+        );
+
         // Update showPreview and questionPreview
         newQuestions = await Promise.all(
-          filteredResults.map(async (q) => {
+          newQuestions.map(async (q) => {
             const newQuestion = {
               ...q,
               showPreview: await updateShowScriptPreview(
-                scriptInputValues.question[q.inputId],
+                newScriptInputValues.question[q.inputId],
                 q.showScript,
                 newQuestions,
               ),
               questionPreview: await updatePreview(
-                scriptInputValues.question[q.inputId],
+                newScriptInputValues.question[q.inputId],
                 q.mainScript,
                 q.question,
                 undefined,
@@ -263,7 +394,8 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
             return newQuestion;
           }),
         );
-        setQuestions(filteredResults);
+        setScriptInputValues(newScriptInputValues);
+        setQuestions(newQuestions);
 
         // Apply imported data to character sidebar
         applyScenarioExportDataToSidebar(importedData);
@@ -463,12 +595,17 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
   const handleMoveQuestionLeft = () => handleMoveQuestion('left');
   const handleMoveQuestionRight = () => handleMoveQuestion('right');
 
-  const saveQuestionChanges = (updatedQuestions: Question[], newActiveTab?: TabId) => {
+  const saveQuestionChanges = (
+    updatedQuestions: Question[],
+    newActiveTab?: TabId,
+    newScriptInputValues?: ScriptInputValues,
+  ) => {
     saveScenarioCreateData(
       createScenarioData({
         questions: updatedQuestions.map(questionMappers.toScenarioFormat),
         layout: pages.map((pageNum) => updatedQuestions.filter((q) => q.page === pageNum).map((q) => q.inputId)),
         activeTab: newActiveTab ?? activeTab,
+        scriptInputValues: newScriptInputValues ?? scriptInputValues,
       }),
     );
   };
@@ -563,7 +700,64 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
     const updatedQuestions = [...questions, newQuestion];
     setQuestions(updatedQuestions);
     setActiveTab(`question-${newQuestion.id}`);
-    saveQuestionChanges(updatedQuestions, `question-${newQuestion.inputId}`);
+    const newScriptInputValues: ScriptInputValues = {
+      ...scriptInputValues,
+    };
+    // Add new input to core tabs
+    CORE_TABS.forEach((tab) => {
+      if (!newScriptInputValues[tab]) {
+        newScriptInputValues[tab] = {};
+      }
+      if (!newScriptInputValues[tab][newQuestion.inputId]) {
+        newScriptInputValues[tab][newQuestion.inputId] = newQuestion.defaultValue;
+      }
+      if (
+        !newScriptInputValues[tab][newQuestion.inputId] &&
+        newQuestion.type === 'select' &&
+        newQuestion.options &&
+        newQuestion.options.length > 0
+      ) {
+        newScriptInputValues[tab][newQuestion.inputId] = newQuestion.options[0].value;
+      }
+    });
+    // Add new input to question tabs
+    updatedQuestions.forEach((q) => {
+      if (q.id === newQuestion.id) return;
+      if (!newScriptInputValues.question[q.inputId]) {
+        newScriptInputValues.question[q.inputId] = {};
+      }
+      if (!newScriptInputValues.question[q.inputId][newQuestion.inputId]) {
+        newScriptInputValues.question[q.inputId][newQuestion.inputId] = newQuestion.defaultValue;
+      }
+      if (
+        !newScriptInputValues.question[q.inputId][newQuestion.inputId] &&
+        newQuestion.type === 'select' &&
+        newQuestion.options &&
+        newQuestion.options.length > 0
+      ) {
+        newScriptInputValues.question[q.inputId][newQuestion.inputId] = newQuestion.options[0].value;
+      }
+    });
+    // Add other inputs to new question
+    questions.forEach((q) => {
+      if (q.id === newQuestion.id) return;
+      if (!newScriptInputValues.question[newQuestion.inputId]) {
+        newScriptInputValues.question[newQuestion.inputId] = {};
+      }
+      if (!newScriptInputValues.question[newQuestion.inputId][q.inputId]) {
+        newScriptInputValues.question[newQuestion.inputId][q.inputId] = q.defaultValue;
+      }
+      if (
+        !newScriptInputValues.question[newQuestion.inputId][q.inputId] &&
+        q.type === 'select' &&
+        q.options &&
+        q.options.length > 0
+      ) {
+        newScriptInputValues.question[newQuestion.inputId][q.inputId] = q.options[0].value;
+      }
+    });
+    setScriptInputValues(newScriptInputValues);
+    saveQuestionChanges(updatedQuestions, `question-${newQuestion.inputId}`, newScriptInputValues);
   };
 
   const questionMappers = {
@@ -980,11 +1174,32 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
                     setQuestions(updatedQuestions);
                     setActiveTab(newTab);
 
+                    const newScriptInputValues: ScriptInputValues = {
+                      ...scriptInputValues,
+                    };
+                    // Remove input from core tabs
+                    CORE_TABS.forEach((tab) => {
+                      if (!newScriptInputValues[tab]) {
+                        newScriptInputValues[tab] = {};
+                      }
+                      delete newScriptInputValues[tab][question.inputId];
+                    });
+                    // Remove input from question tabs
+                    updatedQuestions.forEach((q) => {
+                      if (q.id === question.id) return;
+                      if (!newScriptInputValues.question[q.inputId]) {
+                        newScriptInputValues.question[q.inputId] = {};
+                      }
+                      delete newScriptInputValues.question[q.inputId][question.inputId];
+                    });
+                    delete newScriptInputValues.question[question.inputId];
+                    setScriptInputValues(newScriptInputValues);
                     saveQuestionChanges(
                       updatedQuestions,
                       newTab.startsWith('question-')
                         ? `question-${updatedQuestions.find((q) => q.id === newTab.replace('question-', ''))?.inputId || ''}`
                         : newTab,
+                      newScriptInputValues,
                     );
                   }}
                   className={activeTab === `question-${question.id}` ? 'active' : ''}
@@ -1161,7 +1376,33 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
                       stEcho('warning', `Question ID "${value}" already exists.`);
                       return;
                     }
-                    setQuestions(questions.map((q) => (q.id === question.id ? { ...q, inputId: value } : q)));
+                    const newScriptInputValues: ScriptInputValues = {
+                      ...scriptInputValues,
+                    };
+                    CORE_TABS.forEach((tab) => {
+                      if (!newScriptInputValues[tab]) {
+                        newScriptInputValues[tab] = {};
+                      }
+                      if (!newScriptInputValues[tab][value]) {
+                        newScriptInputValues[tab][value] = scriptInputValues[tab][question.inputId];
+                      }
+                      delete newScriptInputValues[tab][question.inputId];
+                    });
+                    questions.forEach((q) => {
+                      if (q.id === question.id) return;
+                      if (!newScriptInputValues.question[q.inputId]) {
+                        newScriptInputValues.question[q.inputId] = {};
+                      }
+                      if (!newScriptInputValues.question[q.inputId][value]) {
+                        newScriptInputValues.question[q.inputId][value] =
+                          scriptInputValues.question[q.inputId][question.inputId];
+                      }
+                      delete newScriptInputValues.question[q.inputId][question.inputId];
+                    });
+
+                    const newQuestions = questions.map((q) => (q.id === question.id ? { ...q, inputId: value } : q));
+                    setScriptInputValues(newScriptInputValues);
+                    setQuestions(newQuestions);
                   }}
                   question={question.question}
                   onQuestionChange={(value) => {

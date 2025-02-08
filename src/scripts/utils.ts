@@ -9,6 +9,7 @@ export async function executeMainScript(
   emptyStrategy: 'variableName' | 'remove',
   worldName: string | undefined,
 ): Promise<Record<string, string | boolean | { label: string; value: string }>> {
+  if (!script) return answers;
   // Clone answers to avoid modifying the original object
   const variables = JSON.parse(JSON.stringify(answers));
 
@@ -50,6 +51,7 @@ export function executeShowScript(
   emptyStrategy: 'variableName' | 'remove',
   _worldName: string | undefined,
 ): boolean {
+  if (!script) return true;
   // Clone answers to avoid modifying the original object
   const variables = JSON.parse(JSON.stringify(answers));
 
