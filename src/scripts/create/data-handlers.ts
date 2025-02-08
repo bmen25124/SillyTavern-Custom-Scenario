@@ -39,6 +39,7 @@ export async function createProductionScenarioData(
     firstMessage,
     scenario,
     personality,
+    version,
   } = data;
   const formEntries = Array.from(formData.entries());
   let jsonData;
@@ -149,7 +150,7 @@ export async function createProductionScenarioData(
       ...(options && { options }),
     })),
     layout: data.layout || [[...questions.map((q) => q.inputId)]], // Default to all questions in one page if no layout specified
-    version: extensionVersion,
+    version,
   };
 
   // Return the final production data format

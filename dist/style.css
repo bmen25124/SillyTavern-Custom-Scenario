@@ -68,9 +68,6 @@
   padding: 10px;
   margin-bottom: 10px;
 }
-#scenario-create-dialog .questions-container.active {
-  display: block;
-}
 #scenario-create-dialog .questions-container .questions-tabs {
   display: flex;
   gap: 5px;
@@ -103,26 +100,26 @@
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
-#scenario-create-dialog #page-tab-buttons {
+#scenario-create-dialog .page-tab-buttons {
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
   position: relative;
 }
-#scenario-create-dialog #page-tab-buttons .page-button-container {
+#scenario-create-dialog .page-tab-buttons .page-button-container {
   display: flex;
   gap: 2px;
   position: relative;
   transition: transform 0.3s ease;
   will-change: transform;
 }
-#scenario-create-dialog #page-tab-buttons .page-button-container.moving-left {
+#scenario-create-dialog .page-tab-buttons .page-button-container.moving-left {
   animation: slideLeft 0.3s ease forwards;
 }
-#scenario-create-dialog #page-tab-buttons .page-button-container.moving-right {
+#scenario-create-dialog .page-tab-buttons .page-button-container.moving-right {
   animation: slideRight 0.3s ease forwards;
 }
-#scenario-create-dialog #page-tab-buttons .page-button-container .page-button {
+#scenario-create-dialog .page-tab-buttons .page-button-container .page-button {
   min-width: auto;
   padding: 6px 12px;
   font-size: 0.9em;
@@ -133,11 +130,11 @@
   gap: 6px;
   transition: all 0.2s ease;
 }
-#scenario-create-dialog #page-tab-buttons .page-button-container .page-button:hover {
+#scenario-create-dialog .page-tab-buttons .page-button-container .page-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
-#scenario-create-dialog #page-tab-buttons .page-button-container .page-button.active {
+#scenario-create-dialog .page-tab-buttons .page-button-container .page-button.active {
   background-color: var(--accent-color);
   border-color: var(--accent-color);
   color: var(--white-90);
@@ -192,16 +189,10 @@
   background-color: var(--hover-color, #405060);
   border-color: var(--hover-color, #405060);
 }
-#scenario-create-dialog #add-question-btn {
+#scenario-create-dialog .add-question-btn {
   margin-left: 8px;
 }
-#scenario-create-dialog .tab-content {
-  display: none;
-}
-#scenario-create-dialog .tab-content.active {
-  display: block;
-}
-#scenario-create-dialog #dynamic-tab-buttons {
+#scenario-create-dialog .questions-tabs {
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
@@ -260,10 +251,6 @@
 }
 #scenario-create-dialog .accordion-content {
   padding: 10px;
-  display: none;
-}
-#scenario-create-dialog .accordion.open .accordion-content {
-  display: block;
 }
 #scenario-create-dialog .accordion.open .accordion-icon {
   transform: rotate(180deg);
@@ -287,11 +274,11 @@
 #scenario-create-dialog .flex2 {
   flex: 2;
 }
-#scenario-create-dialog #description-preview,
-#scenario-create-dialog #first-message-preview,
-#scenario-create-dialog #scenario-preview,
-#scenario-create-dialog #personality-preview,
-#scenario-create-dialog #character-note-preview {
+#scenario-create-dialog .description-preview,
+#scenario-create-dialog .first-message-preview,
+#scenario-create-dialog .scenario-preview,
+#scenario-create-dialog .personality-preview,
+#scenario-create-dialog .character-note-preview {
   min-height: 100px;
   padding: 10px;
   white-space: pre-wrap;

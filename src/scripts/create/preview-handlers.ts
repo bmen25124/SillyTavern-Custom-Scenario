@@ -66,6 +66,7 @@ export async function updatePreview(popup: JQuery<HTMLElement>, type: CoreTab, r
     },
   };
 
+  // @ts-ignore
   const { contentId, scriptId, previewId, scriptInputsId } = config[type];
   const textarea = popup.find(contentId);
   const scriptTextarea = popup.find(scriptId);

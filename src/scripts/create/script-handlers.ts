@@ -27,6 +27,7 @@ export function updateScriptInputs(
     },
   };
 
+  // @ts-ignore
   const container = popup.find(config[type].containerId);
 
   // Get current data to access saved script input values

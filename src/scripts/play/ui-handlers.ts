@@ -48,13 +48,13 @@ export async function handlePlayScenarioClick() {
     try {
       let scenarioData: FullExportData;
 
-      let buffer: ArrayBuffer;
+      let buffer: ArrayBuffer | null = null;
       let fileType: 'json' | 'png';
       if (file.type === 'image/png') {
         // Handle PNG files
         buffer = await file.arrayBuffer();
         fileType = 'png';
-        const extracted = readScenarioFromPng(buffer);
+        const extracted = readScenarioFromPng(buffer!);
         if (!extracted) {
           await stEcho('error', 'No scenario data found in PNG file.');
           return;
@@ -63,7 +63,6 @@ export async function handlePlayScenarioClick() {
       } else {
         // Handle JSON files
         const text = await file.text();
-        buffer = new TextEncoder().encode(text);
         fileType = 'json';
         scenarioData = JSON.parse(text);
       }
@@ -98,7 +97,7 @@ export async function handlePlayScenarioClick() {
 /**
  * Sets up handlers for the play dialog
  */
-async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: ArrayBuffer, fileType: 'json' | 'png') {
+async function setupPlayDialogHandlers(scenarioData: FullExportData, buffer: ArrayBuffer | null, fileType: 'json' | 'png') {
   const scenarioPlayDialogHtml = $(await renderExtensionTemplateAsync(extensionTemplateFolder, 'scenario-play-dialog'));
   const {
     descriptionScript,

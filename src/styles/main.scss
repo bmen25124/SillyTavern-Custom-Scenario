@@ -80,10 +80,6 @@
         padding: 10px;
         margin-bottom: 10px;
 
-        &.active {
-            display: block;
-        }
-
         .questions-tabs {
             display: flex;
             gap: 5px;
@@ -122,7 +118,7 @@
         }
     }
 
-    #page-tab-buttons {
+    .page-tab-buttons {
         display: flex;
         gap: 5px;
         flex-wrap: wrap;
@@ -225,19 +221,11 @@
         }
     }
 
-    #add-question-btn {
+    .add-question-btn {
         margin-left: 8px;
     }
 
-    .tab-content {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    #dynamic-tab-buttons {
+    .questions-tabs {
         display: flex;
         gap: 5px;
         flex-wrap: wrap;
@@ -308,11 +296,6 @@
 
     .accordion-content {
         padding: 10px;
-        display: none;
-    }
-
-    .accordion.open .accordion-content {
-        display: block;
     }
 
     .accordion.open .accordion-icon {
@@ -343,11 +326,11 @@
         flex: 2;
     }
 
-    #description-preview,
-    #first-message-preview,
-    #scenario-preview,
-    #personality-preview,
-    #character-note-preview {
+    .description-preview,
+    .first-message-preview,
+    .scenario-preview,
+    .personality-preview,
+    .character-note-preview {
         min-height: 100px;
         padding: 10px;
         white-space: pre-wrap;

@@ -1,6 +1,6 @@
 import { extensionVersion } from './config';
 
-export type CoreTab = 'description' | 'first-message' | 'scenario' | 'personality' | 'character-note';
+export type CoreTab = 'description' | 'first-message' | 'scenario' | 'personality' | 'character-note' | 'question';
 export type TabId = CoreTab | string; // question tabs are starting with 'question-'
 
 export const CORE_TABS: CoreTab[] = ['description', 'first-message', 'scenario', 'personality', 'character-note'];
@@ -97,7 +97,7 @@ export function createEmptyScenarioCreateData(): ScenarioCreateData {
     characterNote: '',
     characterNoteScript: '',
     questions: [],
-    layout: [],
+    layout: [[]],
     activeTab: 'description',
     scriptInputValues: {
       question: {},

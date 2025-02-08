@@ -50,16 +50,16 @@ def main():
     os.environ['BUILD_TYPE'] = build_type
     print(f"Building for {build_type}")
 
-    # Delete dist directory if it exists
-    if os.path.exists('dist'):
-        shutil.rmtree('dist')
-        print("Deleted dist directory")
+    # # Delete dist directory if it exists
+    # if os.path.exists('dist'):
+    #     shutil.rmtree('dist')
+    #     print("Deleted dist directory")
 
-    # Ensure dist directory exists
-    ensure_dir('dist')
+    # # Ensure dist directory exists
+    # ensure_dir('dist')
 
-    if not compile_js_files():
-        print("JS compilation gone wrong")
+    # if not compile_js_files():
+    #     print("JS compilation gone wrong")
 
     # Compile SASS
     if compile_sass():
