@@ -1,5 +1,5 @@
 import React from 'react';
-import { CoreTab, QuestionType, ScriptInputValues } from './scripts/types';
+import { CoreTab, QuestionType, ScriptInputValues } from '../scripts/types';
 
 export interface ScriptInput {
   id: string;

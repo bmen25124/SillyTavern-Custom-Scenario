@@ -10,7 +10,7 @@ import {
   Question as ScenarioQuestion,
   upgradeOrDowngradeData,
   CORE_TABS,
-} from './scripts/types';
+} from '../scripts/types';
 import {
   convertImportedData,
   createProductionScenarioData,
@@ -18,18 +18,19 @@ import {
   loadScenarioCreateData,
   removeScenarioCreateData,
   saveScenarioCreateData,
-} from './scripts/create/data-handlers';
-import { applyScenarioExportDataToSidebar } from './scripts/create/ui-state';
-import { readScenarioFromPng } from './scripts/utils/png-handlers';
-import { QuestionTabButton } from './QuestionTabButton';
+} from '../scripts/create/data-handlers';
+import { applyScenarioExportDataToSidebar } from '../scripts/create/ui-state';
+import { readScenarioFromPng } from '../scripts/utils/png-handlers';
 import { QuestionComponent } from './QuestionComponent';
+import { QuestionTabButton } from './QuestionTabButton';
 import { PageTabButton } from './PageTabButton';
-import { extensionVersion, st_createPopper, stEcho } from './scripts/config';
+import { extensionVersion, st_createPopper, stEcho } from '../scripts/config';
 
 // @ts-ignore
 import { uuidv4 } from '../../../../utils.js';
-import { executeMainScript, executeShowScript, interpolateText } from './scripts/utils';
+import { executeMainScript, executeShowScript, interpolateText } from '../scripts/utils';
 import { ScriptInput } from './ScriptInputs';
+
 
 interface Question {
   id: string;

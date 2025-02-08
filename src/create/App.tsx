@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Popup, POPUP_TYPE } from './Popup';
-import { st_popupConfirm } from './scripts/config';
+import { Popup, POPUP_TYPE } from '../Popup';
+import { st_popupConfirm } from '../scripts/config';
 import { CreateDialog } from './CreateDialog';
 
 interface AppProps {}

@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
 // @ts-ignore
 import { getContext } from '../../../../extensions.js';
+import App from './create/App';
 
 const characterButtons = $('.form_create_bottom_buttons_block');
 

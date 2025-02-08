@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 // @ts-ignore
 import dialogPolyfill from '../../../../../lib/dialog-polyfill.esm.js';
 // @ts-ignore
-import { shouldSendOnEnter } from '../../../../RossAscends-mods.js';
+// import { shouldSendOnEnter } from '../../../../RossAscends-mods.js';
 // @ts-ignore
 import { fixToastrForDialogs, Popup as STPopup } from '../../../../popup.js';
 // @ts-ignore

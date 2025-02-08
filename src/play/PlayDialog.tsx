@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { Question, FullExportData } from './scripts/types';
-import { readScenarioFromPng } from './scripts/utils/png-handlers';
-import { executeMainScript, executeShowScript, interpolateText } from './scripts/utils';
-import { st_addWorldInfo, st_getRequestHeaders, st_updateCharacters, stEcho, stGo, st_getCharacters, st_getWorldNames, st_saveCharacterDebounced, st_setWorldInfoButtonClass, st_getThumbnailUrl } from './scripts/config';
+import { Question, FullExportData } from '../scripts/types';
+import { readScenarioFromPng } from '../scripts/utils/png-handlers';
+import { executeMainScript, executeShowScript, interpolateText } from '../scripts/utils';
+import { st_addWorldInfo, st_getRequestHeaders, st_updateCharacters, stEcho, stGo, st_getCharacters, st_getWorldNames, st_saveCharacterDebounced, st_setWorldInfoButtonClass, st_getThumbnailUrl } from '../scripts/config';
 
 interface PlayDialogProps {
   onClose: () => void;
