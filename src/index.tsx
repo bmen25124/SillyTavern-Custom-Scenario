@@ -17,8 +17,6 @@ import PlayApp from './play/App';
   const rootElement = document.createElement('div');
   characterButtons.prepend(rootElement);
 
-
-
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <React.StrictMode>
@@ -41,4 +39,3 @@ import PlayApp from './play/App';
     </React.StrictMode>,
   );
 }
-

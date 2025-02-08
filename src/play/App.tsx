@@ -1,27 +1,38 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Popup, POPUP_TYPE } from '../Popup';
-import { PlayDialog } from './PlayDialog';
+import { PlayDialog, PlayDialogRef } from './PlayDialog';
 
-interface AppProps { }
+interface AppProps {}
 
 function App(props: AppProps) {
   const [showPopup, setShowPopup] = useState(false);
+  const dialogRef = useRef<PlayDialogRef>(null);
+  const [file, setFile] = useState<File | null>(null);
 
   const handleClick = () => {
-    setShowPopup(true);
-  };
-
-  const dialogRef = useRef<{ validateAndPlay: () => Promise<boolean> }>(null);
-
-  const handleComplete = async (value: any) => {
-    if (value === 1 && dialogRef.current) { // OK button clicked
-      const valid = await dialogRef.current.validateAndPlay();
-      if (!valid) {
-        return;
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json, .png';
+    fileInput.style.display = 'none';
+    fileInput.addEventListener('change', async (e) => {
+      // @ts-ignore
+      const file = e.target.files?.[0] as File | null;
+      if (file) {
+        setShowPopup(true);
+        setFile(file);
       }
-    }
-    setShowPopup(false);
+
+      fileInput.remove();
+    });
+    document.body.appendChild(fileInput);
+    fileInput.click();
   };
+
+  useEffect(() => {
+    if (file && showPopup) {
+      dialogRef.current?.handleFileSelect(file);
+    }
+  }, [file, showPopup]);
 
   return (
     <>
@@ -34,8 +45,16 @@ function App(props: AppProps) {
             okButton: true,
             cancelButton: true,
             wider: true,
+            onClosing: async (popup) => {
+              if (popup.result === 1 && dialogRef.current) {
+                // OK button clicked
+                const valid = await dialogRef.current.validateAndPlay();
+                return valid;
+              }
+              return true; // Allow closing for other cases (Cancel, X button)
+            },
           }}
-          onComplete={handleComplete}
+          onComplete={() => setShowPopup(false)}
         />
       )}
     </>

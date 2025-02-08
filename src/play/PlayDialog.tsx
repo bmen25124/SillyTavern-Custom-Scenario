@@ -1,8 +1,19 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Question, FullExportData } from '../scripts/types';
-import { readScenarioFromPng } from '../utils/png-handlers';
+import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
 import { executeMainScript, executeShowScript, interpolateText } from '../utils/script-utils';
-import { st_addWorldInfo, st_getRequestHeaders, st_updateCharacters, stEcho, stGo, st_getCharacters, st_getWorldNames, st_saveCharacterDebounced, st_setWorldInfoButtonClass, st_getThumbnailUrl } from '../scripts/config';
+import {
+  st_addWorldInfo,
+  st_getRequestHeaders,
+  st_updateCharacters,
+  stEcho,
+  stGo,
+  st_getCharacters,
+  st_getWorldNames,
+  st_saveCharacterDebounced,
+  st_setWorldInfoButtonClass,
+  st_getThumbnailUrl,
+} from '../scripts/config';
 
 interface PlayDialogProps {
   onClose: () => void;
@@ -15,6 +26,8 @@ interface QuestionState extends Question {
 
 export interface PlayDialogRef {
   validateAndPlay: () => Promise<boolean>;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  handleFileSelect: (file: File) => Promise<void>;
 }
 
 export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose }, ref) => {
@@ -36,7 +49,8 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
     const updatedQuestions = await Promise.all(
       sortedQuestions.map(async (question) => {
         try {
-          const showPreview = !question.showScript || await executeShowScript(question.showScript, answers, 'remove', worldName);
+          const showPreview =
+            !question.showScript || (await executeShowScript(question.showScript, answers, 'remove', worldName));
           let questionPreview = question.text;
 
           if (question.script) {
@@ -57,7 +71,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
             questionPreview: `Script error: ${error.message}`,
           };
         }
-      })
+      }),
     );
 
     setSortedQuestions(updatedQuestions);
@@ -95,11 +109,13 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
 
       // Sort questions based on layout
       const questions: QuestionState[] = [];
-      const layout = importedData.scenario_creator.layout || [[...importedData.scenario_creator.questions.map(q => q.inputId)]];
+      const layout = importedData.scenario_creator.layout || [
+        [...importedData.scenario_creator.questions.map((q) => q.inputId)],
+      ];
 
       for (const questionIds of layout) {
         for (const questionId of questionIds) {
-          const foundQuestion = importedData.scenario_creator.questions.find(q => q.inputId === questionId);
+          const foundQuestion = importedData.scenario_creator.questions.find((q) => q.inputId === questionId);
           if (foundQuestion) {
             questions.push({
               ...foundQuestion,
@@ -112,12 +128,13 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
 
       // Initialize answers with default values
       const initialAnswers: Record<string, string | boolean | { label: string; value: string }> = {};
-      questions.forEach(question => {
+      questions.forEach((question) => {
         if (question.type === 'select' && question.options?.length) {
-          const defaultOption = question.options?.find(opt => opt.value === question.defaultValue) || question.options[0];
+          const defaultOption =
+            question.options?.find((opt) => opt.value === question.defaultValue) || question.options[0];
           initialAnswers[question.inputId] = {
             label: defaultOption.label,
-            value: defaultOption.value
+            value: defaultOption.value,
           };
         } else if (question.type === 'checkbox') {
           initialAnswers[question.inputId] = question.defaultValue === true;
@@ -141,14 +158,14 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
   };
 
   const handleInputChange = (questionId: string, value: string | boolean | { label: string; value: string }) => {
-    setAnswers(prev => ({
+    setAnswers((prev) => ({
       ...prev,
-      [questionId]: value
+      [questionId]: value,
     }));
 
     // Clear validation error when input changes
     if (validationErrors[questionId]) {
-      setValidationErrors(prev => {
+      setValidationErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[questionId];
         return newErrors;
@@ -157,22 +174,17 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
   };
 
   const validatePage = (pageIndex: number): boolean => {
-    const currentPageQuestions = sortedQuestions.filter(q =>
-      layout[pageIndex].includes(q.inputId) &&
-      q.showPreview === 'SHOW'
+    const currentPageQuestions = sortedQuestions.filter(
+      (q) => layout[pageIndex].includes(q.inputId) && q.showPreview === 'SHOW',
     );
 
     const newErrors: Record<string, string> = {};
     let hasErrors = false;
 
-    currentPageQuestions.forEach(question => {
+    currentPageQuestions.forEach((question) => {
       if (question.required) {
         const answer = answers[question.inputId];
-        if (
-          answer === undefined ||
-          answer === '' ||
-          (typeof answer === 'object' && answer.value === '')
-        ) {
+        if (answer === undefined || answer === '' || (typeof answer === 'object' && answer.value === '')) {
           newErrors[question.inputId] = 'This field is required';
           hasErrors = true;
         }
@@ -209,13 +221,8 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
         await st_addWorldInfo(worldName, scenarioData.data.character_book, false);
       }
 
-      const {
-        descriptionScript,
-        firstMessageScript,
-        scenarioScript,
-        personalityScript,
-        characterNoteScript,
-      } = scenarioData.scenario_creator || {};
+      const { descriptionScript, firstMessageScript, scenarioScript, personalityScript, characterNoteScript } =
+        scenarioData.scenario_creator || {};
 
       // Process description
       const descriptionVars = descriptionScript
@@ -282,10 +289,18 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
       // Prepare form data
       const formData = new FormData();
       if (fileType === 'png' && fileBuffer) {
-        formData.append('avatar', new Blob([fileBuffer], { type: 'image/png' }), 'scenario.png');
+        const newBuffer = writeScenarioToPng(fileBuffer, scenarioData);
+        const newFile = new Blob([newBuffer], {
+          type: 'image/png',
+        });
+        formData.append('avatar', newFile, 'scenario.png');
         formData.append('file_type', 'png');
       } else {
-        formData.append('avatar', new Blob([JSON.stringify(scenarioData)], { type: 'application/json' }), 'scenario.json');
+        formData.append(
+          'avatar',
+          new Blob([JSON.stringify(scenarioData)], { type: 'application/json' }),
+          'scenario.json',
+        );
         formData.append('file_type', 'json');
       }
 
@@ -324,7 +339,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
       thumbnailUrl += `&scenarioTime=${Date.now()}`;
 
       $('#avatar_load_preview').attr('src', thumbnailUrl);
-      $('.mes').each(function() {
+      $('.mes').each(function () {
         const nameMatch = $(this).attr('ch_name') === scenarioData.name;
         if ((!nameMatch && $(this).attr('is_system') === 'true') || $(this).attr('is_user') === 'true') {
           return;
@@ -355,50 +370,42 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
   };
 
   // Set up imperative handle for parent component
-  useImperativeHandle(ref, () => ({
-    validateAndPlay: async () => {
-      if (!scenarioData) {
-        await stEcho('error', 'Please select a scenario file first.');
-        return false;
-      }
+  useImperativeHandle(
+    ref,
+    () => ({
+      validateAndPlay: async () => {
+        if (!scenarioData) {
+          await stEcho('error', 'Please select a scenario file first.');
+          return false;
+        }
 
-      if (!validatePage(currentPageIndex)) {
-        return false;
-      }
+        if (!validatePage(currentPageIndex)) {
+          return false;
+        }
 
-      if (currentPageIndex < layout.length - 1) {
-        await stEcho('warning', 'Please go to the last page before playing');
-        return false;
-      }
+        if (currentPageIndex < layout.length - 1) {
+          await stEcho('warning', 'Please go to the last page before playing');
+          return false;
+        }
 
-      try {
-        await handleSubmit();
-        return true;
-      } catch (error) {
-        return false;
-      }
-    }
-  }), [scenarioData, currentPageIndex, layout.length, validatePage, handleSubmit]);
+        try {
+          await handleSubmit();
+          return true;
+        } catch (error) {
+          return false;
+        }
+      },
+      fileInputRef,
+      handleFileSelect,
+    }),
+    [scenarioData, currentPageIndex, layout.length, validatePage, handleSubmit],
+  );
 
   if (!scenarioData) {
     return (
       <div className="scenario-play-dialog">
         <h2>Scenario Player</h2>
-        <div className="flex-container justifyCenter marginTop10">
-          <input
-            type="file"
-            accept=".json, .png"
-            style={{ display: 'none' }}
-            ref={fileInputRef}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFileSelect(file);
-            }}
-          />
-          <button className="menu_button" onClick={() => fileInputRef.current?.click()}>
-            Select Scenario File
-          </button>
-        </div>
+        <div className="flex-container justifyCenter marginTop10"></div>
       </div>
     );
   }
@@ -409,65 +416,66 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
 
       <form id="dynamic-inputs-container" className="flex-container flexFlowColumn marginTop10">
         {sortedQuestions
-          .filter(question => layout[currentPageIndex].includes(question.inputId))
-          .map(question => (
-            <fieldset key={question.inputId} className="dynamic-input-group marginTop10">
-              <div className="flex-container flexFlowColumn">
-                <pre className="input-question" style={{ whiteSpace: 'pre-wrap' }}>
-                  {question.questionPreview}{question.required ? ' *' : ''}
-                </pre>
-
-                {question.showPreview === 'SHOW' && (
-                  <div className="input-container">
-                    {question.type === 'checkbox' ? (
-                      <label className="checkbox_label">
+          .filter((question) => layout[currentPageIndex].includes(question.inputId))
+          .map(
+            (question) =>
+              question.showPreview === 'SHOW' && (
+                <fieldset key={question.inputId} className="dynamic-input-group marginTop10">
+                  <div className="flex-container flexFlowColumn">
+                    <pre className="input-question" style={{ whiteSpace: 'pre-wrap' }}>
+                      {question.questionPreview}
+                      {question.required ? ' *' : ''}
+                    </pre>
+                    <div className="input-container">
+                      {question.type === 'checkbox' ? (
+                        <label className="checkbox_label">
+                          <input
+                            type="checkbox"
+                            className="dynamic-input"
+                            checked={answers[question.inputId] as boolean}
+                            onChange={(e) => handleInputChange(question.inputId, e.target.checked)}
+                          />
+                        </label>
+                      ) : question.type === 'select' ? (
+                        <select
+                          className="text_pole dynamic-input"
+                          value={(answers[question.inputId] as { value: string })?.value || ''}
+                          onChange={(e) => {
+                            const option = question.options?.find((opt) => opt.value === e.target.value);
+                            if (option) {
+                              handleInputChange(question.inputId, {
+                                label: option.label,
+                                value: option.value,
+                              });
+                            }
+                          }}
+                        >
+                          {question.options?.map((opt, index) => (
+                            <option key={index} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
                         <input
-                          type="checkbox"
-                          className="dynamic-input"
-                          checked={answers[question.inputId] as boolean}
-                          onChange={e => handleInputChange(question.inputId, e.target.checked)}
+                          type="text"
+                          className="text_pole dynamic-input"
+                          placeholder={question.required ? 'Required' : 'Enter your answer'}
+                          value={answers[question.inputId] as string}
+                          onChange={(e) => handleInputChange(question.inputId, e.target.value)}
                         />
-                      </label>
-                    ) : question.type === 'select' ? (
-                      <select
-                        className="text_pole dynamic-input"
-                        value={(answers[question.inputId] as { value: string })?.value || ''}
-                        onChange={e => {
-                          const option = question.options?.find(opt => opt.value === e.target.value);
-                          if (option) {
-                            handleInputChange(question.inputId, {
-                              label: option.label,
-                              value: option.value
-                            });
-                          }
-                        }}
-                      >
-                        {question.options?.map((opt, index) => (
-                          <option key={index} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type="text"
-                        className="text_pole dynamic-input"
-                        placeholder={question.required ? 'Required' : 'Enter your answer'}
-                        value={answers[question.inputId] as string}
-                        onChange={e => handleInputChange(question.inputId, e.target.value)}
-                      />
+                      )}
+                    </div>
+
+                    {validationErrors[question.inputId] && (
+                      <span className="validation-error" style={{ color: 'red' }}>
+                        {validationErrors[question.inputId]}
+                      </span>
                     )}
                   </div>
-                )}
-
-                {validationErrors[question.inputId] && (
-                  <span className="validation-error" style={{ color: 'red' }}>
-                    {validationErrors[question.inputId]}
-                  </span>
-                )}
-              </div>
-            </fieldset>
-          ))}
+                </fieldset>
+              ),
+          )}
       </form>
 
       <div className="flex-container justifySpaceBetween marginTop10">

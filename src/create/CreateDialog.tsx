@@ -31,7 +31,6 @@ import { uuidv4 } from '../../../../utils.js';
 import { executeMainScript, executeShowScript, interpolateText } from '../utils/script-utils';
 import { ScriptInput } from './ScriptInputs';
 
-
 interface Question {
   id: string;
   inputId: string;
@@ -1379,7 +1378,10 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
                     }
                     const isValidId = /^[a-zA-Z_$][a-zA-Z0-9_$]{0,19}$/.test(value);
                     if (!isValidId) {
-                      stEcho('warning', `Question ID "${value}" is not valid. Must start with a letter, $ or _, and contain only letters, numbers, $ or _, max 20 characters.`);
+                      stEcho(
+                        'warning',
+                        `Question ID "${value}" is not valid. Must start with a letter, $ or _, and contain only letters, numbers, $ or _, max 20 characters.`,
+                      );
                       return;
                     }
                     const newScriptInputValues: ScriptInputValues = {
