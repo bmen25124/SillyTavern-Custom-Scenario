@@ -12,15 +12,15 @@ import {
   CORE_TABS,
 } from '../scripts/types';
 import {
+  applyScenarioExportDataToSidebar,
   convertImportedData,
   createProductionScenarioData,
   downloadFile,
   loadScenarioCreateData,
   removeScenarioCreateData,
   saveScenarioCreateData,
-} from '../scripts/create/data-handlers';
-import { applyScenarioExportDataToSidebar } from '../scripts/create/ui-state';
-import { readScenarioFromPng } from '../scripts/utils/png-handlers';
+} from '../utils/data-handlers';
+import { readScenarioFromPng } from '../utils/png-handlers';
 import { QuestionComponent } from './QuestionComponent';
 import { QuestionTabButton } from './QuestionTabButton';
 import { PageTabButton } from './PageTabButton';
@@ -28,7 +28,7 @@ import { extensionVersion, st_createPopper, stEcho } from '../scripts/config';
 
 // @ts-ignore
 import { uuidv4 } from '../../../../utils.js';
-import { executeMainScript, executeShowScript, interpolateText } from '../scripts/utils';
+import { executeMainScript, executeShowScript, interpolateText } from '../utils/script-utils';
 import { ScriptInput } from './ScriptInputs';
 
 

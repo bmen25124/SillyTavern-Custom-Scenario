@@ -4,7 +4,7 @@ import { Buffer } from 'buffer';
 import encode from 'png-chunks-encode';
 import extract from 'png-chunks-extract';
 import PNGtext from 'png-chunk-text';
-import { FullExportData } from '../types';
+import { FullExportData } from '../scripts/types';
 
 /**
  * Writes Character metadata to a PNG image buffer.

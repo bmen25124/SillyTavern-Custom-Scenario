@@ -7,7 +7,7 @@ import {
   createEmptyScenarioCreateData,
   createEmptyScenarioExportData,
   upgradeOrDowngradeData,
-} from '../types';
+} from '../scripts/types';
 import {
   st_humanizedDateTime,
   st_getcreateCharacterData,
@@ -17,7 +17,7 @@ import {
   st_server_convertWorldInfoToCharacterBook,
   st_setWorldInfoButtonClass,
   st_addWorldInfo,
-} from '../config';
+} from '../scripts/config';
 import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
 
 /**
@@ -290,107 +290,6 @@ export function saveScenarioCreateData(data: ScenarioCreateData) {
 }
 
 /**
- * Extracts current scenario data from the UI. Except for scriptInputValues.
- */
-export function getScenarioCreateDataFromUI(popup: JQuery<HTMLElement>): ScenarioCreateData {
-  const data = createEmptyScenarioCreateData();
-  data.scriptInputValues = loadScenarioCreateData().scriptInputValues;
-
-  // @ts-ignore
-  data.description = popup.find('#scenario-creator-character-description').val() || '';
-  // @ts-ignore
-  data.descriptionScript = popup.find('#scenario-creator-script').val() || '';
-  // @ts-ignore
-  data.firstMessage = popup.find('#scenario-creator-character-first-message').val() || '';
-  // @ts-ignore
-  data.firstMessageScript = popup.find('#scenario-creator-first-message-script').val() || '';
-  // @ts-ignore
-  data.scenario = popup.find('#scenario-creator-character-scenario').val() || '';
-  // @ts-ignore
-  data.scenarioScript = popup.find('#scenario-creator-scenario-script').val() || '';
-  data.activeTab = popup.find('.tab-button.active').data('tab') || 'description';
-  data.version = extensionVersion;
-  // @ts-ignore
-  data.personality = popup.find('#scenario-creator-character-personality').val() || '';
-  // @ts-ignore
-  data.personalityScript = popup.find('#scenario-creator-personality-script').val() || '';
-  // @ts-ignore
-  data.characterNote = popup.find('#scenario-creator-character-note').val() || '';
-  // @ts-ignore
-  data.characterNoteScript = popup.find('#scenario-creator-character-note-script').val() || '';
-  // @ts-ignore
-  data.worldName = $('#character_world').val() || undefined;
-
-  // Get questions data and build layout
-  data.questions = [];
-  data.layout = [];
-
-  // Get all pages from page buttons
-  const pageNumbers = popup
-    .find('.page-button')
-    .map(function () {
-      return $(this).data('page');
-    })
-    .get();
-
-  // For each page, find its questions in order
-  pageNumbers.forEach((pageNum) => {
-    const pageQuestions: string[] = [];
-
-    // Find all tab containers for this page
-    popup.find(`.tab-button-container[data-page="${pageNum}"]`).each(function () {
-      const inputId = $(this).find('.tab-button').data('tab').replace('question-', '');
-      const questionGroup = popup.find(`.dynamic-input-group[data-tab="question-${inputId}"]`);
-
-      const question: Question = {
-        inputId,
-        // @ts-ignore
-        text: questionGroup.find('.input-question').val(),
-        // @ts-ignore
-        script: questionGroup.find('.question-script').val() || '',
-        // @ts-ignore
-        type: questionGroup.find('.input-type-select').val(),
-        defaultValue: '',
-        required: questionGroup.find('.input-required').prop('checked'),
-        // @ts-ignore
-        showScript: questionGroup.find('.show-script').val() || '',
-      };
-
-      switch (question.type) {
-        case 'checkbox':
-          question.defaultValue = questionGroup.find('.input-default-checkbox').prop('checked');
-          break;
-        case 'select':
-          // @ts-ignore
-          question.defaultValue = questionGroup.find('.select-default').val();
-          question.options = [];
-          questionGroup.find('.option-item').each(function () {
-            // @ts-ignore
-            question.options.push({
-              // @ts-ignore
-              value: $(this).find('.option-value').val(),
-              // @ts-ignore
-              label: $(this).find('.option-label').val(),
-            });
-          });
-          break;
-        default:
-          // @ts-ignore
-          question.defaultValue = questionGroup.find('.input-default').val();
-      }
-
-      data.questions.push(question);
-      pageQuestions.push(question.inputId);
-    });
-
-    // Add this page's questions to layout
-    data.layout.push(pageQuestions);
-  });
-
-  return data;
-}
-
-/**
  * Converts imported data to the correct format with internal state
  * @param importedData Full export data or File object for PNG imports
  * @returns null if there is an error
@@ -511,4 +410,26 @@ export async function convertImportedData(importedData: FullExportData | File): 
     version: scenarioCreator.version,
     worldName: data.data?.extensions?.world,
   };
+}
+
+/**
+ * Only applies necessary fields in the advanced dialog.
+ */
+export function applyScenarioExportDataToSidebar(importedData: FullExportData) {
+  if ($('#form_create').attr('actiontype') !== 'createcharacter') {
+    return;
+  }
+
+  if (importedData.data.extensions?.depth_prompt !== undefined) {
+    $('#depth_prompt_depth').val(importedData.data.extensions.depth_prompt.depth);
+    $('#depth_prompt_role').val(importedData.data.extensions.depth_prompt.role || 'system');
+  } else {
+    $('#depth_prompt_depth').val(4);
+    $('#depth_prompt_role').val('system');
+  }
+  $('#creator_textarea').val(importedData.data.creator || '');
+  $('#creator_notes_textarea').val(importedData.creatorcomment || importedData.data.creator_notes || '');
+  $('#tags_textarea').val((importedData.tags || importedData.data.tags || []).join(', '));
+  $('#character_version_textarea').val(importedData.data.character_version || '');
+  $('#character_world').val(importedData.data.extensions?.world || '');
 }

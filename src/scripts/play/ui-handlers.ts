@@ -18,8 +18,8 @@ import {
   extensionName,
 } from '../config';
 import { upgradeOrDowngradeData, FullExportData, Question } from '../types';
-import { executeMainScript, executeShowScript, interpolateText } from '../utils';
-import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
+import { executeMainScript, executeShowScript, interpolateText } from '../../utils/script-utils';
+import { readScenarioFromPng, writeScenarioToPng } from '../../utils/png-handlers';
 
 /**
  * Prepares and adds the play scenario button to the character sidebar

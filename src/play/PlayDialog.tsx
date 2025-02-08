@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Question, FullExportData } from '../scripts/types';
-import { readScenarioFromPng } from '../scripts/utils/png-handlers';
-import { executeMainScript, executeShowScript, interpolateText } from '../scripts/utils';
+import { readScenarioFromPng } from '../utils/png-handlers';
+import { executeMainScript, executeShowScript, interpolateText } from '../utils/script-utils';
 import { st_addWorldInfo, st_getRequestHeaders, st_updateCharacters, stEcho, stGo, st_getCharacters, st_getWorldNames, st_saveCharacterDebounced, st_setWorldInfoButtonClass, st_getThumbnailUrl } from '../scripts/config';
 
 interface PlayDialogProps {
@@ -13,7 +13,11 @@ interface QuestionState extends Question {
   questionPreview: string;
 }
 
-export const PlayDialog: React.FC<PlayDialogProps> = ({ onClose }) => {
+export interface PlayDialogRef {
+  validateAndPlay: () => Promise<boolean>;
+}
+
+export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose }, ref) => {
   const [currentPageIndex, setCurrentPageIndex] = React.useState(0);
   const [scenarioData, setScenarioData] = React.useState<FullExportData | null>(null);
   const [sortedQuestions, setSortedQuestions] = React.useState<QuestionState[]>([]);
@@ -346,9 +350,35 @@ export const PlayDialog: React.FC<PlayDialogProps> = ({ onClose }) => {
       onClose();
     } catch (error: any) {
       console.error('Error processing scenario:', error);
-      await stEcho('error', `Error processing scenario: ${error.message}`);
+      stEcho('error', `Error processing scenario: ${error.message}`);
     }
   };
+
+  // Set up imperative handle for parent component
+  useImperativeHandle(ref, () => ({
+    validateAndPlay: async () => {
+      if (!scenarioData) {
+        await stEcho('error', 'Please select a scenario file first.');
+        return false;
+      }
+
+      if (!validatePage(currentPageIndex)) {
+        return false;
+      }
+
+      if (currentPageIndex < layout.length - 1) {
+        await stEcho('warning', 'Please go to the last page before playing');
+        return false;
+      }
+
+      try {
+        await handleSubmit();
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+  }), [scenarioData, currentPageIndex, layout.length, validatePage, handleSubmit]);
 
   if (!scenarioData) {
     return (
@@ -463,4 +493,4 @@ export const PlayDialog: React.FC<PlayDialogProps> = ({ onClose }) => {
       </div>
     </div>
   );
-};
+});

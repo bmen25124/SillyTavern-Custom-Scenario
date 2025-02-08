@@ -1,4 +1,4 @@
-import { interpolateText } from '../scripts/utils';
+import { interpolateText } from '../utils/script-utils';
 import { describe, expect, test } from '@jest/globals';
 
 describe('interpolateText', () => {
