@@ -10,7 +10,7 @@ import {
   Question as ScenarioQuestion,
   upgradeOrDowngradeData,
   CORE_TABS,
-} from '../scripts/types';
+} from '../types/types';
 import {
   applyScenarioExportDataToSidebar,
   convertImportedData,
@@ -24,10 +24,8 @@ import { readScenarioFromPng } from '../utils/png-handlers';
 import { QuestionComponent } from './QuestionComponent';
 import { QuestionTabButton } from './QuestionTabButton';
 import { PageTabButton } from './PageTabButton';
-import { extensionVersion, st_createPopper, stEcho } from '../scripts/config';
+import { extensionVersion, st_createPopper, st_echo, st_uuidv4 } from '../config';
 
-// @ts-ignore
-import { uuidv4 } from '../../../../utils.js';
 import { executeMainScript, executeShowScript, interpolateText } from '../utils/script-utils';
 import { ScriptInput } from './ScriptInputs';
 
@@ -53,14 +51,14 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
   let initialData = loadScenarioCreateData();
   // Check version changes
   if (initialData.version && initialData.version !== extensionVersion) {
-    stEcho('info', `Version of cache data changed from ${initialData.version} to ${extensionVersion}`);
+    st_echo('info', `Version of cache data changed from ${initialData.version} to ${extensionVersion}`);
   }
 
   try {
     initialData = upgradeOrDowngradeData(initialData, 'create');
     saveScenarioCreateData(initialData);
   } catch (error) {
-    stEcho('error', 'Cache data is not compatible. Removing cache data.');
+    st_echo('error', 'Cache data is not compatible. Removing cache data.');
     removeScenarioCreateData();
   }
 
@@ -89,7 +87,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
   // It is only for initializing activeTab. DO NOT USE THIS FOR ANYTHING ELSE.
   const questionInputIdAndIdMap: Map<string, string> = new Map();
   initialData.questions.forEach((q) => {
-    questionInputIdAndIdMap.set(q.inputId, uuidv4());
+    questionInputIdAndIdMap.set(q.inputId, st_uuidv4());
   });
   const [tabAccordionStates, setTabAccordionStates] = React.useState<Record<string, boolean>>({
     description: true,
@@ -286,7 +284,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
         let newQuestions = scenarioData.questions
           .map((q) => {
             const newQuestion: Question = {
-              id: uuidv4(),
+              id: st_uuidv4(),
               inputId: q.inputId,
               type: q.type as QuestionType,
               page: scenarioData.layout.findIndex((page) => page.includes(q.inputId)) + 1,
@@ -423,14 +421,14 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
             }
           } catch (error) {
             console.error('Import error:', error);
-            stEcho('error', 'Failed to import scenario data. Please check the file and try again.');
+            st_echo('error', 'Failed to import scenario data. Please check the file and try again.');
           }
         };
         reader.readAsText(file);
       }
     } catch (error) {
       console.error('Import error:', error);
-      stEcho('error', 'Failed to import scenario data. Please check the file and try again.');
+      st_echo('error', 'Failed to import scenario data. Please check the file and try again.');
     }
 
     // Reset file input for future imports
@@ -464,7 +462,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
 
     const questionCount = questions.filter((q) => q.page === currentPage).length;
     if (questionCount > 0) {
-      stEcho('warning', 'Cannot remove page with questions. Please move questions to another page first.');
+      st_echo('warning', 'Cannot remove page with questions. Please move questions to another page first.');
       return;
     }
 
@@ -683,7 +681,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
     const newId = `id_${newNumber}`;
 
     const newQuestion: Question = {
-      id: uuidv4(),
+      id: st_uuidv4(),
       page: currentPage,
       type: 'text',
       inputId: newId,
@@ -973,7 +971,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
   const handleExportClick = async () => {
     const errors = await validateExport();
     if (errors.length > 0) {
-      stEcho('error', 'Export validation failed:\n' + errors.join('\n'));
+      st_echo('error', 'Export validation failed:\n' + errors.join('\n'));
       return;
     }
     setIsExportVisible(!isExportVisible);
@@ -986,7 +984,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
 
     const errors = await validateExport();
     if (errors.length > 0) {
-      stEcho('error', 'Export validation failed:\n' + errors.join('\n'));
+      st_echo('error', 'Export validation failed:\n' + errors.join('\n'));
       return;
     }
 
@@ -1368,17 +1366,17 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
                   inputId={question.inputId}
                   onInputIdChange={(value) => {
                     if (!value) {
-                      stEcho('warning', 'Question ID cannot be empty.');
+                      st_echo('warning', 'Question ID cannot be empty.');
                       return;
                     }
                     const existingIds = questions.map((q) => q.inputId);
                     if (existingIds.includes(value)) {
-                      stEcho('warning', `Question ID "${value}" already exists.`);
+                      st_echo('warning', `Question ID "${value}" already exists.`);
                       return;
                     }
                     const isValidId = /^[a-zA-Z_$][a-zA-Z0-9_$]{0,19}$/.test(value);
                     if (!isValidId) {
-                      stEcho(
+                      st_echo(
                         'warning',
                         `Question ID "${value}" is not valid. Must start with a letter, $ or _, and contain only letters, numbers, $ or _, max 20 characters.`,
                       );

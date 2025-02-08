@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-// @ts-ignore
-import dialogPolyfill from '../../../../../lib/dialog-polyfill.esm.js';
-// @ts-ignore
-// import { shouldSendOnEnter } from '../../../../RossAscends-mods.js';
-// @ts-ignore
-import { fixToastrForDialogs, Popup as STPopup } from '../../../../popup.js';
-// @ts-ignore
-import { removeFromArray, runAfterAnimation, uuidv4 } from '../../../../utils.js';
+import {
+  dialogPolyfill,
+  st_fixToastrForDialogs,
+  st_removeFromArray,
+  st_runAfterAnimation,
+  st_uuidv4,
+  STPopup,
+} from './config';
 
 export enum POPUP_TYPE {
   TEXT = 1,
@@ -69,7 +69,7 @@ export const Popup: React.FC<PopupProps> = ({ content, type, inputValue = '', op
   const mainInputRef = useRef<HTMLTextAreaElement>(null);
   const [isClosingPrevented, setIsClosingPrevented] = useState(false);
   const [lastFocus, setLastFocus] = useState<HTMLElement | null>(null);
-  const id = useRef(uuidv4());
+  const id = useRef(st_uuidv4());
 
   // Create a reference object that mimics the original Popup instance
   const popupRef = useRef({
@@ -107,13 +107,13 @@ export const Popup: React.FC<PopupProps> = ({ content, type, inputValue = '', op
     }
 
     dialog.showModal();
-    fixToastrForDialogs();
+    st_fixToastrForDialogs();
 
     return () => {
       // Remove from STPopup utility's popup array
-      removeFromArray(STPopup.util.popups, popupRef.current);
+      st_removeFromArray(STPopup.util.popups, popupRef.current);
       // Don't call dialog.close() here since it's handled in handleComplete
-      fixToastrForDialogs();
+      st_fixToastrForDialogs();
     };
   }, []);
 
@@ -170,10 +170,10 @@ export const Popup: React.FC<PopupProps> = ({ content, type, inputValue = '', op
     dialog.setAttribute('closing', '');
 
     // Once the hiding starts, we need to fix the toastr to the layer below
-    fixToastrForDialogs();
+    st_fixToastrForDialogs();
 
     // After the dialog is actually completely closed, remove it from the DOM
-    runAfterAnimation(dialog, async () => {
+    st_runAfterAnimation(dialog, async () => {
       // Call the close on the dialog
       dialog.close();
 
@@ -183,7 +183,7 @@ export const Popup: React.FC<PopupProps> = ({ content, type, inputValue = '', op
       }
 
       // Remove it from the popup references
-      removeFromArray(STPopup.util.popups, popupRef.current);
+      st_removeFromArray(STPopup.util.popups, popupRef.current);
 
       // If there is any popup below this one, see if we can set the focus
       if (STPopup.util.popups.length > 0) {

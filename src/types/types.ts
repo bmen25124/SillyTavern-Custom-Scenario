@@ -1,4 +1,4 @@
-import { extensionVersion } from './config';
+import { extensionVersion } from '../config';
 
 export type CoreTab = 'description' | 'first-message' | 'scenario' | 'personality' | 'character-note' | 'question';
 export type TabId = CoreTab | string; // question tabs are starting with 'question-'

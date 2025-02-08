@@ -13,6 +13,15 @@ import { Popper } from '../../../../../lib.js';
 // @ts-ignore
 import { getContext } from '../../../../extensions.js';
 
+// @ts-ignore
+import dialogPolyfill from '../../../../../lib/dialog-polyfill.esm.js';
+// @ts-ignore
+// import { shouldSendOnEnter } from '../../../../RossAscends-mods.js';
+// @ts-ignore
+import { fixToastrForDialogs, Popup as STPopup } from '../../../../popup.js';
+// @ts-ignore
+import { removeFromArray, runAfterAnimation, uuidv4 } from '../../../../utils.js';
+
 import {
   world_names,
   selected_world_info,
@@ -29,67 +38,23 @@ import {
   // @ts-ignore
 } from '../../../../world-info.js';
 
-import { FullExportData } from './types.js';
+import { FullExportData } from './types/types.js';
 
 export const extensionName = 'SillyTavern-Custom-Scenario';
 export const extensionVersion = '0.4.1';
-export const extensionTemplateFolder = `third-party/${extensionName}/templates`;
 
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
  */
-export async function stEcho(severity: string, message: string): Promise<void> {
+export async function st_echo(severity: string, message: string): Promise<void> {
   await getContext().SlashCommandParser.commands['echo'].callback({ severity: severity }, message);
 }
 
 /**
  * Executes the 'go' slash command to switch to a specified character.
  */
-export async function stGo(name: string): Promise<void> {
+export async function st_go(name: string): Promise<void> {
   await getContext().SlashCommandParser.commands['go'].callback(undefined, name);
-}
-
-export function renderExtensionTemplateAsync(
-  extensionName: string,
-  templateId: string,
-  templateData?: object,
-  sanitize?: boolean,
-  localize?: boolean,
-): Promise<string> {
-  return getContext().renderExtensionTemplateAsync(extensionName, templateId, templateData, sanitize, localize);
-}
-
-export enum POPUP_TYPE {
-  TEXT = 1,
-  CONFIRM = 2,
-  INPUT = 3,
-  DISPLAY = 4,
-  CROP = 5,
-}
-
-export enum POPUP_RESULT {
-  AFFIRMATIVE = 1,
-  NEGATIVE = 0,
-  // @ts-ignore - not typed
-  CANCELLED = null,
-}
-
-interface PopupOptions {
-  okButton?: boolean;
-  cancelButton?: boolean;
-  wide?: boolean;
-  large?: boolean;
-  wider?: boolean;
-  onClosing?: (popupInstance: { result: POPUP_RESULT }) => void;
-}
-
-export function callGenericPopup(
-  content: JQuery<HTMLElement> | string | Element,
-  type: POPUP_TYPE,
-  inputValue?: string,
-  popupOptions?: PopupOptions,
-): Promise<POPUP_RESULT | string | boolean | null> {
-  return getContext().callGenericPopup(content, type, inputValue, popupOptions);
 }
 
 export function st_getRequestHeaders(): Partial<{
@@ -344,3 +309,21 @@ export async function st_addWorldInfo(
 
   return true;
 }
+
+export function st_fixToastrForDialogs() {
+  fixToastrForDialogs();
+}
+
+export function st_removeFromArray(array: any[], item: any) {
+  removeFromArray(array, item);
+}
+
+export function st_runAfterAnimation(element: any, callback: any) {
+  runAfterAnimation(element, callback);
+}
+
+export function st_uuidv4() {
+  return uuidv4();
+}
+
+export { STPopup, dialogPolyfill };

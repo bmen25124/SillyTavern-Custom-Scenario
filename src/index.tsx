@@ -1,9 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// @ts-ignore
-import { getContext } from '../../../../extensions.js';
-console.log(getContext());
-
 import CreateApp from './create/App';
 import PlayApp from './play/App';
 

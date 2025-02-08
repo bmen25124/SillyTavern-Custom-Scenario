@@ -1,19 +1,19 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Question, FullExportData } from '../scripts/types';
+import { Question, FullExportData } from '../types/types';
 import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
 import { executeMainScript, executeShowScript, interpolateText } from '../utils/script-utils';
 import {
   st_addWorldInfo,
   st_getRequestHeaders,
   st_updateCharacters,
-  stEcho,
-  stGo,
+  st_echo,
+  st_go,
   st_getCharacters,
   st_getWorldNames,
   st_saveCharacterDebounced,
   st_setWorldInfoButtonClass,
   st_getThumbnailUrl,
-} from '../scripts/config';
+} from '../config';
 
 interface PlayDialogProps {
   onClose: () => void;
@@ -92,7 +92,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
         type = 'png';
         const extracted = readScenarioFromPng(buffer);
         if (!extracted) {
-          await stEcho('error', 'No scenario data found in PNG file.');
+          await st_echo('error', 'No scenario data found in PNG file.');
           return;
         }
         importedData = extracted;
@@ -103,7 +103,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
       }
 
       if (!importedData.scenario_creator) {
-        await stEcho('warning', 'This scenario does not have a creator section');
+        await st_echo('warning', 'This scenario does not have a creator section');
         return;
       }
 
@@ -153,7 +153,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
       setValidationErrors({});
     } catch (error: any) {
       console.error('Import error:', error);
-      await stEcho('error', 'Error importing scenario: ' + error.message);
+      await st_echo('error', 'Error importing scenario: ' + error.message);
     }
   };
 
@@ -212,7 +212,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
     }
 
     if (currentPageIndex < layout.length - 1) {
-      await stEcho('warning', 'Please go to the last page before playing');
+      await st_echo('warning', 'Please go to the last page before playing');
       return;
     }
 
@@ -324,7 +324,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
       }
 
       await st_updateCharacters();
-      await stGo(`${file_name}.png`);
+      await st_go(`${file_name}.png`);
 
       // Update avatar
       let thumbnailUrl = st_getThumbnailUrl('avatar', `${file_name}.png`);
@@ -365,7 +365,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
       onClose();
     } catch (error: any) {
       console.error('Error processing scenario:', error);
-      stEcho('error', `Error processing scenario: ${error.message}`);
+      st_echo('error', `Error processing scenario: ${error.message}`);
     }
   };
 
@@ -375,7 +375,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
     () => ({
       validateAndPlay: async () => {
         if (!scenarioData) {
-          await stEcho('error', 'Please select a scenario file first.');
+          await st_echo('error', 'Please select a scenario file first.');
           return false;
         }
 
@@ -384,7 +384,7 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
         }
 
         if (currentPageIndex < layout.length - 1) {
-          await stEcho('warning', 'Please go to the last page before playing');
+          await st_echo('warning', 'Please go to the last page before playing');
           return false;
         }
 

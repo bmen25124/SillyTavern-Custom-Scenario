@@ -1,4 +1,4 @@
-import { st_getWorldInfo } from '../scripts/config';
+import { st_getWorldInfo } from '../config';
 
 /**
  * @param emptyStrategy if it's variableName, null/undefined/empty values would be shown as `{{variable}}`. Otherwise, it will show as empty strings.

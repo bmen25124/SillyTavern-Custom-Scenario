@@ -1,5 +1,5 @@
 import React from 'react';
-import { QuestionType, ScriptInputValues } from '../scripts/types';
+import { QuestionType, ScriptInputValues } from '../types/types';
 import { ScriptInput, ScriptInputs } from './ScriptInputs';
 
 interface Option {

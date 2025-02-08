@@ -7,17 +7,17 @@ import {
   createEmptyScenarioCreateData,
   createEmptyScenarioExportData,
   upgradeOrDowngradeData,
-} from '../scripts/types';
+} from '../types/types';
 import {
   st_humanizedDateTime,
   st_getcreateCharacterData,
   extensionVersion,
-  stEcho,
+  st_echo,
   st_getWorldInfo,
   st_server_convertWorldInfoToCharacterBook,
   st_setWorldInfoButtonClass,
   st_addWorldInfo,
-} from '../scripts/config';
+} from '../config';
 import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
 
 /**
@@ -305,12 +305,12 @@ export async function convertImportedData(importedData: FullExportData | File): 
 
       const extracted = readScenarioFromPng(buffer);
       if (!extracted) {
-        await stEcho('error', 'No scenario data found in PNG file.');
+        await st_echo('error', 'No scenario data found in PNG file.');
         return null;
       }
       data = extracted;
     } catch (error: any) {
-      await stEcho('error', `Failed to read PNG file: ${error.message}`);
+      await st_echo('error', `Failed to read PNG file: ${error.message}`);
       return null;
     }
   } else {
@@ -319,19 +319,19 @@ export async function convertImportedData(importedData: FullExportData | File): 
 
   // Show info if no scenario_creator exists
   if (!data.scenario_creator) {
-    await stEcho('info', 'No scenario_creator data found. Creating new empty data.');
+    await st_echo('info', 'No scenario_creator data found. Creating new empty data.');
   }
   // Extract scenario creator specific data or create a new empty data
   let scenarioCreator = data.scenario_creator || createEmptyScenarioExportData();
 
   // Check version changes
   if (scenarioCreator.version && scenarioCreator.version !== extensionVersion) {
-    await stEcho('info', `Imported data version changed from ${scenarioCreator.version} to ${extensionVersion}`);
+    await st_echo('info', `Imported data version changed from ${scenarioCreator.version} to ${extensionVersion}`);
   }
   try {
     scenarioCreator = upgradeOrDowngradeData(scenarioCreator, 'export');
   } catch (error: any) {
-    await stEcho('error', error.message);
+    await st_echo('error', error.message);
     return null;
   }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CoreTab, ScriptInputValues } from '../scripts/types';
+import { CoreTab, ScriptInputValues } from '../types/types';
 import { ScriptInput, ScriptInputs } from './ScriptInputs';
 
 interface TabContentProps {

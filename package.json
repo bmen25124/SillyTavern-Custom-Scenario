@@ -4,8 +4,8 @@
     "description": "A web application using pure JS and SCSS.",
     "main": "src/scripts/main.js",
     "scripts": {
-        "dev": "cross-env NODE_ENV=development webpack --mode development --watch",
-        "build": "cross-env NODE_ENV=production webpack --mode production",
+        "dev": "cross-env NODE_ENV=development sass src/styles/main.scss dist/style.css --source-map & cross-env NODE_ENV=development webpack --mode development --watch",
+        "build": "cross-env NODE_ENV=production sass src/styles/main.scss dist/style.css --no-source-map && cross-env NODE_ENV=production webpack --mode production",
         "test": "jest",
         "prettify": "prettier --write \"src/**/*.tsx\" \"templates/**/*.html\""
     },
