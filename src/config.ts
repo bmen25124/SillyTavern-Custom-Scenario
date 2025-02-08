@@ -41,7 +41,7 @@ import {
 import { FullExportData } from './types/types.js';
 
 export const extensionName = 'SillyTavern-Custom-Scenario';
-export const extensionVersion = '0.4.1';
+export const extensionVersion = '0.4.2';
 
 /**
  * Sends an echo message using the SlashCommandParser's echo command.

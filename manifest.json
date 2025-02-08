@@ -6,6 +6,6 @@
     "js": "dist/index.js",
     "css": "dist/style.css",
     "author": "bmen25124",
-    "version": "0.4.1",
+    "version": "0.4.2",
     "homePage": "https://github.com/bmen25124/SillyTavern-Custom-Scenario"
 }
