@@ -1376,6 +1376,11 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
                       stEcho('warning', `Question ID "${value}" already exists.`);
                       return;
                     }
+                    const isValidId = /^[a-zA-Z_$][a-zA-Z0-9_$]{0,19}$/.test(value);
+                    if (!isValidId) {
+                      stEcho('warning', `Question ID "${value}" is not valid. Must start with a letter, $ or _, and contain only letters, numbers, $ or _, max 20 characters.`);
+                      return;
+                    }
                     const newScriptInputValues: ScriptInputValues = {
                       ...scriptInputValues,
                     };
