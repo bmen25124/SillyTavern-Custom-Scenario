@@ -116,7 +116,7 @@ if (infos && infos.length > 0) {
 ### Why did you create this?
 I saw this on [AIDungeon](https://play.aidungeon.com/) and liked it. You can see in this [reddit post](https://www.reddit.com/r/SillyTavernAI/comments/1i59jem/scenario_system_similar_to_ai_dungeon_nsfw_for/) with an example.
 
-### Why version is _0.4.1_
+### Why version is _0.4.2_
 It is because of UI, not functionality.
 
 ## Known Issues
