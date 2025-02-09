@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Popup, POPUP_TYPE } from '../Popup';
-import { st_popupConfirm } from '../config';
 import { CreateDialog } from './CreateDialog';
 
 interface AppProps {}
@@ -13,13 +12,7 @@ function App(props: AppProps) {
   };
 
   const handleComplete = (value: any) => {
-    console.log('Popup result:', value);
     setShowPopup(false);
-  };
-
-  const handleSecondsClick = async () => {
-    const confirmedResult = await st_popupConfirm('heheheh boi');
-    console.log(confirmedResult);
   };
 
   return (
