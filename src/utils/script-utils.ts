@@ -5,7 +5,7 @@ import { st_getWorldInfo } from '../config';
  */
 export async function executeMainScript(
   script: string,
-  answers: {},
+  answers: Record<string, string | boolean | { label: string; value: string }>,
   emptyStrategy: 'variableName' | 'remove',
   worldName: string | undefined,
 ): Promise<Record<string, string | boolean | { label: string; value: string }>> {
@@ -28,7 +28,7 @@ export async function executeMainScript(
     `,
   );
 
-  return scriptFunction(JSON.parse(JSON.stringify(variables)), {
+  return scriptFunction(variables, {
     getAll: async (params: { name?: string; keyword: string }) =>
       await getWorldInfoContent({
         name: params.name ?? worldName,
@@ -47,7 +47,7 @@ export async function executeMainScript(
  */
 export function executeShowScript(
   script: string,
-  answers: {},
+  answers: Record<string, string | boolean | { label: string; value: string }>,
   emptyStrategy: 'variableName' | 'remove',
   _worldName: string | undefined,
 ): boolean {
@@ -66,7 +66,7 @@ export function executeShowScript(
     `,
   );
 
-  return scriptFunction(JSON.parse(JSON.stringify(variables)));
+  return scriptFunction(variables);
 }
 
 /**
@@ -86,7 +86,7 @@ export function interpolateText(
 
   let result = template;
   const regex = /\{\{([^}]+)\}\}/g;
-  let maxIterations = 10; // Prevent infinite recursion
+  let maxIterations = 100; // Prevent infinite recursion
   let iteration = 0;
 
   while (result.includes('{{') && iteration < maxIterations) {
