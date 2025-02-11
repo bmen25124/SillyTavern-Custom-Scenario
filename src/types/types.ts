@@ -39,6 +39,7 @@ export interface ScenarioExportData {
 }
 
 export interface ScenarioCreateData extends ScenarioExportData {
+  name: string;
   description: string;
   firstMessage: string;
   scenario: string;
@@ -86,6 +87,7 @@ export const STORAGE_KEY = 'scenario_creator_data';
 
 export function createEmptyScenarioCreateData(): ScenarioCreateData {
   return {
+    name: '',
     description: '',
     descriptionScript: '',
     firstMessage: '',
@@ -303,6 +305,20 @@ const versionUpgrades: VersionUpgrade[] = [
       data.version = '0.4.2';
     },
   },
+  {
+    from: '0.4.2',
+    to: '0.4.3',
+    createCallback: (data: ScenarioCreateData) => {
+      // Add name field
+      if (!data.hasOwnProperty('name')) {
+        data.name = '';
+      }
+      data.version = '0.4.3';
+    },
+    exportCallback: (data: ScenarioExportData) => {
+      data.version = '0.4.3';
+    },
+  }
 ];
 
 /**

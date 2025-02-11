@@ -251,6 +251,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
   const [isExportVisible, setIsExportVisible] = React.useState(false);
 
   const getWorldName = () => ($('#character_world').val() as string) || undefined;
+  const getCharacterName = () => $('#character_name_pole').val() as string;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -458,7 +459,10 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
   };
 
   const handleRemovePage = () => {
-    if (pages.length <= 1) return; // Don't remove the last page
+    if (pages.length <= 1) {
+      st_echo('warning', 'Cannot remove last page.');
+      return;
+    }
 
     const questionCount = questions.filter((q) => q.page === currentPage).length;
     if (questionCount > 0) {
@@ -692,9 +696,9 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
       question: '',
       mainScript: '',
       showScript: '',
-      showPreview: '',
+      showPreview: 'SHOW',
       questionPreview: '',
-      isRequired: false,
+      isRequired: true,
       options: [],
       defaultValue: '',
       isDefaultChecked: false,
@@ -791,6 +795,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
 
     // Return ScenarioCreateData format
     const baseData: ScenarioCreateData = {
+      name: getCharacterName(),
       description,
       descriptionScript,
       firstMessage,
@@ -892,6 +897,13 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
 
   const validateExport = async (): Promise<string[]> => {
     const errors: string[] = [];
+
+    // Check name
+    const formElement = $('#form_create').get(0) as HTMLFormElement;
+    const formData = new FormData(formElement);
+    if (!formData.get('ch_name')) {
+      errors.push('Character name is required.');
+    }
 
     // Check all scripts for errors
     try {
@@ -995,7 +1007,13 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
     const formElement = $('#form_create').get(0) as HTMLFormElement;
     const formData = new FormData(formElement);
     const productionData = await createProductionScenarioData(createScenarioData(), formData);
-    downloadFile(productionData, `scenario.${format}`, format);
+    if (!productionData) {
+      return;
+    }
+
+    // Replace invalid filename characters with underscore
+    const safeName = (productionData.name || productionData.data?.name).replace(/[<>:"/\\|?*]/g, '_');
+    downloadFile(productionData, `${safeName}.${format}`, format);
   };
 
   // Set up popper for export dropdown and handle click outside

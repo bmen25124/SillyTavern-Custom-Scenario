@@ -41,7 +41,7 @@ import {
 import { FullExportData } from './types/types.js';
 
 export const extensionName = 'SillyTavern-Custom-Scenario';
-export const extensionVersion = '0.4.2';
+export const extensionVersion = '0.4.3';
 
 /**
  * Sends an echo message using the SlashCommandParser's echo command.
@@ -295,8 +295,8 @@ export async function st_addWorldInfo(
   if (!worldNames.includes(worldName) && character_book) {
     if (!skipPopup) {
       const confirmation = await st_popupConfirm(
-        `Are you sure you want to import '${worldName}'?`,
-        `Without lorebook, it will not work as expected.`,
+        `Import lorebook named '${worldName}'`,
+        'Higly recommended'
       );
       if (!confirmation) {
         return false;

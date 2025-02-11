@@ -26,7 +26,7 @@ import { readScenarioFromPng, writeScenarioToPng } from '../utils/png-handlers';
 export async function createProductionScenarioData(
   data: ScenarioCreateData,
   formData: FormData,
-): Promise<FullExportData> {
+): Promise<FullExportData | null> {
   const {
     descriptionScript,
     firstMessageScript,
@@ -55,7 +55,7 @@ export async function createProductionScenarioData(
   if (!jsonData) {
     jsonData = {};
     // @ts-ignore
-    jsonData.name = 'Unnamed Character';
+    jsonData.name = formEntries.find(([key]) => key === 'ch_name')[1] || '';
     // @ts-ignore
     jsonData.personality = formEntries.find(([key]) => key === 'personality')[1] || '';
     // @ts-ignore
@@ -123,6 +123,11 @@ export async function createProductionScenarioData(
     extensions.world = jsonData.world;
     // @ts-ignore
     jsonData.data.extensions = extensions;
+  }
+
+  if (!jsonData.name) {
+    st_echo('error', 'Character name is required.');
+    return null;
   }
 
   let character_book: { entries: any[]; name: string } | undefined;
@@ -386,6 +391,7 @@ export async function convertImportedData(importedData: FullExportData | File): 
   }
 
   return {
+    name: data.name || data.data?.name || '',
     description: data.description || data.data?.description || '',
     descriptionScript: scenarioCreator.descriptionScript || '',
     firstMessage: data.first_mes || data.data?.first_mes || '',
@@ -427,6 +433,7 @@ export function applyScenarioExportDataToSidebar(importedData: FullExportData) {
     $('#depth_prompt_depth').val(4);
     $('#depth_prompt_role').val('system');
   }
+  $('#character_name_pole').val(importedData.name || importedData.data.name || '');
   $('#creator_textarea').val(importedData.data.creator || '');
   $('#creator_notes_textarea').val(importedData.creatorcomment || importedData.data.creator_notes || '');
   $('#tags_textarea').val((importedData.tags || importedData.data.tags || []).join(', '));

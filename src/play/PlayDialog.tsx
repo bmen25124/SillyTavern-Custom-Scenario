@@ -422,7 +422,11 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
               question.showPreview === 'SHOW' && (
                 <fieldset key={question.inputId} className="dynamic-input-group marginTop10">
                   <div className="flex-container flexFlowColumn">
-                    <pre className="input-question" style={{ whiteSpace: 'pre-wrap' }} title={'{{' + question.inputId + '}}'}>
+                    <pre
+                      className="input-question"
+                      style={{ whiteSpace: 'pre-wrap' }}
+                      title={'{{' + question.inputId + '}}'}
+                    >
                       {question.questionPreview}
                       {question.required ? ' *' : ''}
                     </pre>
