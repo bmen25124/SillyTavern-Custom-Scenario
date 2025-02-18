@@ -13,7 +13,7 @@ import {
   st_getcreateCharacterData,
   extensionVersion,
   st_echo,
-  st_getWorldInfo,
+  st_loadWorldInfo,
   st_server_convertWorldInfoToCharacterBook,
   st_setWorldInfoButtonClass,
   st_addWorldInfo,
@@ -132,7 +132,7 @@ export async function createProductionScenarioData(
 
   let character_book: { entries: any[]; name: string } | undefined;
   if (jsonData.world) {
-    const file = await st_getWorldInfo(jsonData.world);
+    const file = await st_loadWorldInfo(jsonData.world);
     if (file && file.entries) {
       character_book = st_server_convertWorldInfoToCharacterBook(jsonData.world, file.entries);
     }

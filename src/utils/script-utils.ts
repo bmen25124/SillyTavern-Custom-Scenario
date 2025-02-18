@@ -1,4 +1,4 @@
-import { st_getWorldInfo } from '../config';
+import { st_loadWorldInfo } from '../config';
 
 /**
  * @param emptyStrategy if it's variableName, null/undefined/empty values would be shown as `{{variable}}`. Otherwise, it will show as empty strings.
@@ -123,7 +123,7 @@ export async function getWorldInfoContent(params: { name?: string; keyword: stri
   if (!params.name) {
     return null;
   }
-  const worldInfo = await st_getWorldInfo(params.name);
+  const worldInfo = await st_loadWorldInfo(params.name);
   if (!worldInfo) {
     return null;
   }
