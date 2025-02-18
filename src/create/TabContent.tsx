@@ -1,6 +1,7 @@
 import React from 'react';
 import { CoreTab, ScriptInputValues } from '../types/types';
 import { ScriptInput, ScriptInputs } from './ScriptInputs';
+import { CodeEditor } from './CodeEditor';
 
 interface TabContentProps {
   type: CoreTab;
@@ -37,14 +38,14 @@ export const TabContent: React.FC<TabContentProps> = ({
 }) => {
   return (
     <div className="flex-container flexFlowColumn marginTopBot5">
-      <div className="flex-container justifySpaceBetween alignItemsCenter flex1" title={contentLabel}>
+      <div className="flex-container flex1 flexFlowColumn" title={contentLabel}>
         <label>{contentLabel}</label>
-        <textarea
-          className="text_pole textarea_compact"
+        <CodeEditor
           rows={4}
           placeholder={contentPlaceholder}
           value={content}
-          onChange={(e) => onContentChange(e.target.value)}
+          onChange={onContentChange}
+          language="custom-scenario-script"
         />
       </div>
       <div className="accordion marginTop10">
@@ -67,13 +68,7 @@ export const TabContent: React.FC<TabContentProps> = ({
                 onChange={scriptInputs.onChange}
               />
             </div>
-            <textarea
-              className="text_pole textarea_compact"
-              rows={8}
-              placeholder="Enter your script here..."
-              value={script}
-              onChange={(e) => onScriptChange(e.target.value)}
-            />
+            <CodeEditor rows={8} placeholder="Enter your script here..." value={script} onChange={onScriptChange} />
           </div>
         )}
       </div>

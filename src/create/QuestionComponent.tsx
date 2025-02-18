@@ -1,6 +1,7 @@
 import React from 'react';
 import { QuestionType, ScriptInputValues } from '../types/types';
 import { ScriptInput, ScriptInputs } from './ScriptInputs';
+import { CodeEditor } from './CodeEditor';
 
 interface Option {
   value: string;
@@ -106,12 +107,12 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
 
       <div className="flex-container flexFlowColumn marginTop10">
         <label>Question:</label>
-        <textarea
-          className="text_pole textarea_compact input-question"
+        <CodeEditor
           rows={2}
           placeholder="Enter question"
           value={question}
-          onChange={(e) => onQuestionChange(e.target.value)}
+          onChange={onQuestionChange}
+          language="custom-scenario-script"
         />
       </div>
 
@@ -127,7 +128,7 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
         </div>
         {isAccordionOpen && (
           <div className="accordion-content">
-            <div className="question-script-inputs-container flex-container flexFlowColumn marginTop10 marginBottom10">
+            <div className="flex-container flexFlowColumn marginTop10 marginBottom10">
               <ScriptInputs
                 type="question"
                 isQuestionInput={true}
@@ -137,19 +138,17 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
                 onChange={scriptInputs.onChange}
               />
             </div>
-            <textarea
-              className="text_pole textarea_compact question-script"
+            <CodeEditor
               rows={8}
               placeholder="Enter your main script here..."
               value={mainScript}
-              onChange={(e) => onMainScriptChange(e.target.value)}
+              onChange={onMainScriptChange}
             />
-            <textarea
-              className="text_pole textarea_compact show-script"
+            <CodeEditor
               rows={4}
               placeholder="Enter your show script here..."
               value={showScript}
-              onChange={(e) => onShowScriptChange(e.target.value)}
+              onChange={onShowScriptChange}
             />
             <label>Preview: </label>
             <label className="show-preview">{showPreview}</label>

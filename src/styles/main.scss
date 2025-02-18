@@ -330,14 +330,13 @@
         flex: 2;
     }
 
-    .description-preview,
-    .first-message-preview,
-    .scenario-preview,
-    .personality-preview,
-    .character-note-preview {
-        min-height: 100px;
-        padding: 10px;
-        white-space: pre-wrap;
-        overflow-wrap: break-word;
+    .code-highlight {
+        margin: 0;
+        background-color: var(--black30a);
+        text-align: left;
+        code {
+            background: 0;
+            border: 0;
+        }
     }
 }

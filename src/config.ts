@@ -5,7 +5,7 @@ import {
   // @ts-ignore
 } from '../../../../../script.js';
 // @ts-ignore
-import { Popper } from '../../../../../lib.js';
+import { Popper, hljs } from '../../../../../lib.js';
 
 // @ts-ignore
 import dialogPolyfill from '../../../../../lib/dialog-polyfill.esm.js';
@@ -233,4 +233,4 @@ export function st_uuidv4() {
   return SillyTavern.getContext().uuidv4();
 }
 
-export { STPopup, dialogPolyfill };
+export { STPopup, dialogPolyfill, hljs };
