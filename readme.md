@@ -1,12 +1,20 @@
 # SillyTavern Custom Scenario
 
-An extension that lets you create interactive scenarios with variables and basic scripting.
+A [SillyTavern](https://docs.sillytavern.app/) extension that let you create/play interactive character cards. Do you want to ask a question before starting the scenario? Like the character traits, starting location, etc. You can do it here.
 
 ## What it does
 - Create scenarios with custom questions
 - Use variables in the description/first message/personality/scenario/character note.
 - Add simple scripts to make things dynamic. (JavaScript)
 - Import/export scenarios as JSON/PNG
+
+## How to install
+
+Install via the SillyTavern extension installer.
+
+```txt
+https://github.com/bmen25124/SillyTavern-Custom-Scenario
+```
 
 ## Question types
 - Text input
@@ -116,7 +124,7 @@ if (infos && infos.length > 0) {
 ### Why did you create this?
 I saw this on [AIDungeon](https://play.aidungeon.com/) and liked it. You can see in this [reddit post](https://www.reddit.com/r/SillyTavernAI/comments/1i59jem/scenario_system_similar_to_ai_dungeon_nsfw_for/) with an example.
 
-### Why version is _0.4.2_
+### Why version is _0.4.4_
 It is because of UI, not functionality.
 
 ## Known Issues
