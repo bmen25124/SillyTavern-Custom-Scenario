@@ -38,6 +38,12 @@ interface QuestionComponentProps {
     values?: ScriptInputValues;
     onChange?: (inputId: string, value: string | boolean) => void;
   };
+  isQuestionHighlightMode: boolean;
+  onQuestionHighlightModeChange: (value: boolean) => void;
+  isMainScriptHighlightMode: boolean;
+  onMainScriptHighlightModeChange: (value: boolean) => void;
+  isShowScriptHighlightMode: boolean;
+  onShowScriptHighlightModeChange: (value: boolean) => void;
 }
 
 export const QuestionComponent: React.FC<QuestionComponentProps> = ({
@@ -66,6 +72,12 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
   isAccordionOpen,
   onAccordionToggle,
   scriptInputs,
+  isQuestionHighlightMode,
+  onQuestionHighlightModeChange,
+  isMainScriptHighlightMode,
+  onMainScriptHighlightModeChange,
+  isShowScriptHighlightMode,
+  onShowScriptHighlightModeChange,
 }) => {
   const handleAddOption = () => {
     onOptionsChange([...options, { value: '', label: '' }]);
@@ -113,6 +125,8 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
           value={question}
           onChange={onQuestionChange}
           language="custom-scenario-script"
+          isHighlightMode={isQuestionHighlightMode}
+          onHighlightModeChange={onQuestionHighlightModeChange}
         />
       </div>
 
@@ -143,12 +157,16 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
               placeholder="Enter your main script here..."
               value={mainScript}
               onChange={onMainScriptChange}
+              isHighlightMode={isMainScriptHighlightMode}
+              onHighlightModeChange={onMainScriptHighlightModeChange}
             />
             <CodeEditor
               rows={4}
               placeholder="Enter your show script here..."
               value={showScript}
               onChange={onShowScriptChange}
+              isHighlightMode={isShowScriptHighlightMode}
+              onHighlightModeChange={onShowScriptHighlightModeChange}
             />
             <label>Preview: </label>
             <label className="show-preview">{showPreview}</label>

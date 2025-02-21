@@ -7,9 +7,9 @@ export const CodeEditor: React.FC<{
   rows: number;
   placeholder?: string;
   language?: 'javascript' | 'custom-scenario-script';
-}> = ({ value, onChange, rows, placeholder, language = 'javascript' }) => {
-  const [isHighlightMode, setIsHighlightMode] = useState(false);
-
+  isHighlightMode: boolean;
+  onHighlightModeChange: (value: boolean) => void;
+}> = ({ value, onChange, rows, placeholder, language = 'javascript', isHighlightMode, onHighlightModeChange }) => {
   // Register custom language if not already registered
   if (language === 'custom-scenario-script' && !hljs.getLanguage('custom-scenario-script')) {
     hljs.registerLanguage('custom-scenario-script', () => ({
@@ -26,15 +26,15 @@ export const CodeEditor: React.FC<{
 
   // Highlight the code using hljs
   const highlightedCode = React.useMemo(() => {
-    if (!value) return '';
+    if (!value) return `<span>${placeholder || 'Enter your code here...'}</span>`;
     const result = hljs.highlight(value, { language });
     return result.value;
-  }, [value, language]);
+  }, [value, language, placeholder]);
 
   return (
     <div style={{ position: 'relative' }}>
       <button
-        onClick={() => setIsHighlightMode(!isHighlightMode)}
+        onClick={() => onHighlightModeChange(!isHighlightMode)}
         style={{
           position: 'absolute',
           top: '4px',
@@ -66,7 +66,7 @@ export const CodeEditor: React.FC<{
         }}
       >
         {isHighlightMode ? (
-          <pre className="code-highlight">
+          <pre className="code-highlight" title={value ? placeholder : undefined}>
             <code dangerouslySetInnerHTML={{ __html: highlightedCode }} />
           </pre>
         ) : (
@@ -83,6 +83,7 @@ export const CodeEditor: React.FC<{
               resize: 'vertical',
               paddingRight: 'calc(32px + var(--scrollbar-width, 12px))',
             }}
+            title={value ? placeholder : undefined}
           />
         )}
       </div>

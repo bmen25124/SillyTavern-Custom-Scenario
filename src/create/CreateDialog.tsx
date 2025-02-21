@@ -43,6 +43,9 @@ interface Question {
   options: { value: string; label: string }[];
   defaultValue: string;
   isDefaultChecked: boolean;
+  questionHighlightMode: boolean;
+  mainScriptHighlightMode: boolean;
+  showScriptHighlightMode: boolean;
 }
 
 interface CreateDialogProps {}
@@ -67,22 +70,32 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
   const [description, setDescription] = React.useState(initialData.description);
   const [descriptionScript, setDescriptionScript] = React.useState(initialData.descriptionScript);
   const [descriptionPreview, setDescriptionPreview] = React.useState('');
+  const [descriptionHighlightMode, setDescriptionHighlightMode] = React.useState(false);
+  const [descriptionScriptHighlightMode, setDescriptionScriptHighlightMode] = React.useState(false);
 
   const [firstMessage, setFirstMessage] = React.useState(initialData.firstMessage);
   const [firstMessageScript, setFirstMessageScript] = React.useState(initialData.firstMessageScript);
   const [firstMessagePreview, setFirstMessagePreview] = React.useState('');
+  const [firstMessageHighlightMode, setFirstMessageHighlightMode] = React.useState(false);
+  const [firstMessageScriptHighlightMode, setFirstMessageScriptHighlightMode] = React.useState(false);
 
   const [scenario, setScenario] = React.useState(initialData.scenario);
   const [scenarioScript, setScenarioScript] = React.useState(initialData.scenarioScript);
   const [scenarioPreview, setScenarioPreview] = React.useState('');
+  const [scenarioHighlightMode, setScenarioHighlightMode] = React.useState(false);
+  const [scenarioScriptHighlightMode, setScenarioScriptHighlightMode] = React.useState(false);
 
   const [personality, setPersonality] = React.useState(initialData.personality);
   const [personalityScript, setPersonalityScript] = React.useState(initialData.personalityScript);
   const [personalityPreview, setPersonalityPreview] = React.useState('');
+  const [personalityHighlightMode, setPersonalityHighlightMode] = React.useState(false);
+  const [personalityScriptHighlightMode, setPersonalityScriptHighlightMode] = React.useState(false);
 
   const [characterNote, setCharacterNote] = React.useState(initialData.characterNote);
   const [characterNoteScript, setCharacterNoteScript] = React.useState(initialData.characterNoteScript);
   const [characterNotePreview, setCharacterNotePreview] = React.useState('');
+  const [characterNoteHighlightMode, setCharacterNoteHighlightMode] = React.useState(false);
+  const [characterNoteScriptHighlightMode, setCharacterNoteScriptHighlightMode] = React.useState(false);
 
   // It is only for initializing activeTab. DO NOT USE THIS FOR ANYTHING ELSE.
   const questionInputIdAndIdMap: Map<string, string> = new Map();
@@ -281,6 +294,18 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
         setCharacterNote(scenarioData.characterNote);
         setCharacterNoteScript(scenarioData.characterNoteScript);
 
+        // Set highlight modes on
+        setDescriptionHighlightMode(true);
+        setDescriptionScriptHighlightMode(true);
+        setFirstMessageHighlightMode(true);
+        setFirstMessageScriptHighlightMode(true);
+        setScenarioHighlightMode(true);
+        setScenarioScriptHighlightMode(true);
+        setPersonalityHighlightMode(true);
+        setPersonalityScriptHighlightMode(true);
+        setCharacterNoteHighlightMode(true);
+        setCharacterNoteScriptHighlightMode(true);
+
         // Update questions
         let newQuestions = scenarioData.questions
           .map((q) => {
@@ -298,6 +323,9 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
               options: q.options ?? [],
               defaultValue: typeof q.defaultValue === 'string' ? q.defaultValue : '',
               isDefaultChecked: q.defaultValue === true,
+              questionHighlightMode: true,
+              mainScriptHighlightMode: true,
+              showScriptHighlightMode: true,
             };
             return newQuestion;
           })
@@ -634,18 +662,28 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
     setDescription(emptyData.description);
     setDescriptionScript(emptyData.descriptionScript);
     setDescriptionPreview('');
+    setDescriptionHighlightMode(false);
+    setDescriptionScriptHighlightMode(false);
     setFirstMessage(emptyData.firstMessage);
     setFirstMessageScript(emptyData.firstMessageScript);
     setFirstMessagePreview('');
+    setFirstMessageHighlightMode(false);
+    setFirstMessageScriptHighlightMode(false);
     setScenario(emptyData.scenario);
     setScenarioScript(emptyData.scenarioScript);
     setScenarioPreview('');
+    setScenarioHighlightMode(false);
+    setScenarioScriptHighlightMode(false);
     setPersonality(emptyData.personality);
     setPersonalityScript(emptyData.personalityScript);
     setPersonalityPreview('');
+    setPersonalityHighlightMode(false);
+    setPersonalityScriptHighlightMode(false);
     setCharacterNote(emptyData.characterNote);
     setCharacterNoteScript(emptyData.characterNoteScript);
     setCharacterNotePreview('');
+    setCharacterNoteHighlightMode(false);
+    setCharacterNoteScriptHighlightMode(false);
 
     // Reset script input values
     setScriptInputValues(emptyData.scriptInputValues);
@@ -702,6 +740,9 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
       options: [],
       defaultValue: '',
       isDefaultChecked: false,
+      questionHighlightMode: false,
+      mainScriptHighlightMode: false,
+      showScriptHighlightMode: false,
     };
     const updatedQuestions = [...questions, newQuestion];
     setQuestions(updatedQuestions);
@@ -1269,6 +1310,10 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
               onScriptChange: setDescriptionScript,
               previewContent: descriptionPreview,
               setPreviewContent: setDescriptionPreview,
+              contentHighlightMode: descriptionHighlightMode,
+              onContentHighlightModeChange: setDescriptionHighlightMode,
+              scriptHighlightMode: descriptionScriptHighlightMode,
+              onScriptHighlightModeChange: setDescriptionScriptHighlightMode,
             },
             'first-message': {
               type: 'first-message' as const,
@@ -1280,6 +1325,10 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
               onScriptChange: setFirstMessageScript,
               previewContent: firstMessagePreview,
               setPreviewContent: setFirstMessagePreview,
+              contentHighlightMode: firstMessageHighlightMode,
+              onContentHighlightModeChange: setFirstMessageHighlightMode,
+              scriptHighlightMode: firstMessageScriptHighlightMode,
+              onScriptHighlightModeChange: setFirstMessageScriptHighlightMode,
             },
             scenario: {
               type: 'scenario' as const,
@@ -1291,6 +1340,10 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
               onScriptChange: setScenarioScript,
               previewContent: scenarioPreview,
               setPreviewContent: setScenarioPreview,
+              contentHighlightMode: scenarioHighlightMode,
+              onContentHighlightModeChange: setScenarioHighlightMode,
+              scriptHighlightMode: scenarioScriptHighlightMode,
+              onScriptHighlightModeChange: setScenarioScriptHighlightMode,
             },
             personality: {
               type: 'personality' as const,
@@ -1302,6 +1355,10 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
               onScriptChange: setPersonalityScript,
               previewContent: personalityPreview,
               setPreviewContent: setPersonalityPreview,
+              contentHighlightMode: personalityHighlightMode,
+              onContentHighlightModeChange: setPersonalityHighlightMode,
+              scriptHighlightMode: personalityScriptHighlightMode,
+              onScriptHighlightModeChange: setPersonalityScriptHighlightMode,
             },
             'character-note': {
               type: 'character-note' as const,
@@ -1313,6 +1370,10 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
               onScriptChange: setCharacterNoteScript,
               previewContent: characterNotePreview,
               setPreviewContent: setCharacterNotePreview,
+              contentHighlightMode: characterNoteHighlightMode,
+              onContentHighlightModeChange: setCharacterNoteHighlightMode,
+              scriptHighlightMode: characterNoteScriptHighlightMode,
+              onScriptHighlightModeChange: setCharacterNoteScriptHighlightMode,
             },
           };
           return configs[tabId as keyof typeof configs];
@@ -1365,6 +1426,10 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
                   setScriptInputValues(newScriptInputValues);
                 },
               }}
+              isContentHighlightMode={config.contentHighlightMode}
+              onContentHighlightModeChange={config.onContentHighlightModeChange}
+              isScriptHighlightMode={config.scriptHighlightMode}
+              onScriptHighlightModeChange={config.onScriptHighlightModeChange}
             />
           )
         );
@@ -1504,6 +1569,24 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
                       };
                       setScriptInputValues(newScriptInputValues);
                     },
+                  }}
+                  isQuestionHighlightMode={question.questionHighlightMode}
+                  isMainScriptHighlightMode={question.mainScriptHighlightMode}
+                  isShowScriptHighlightMode={question.showScriptHighlightMode}
+                  onQuestionHighlightModeChange={(value) => {
+                    setQuestions(
+                      questions.map((q) => (q.id === question.id ? { ...q, questionHighlightMode: value } : q)),
+                    );
+                  }}
+                  onMainScriptHighlightModeChange={(value) => {
+                    setQuestions(
+                      questions.map((q) => (q.id === question.id ? { ...q, mainScriptHighlightMode: value } : q)),
+                    );
+                  }}
+                  onShowScriptHighlightModeChange={(value) => {
+                    setQuestions(
+                      questions.map((q) => (q.id === question.id ? { ...q, showScriptHighlightMode: value } : q)),
+                    );
                   }}
                 />
               )

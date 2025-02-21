@@ -56,6 +56,10 @@ Created card
 
 ![created card](images/created-card.png)
 
+## Example Cards
+
+Check [rentry page(half NSFW)](https://rentry.co/custom-scenario-creator-examples) for examples. You can import on _Create Dialog_ to see how scripts are working.
+
 ## Simple scripting
 You can write basic JavaScript to manipulate variables. For example:
 

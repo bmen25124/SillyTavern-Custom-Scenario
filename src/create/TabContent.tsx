@@ -20,6 +20,10 @@ interface TabContentProps {
     values?: ScriptInputValues;
     onChange?: (inputId: string, value: string | boolean) => void;
   };
+  isContentHighlightMode: boolean;
+  onContentHighlightModeChange: (value: boolean) => void;
+  isScriptHighlightMode: boolean;
+  onScriptHighlightModeChange: (value: boolean) => void;
 }
 
 export const TabContent: React.FC<TabContentProps> = ({
@@ -35,6 +39,10 @@ export const TabContent: React.FC<TabContentProps> = ({
   isAccordionOpen = false,
   onAccordionToggle,
   scriptInputs,
+  isContentHighlightMode,
+  onContentHighlightModeChange,
+  isScriptHighlightMode,
+  onScriptHighlightModeChange,
 }) => {
   return (
     <div className="flex-container flexFlowColumn marginTopBot5">
@@ -46,6 +54,8 @@ export const TabContent: React.FC<TabContentProps> = ({
           value={content}
           onChange={onContentChange}
           language="custom-scenario-script"
+          isHighlightMode={isContentHighlightMode}
+          onHighlightModeChange={onContentHighlightModeChange}
         />
       </div>
       <div className="accordion marginTop10">
@@ -68,7 +78,14 @@ export const TabContent: React.FC<TabContentProps> = ({
                 onChange={scriptInputs.onChange}
               />
             </div>
-            <CodeEditor rows={8} placeholder="Enter your script here..." value={script} onChange={onScriptChange} />
+            <CodeEditor
+              rows={8}
+              placeholder="Enter your script here..."
+              value={script}
+              onChange={onScriptChange}
+              isHighlightMode={isScriptHighlightMode}
+              onHighlightModeChange={onScriptHighlightModeChange}
+            />
           </div>
         )}
       </div>
