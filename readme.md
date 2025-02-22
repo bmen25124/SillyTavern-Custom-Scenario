@@ -1,98 +1,102 @@
 # SillyTavern Custom Scenario
 
-A [SillyTavern](https://docs.sillytavern.app/) extension that let you create/play interactive character cards. Do you want to ask a question before starting the scenario? Like the character traits, starting location, etc. You can do it here.
+A [SillyTavern](https://docs.sillytavern.app/) extension that allows you to create and play interactive character cards.  Want to customize the scenario before starting? Define character traits, starting location, or any other key element through a series of questions!
 
-## What it does
-- Create scenarios with custom questions
-- Use variables in the description/first message/personality/scenario/character note.
-- Add simple scripts to make things dynamic. (JavaScript)
-- Import/export scenarios as JSON/PNG
+## Key Features
 
-## How to install
+*   **Custom Scenarios:** Design scenarios with tailored question prompts.
+*   **Dynamic Variables:** Use the answers to those questions as variables within the description, first message, personality, scenario notes, and character notes.
+*   **Simple Scripting (JavaScript):**  Add dynamic logic and complex variable manipulation.
+*   **Import/Export:** Share and backup your creations as JSON or PNG files.
+*   **Question Types:**  Supports Text input, Dropdown select, and Checkbox options.
 
-Install via the SillyTavern extension installer.
+## Installation
+
+Install via the SillyTavern extension installer:
 
 ```txt
 https://github.com/bmen25124/SillyTavern-Custom-Scenario
 ```
 
-## Question types
-- Text input
-- Dropdown select
-- Checkbox
+## How to Use
 
-## How to use
+### 1. Create a Scenario
 
-### Create a scenario
+1.  Click the puzzle icon on the character create/edit sidebar.
 
-Click the puzzle icon on the character create/edit sidebar.
+    ![Create Icon](images/create-icon.png)
 
-![create icon](images/create-icon.png)
+2.  Fill out the form in the "Create Scenario" dialog.
 
-Fill out the form.
+    ![Create Dialog](images/create-dialog.png)
+    ![Question - Text](images/question-text.png)
 
-![create dialog](images/create-dialog.png)
-![question - text](images/question-text.png)
+3.  Open the *Script* accordion and test your scripting logic with the "Preview" button.
 
+    ![Simple Preview in First Message](images/first-message-simple-preview.png)
 
-Open _script_ accordion and test it with the preview button
+4.  Export your completed scenario.
 
-![simple preview in first message](images/first-message-simple-preview.png)
+### 2. Play a Scenario
 
+1.  Click the play icon on the characters sidebar and select the JSON/PNG file containing your scenario.
 
-Export it.
+    ![Play Icon](images/play-icon.png)
 
-### Play a scenario
+2.  Fill in the inputs in the "Play Scenario" dialog.
 
-Click the play icon on the characters sidebar and select the JSON/PNG file.
+    ![Play Dialog](images/play-dialog.png)
 
-![play icon](images/play-icon.png)
+3.  Your character card will be created with the scenario applied!
 
-Fill inputs.
-
-![play dialog](images/play-dialog.png)
-
-Created card
-
-![created card](images/created-card.png)
+    ![Created Card](images/created-card.png)
 
 ## Example Cards
 
-Check [rentry page(half NSFW)](https://rentry.co/custom-scenario-creator-examples) for examples. You can import on _Create Dialog_ to see how scripts are working.
+Check out the [rentry page (half NSFW)](https://rentry.co/custom-scenario-creator-examples) for example scenarios. Import these into the "Create Scenario" dialog to see how the scripting works.
 
-## Simple scripting
-You can write basic JavaScript to manipulate variables. For example:
+## Simple Scripting
+
+You can use basic JavaScript to manipulate variables based on user input.
+
+**Example:**
 
 If your description is:
+
 ```
 {{user}} just received a package with a gift from an unknown sender. The package is labeled as containing {{gift}}.
 
 You also received a card with the following message: {{occasionMessage}}
 ```
 
-Assume this was the answer to the question:
+And the user answers the questions:
+
 ```yml
 gift: "a book"
 message: "birthday"
-# As you see, there is no `occasionMessage`
+# As you can see, there is no `occasionMessage` defined yet.
 ```
 
-You can write a script for setting `occasionMessage`
-```js
+You can use a script to set the `occasionMessage`:
+
+```javascript
 variables.occasionMessage = `Happy {{message}}! Enjoy your new {{gift}}`;
 ```
 
-Or:
-```js
+or
+
+```javascript
 variables.occasionMessage = `Happy ${variables.message}! Enjoy your new ${variables.gift}`;
 ```
 
-Or:
-```js
+or
+
+```javascript
 variables.occasionMessage = "Happy " + variables.message + "! Enjoy your new " + variables.gift;
 ```
 
-Output will be:
+The output will be:
+
 ```
 {{user}} just received a package with a gift from an unknown sender. The package is labeled as containing a book.
 
@@ -100,36 +104,47 @@ You also received a card with the following message: Happy birthday! Enjoy your 
 ```
 
 ## Scripting Details
-* `variables` is an object that holds all the variables. Aka the answers to the questions.
-* All variables can be accessed and modified.
-* Example usage: (Let's say question id is `gift`)
-    * If question type is _text_, `variables.gift`
-    * If the question type is _dropdown_, `variables.gift.value` and `variables.gift.label`. When creating the card, `variables.gift.label` is used.
-    * If question type is _checkbox_, `variables.gift`. (boolean)
-* `Show Script` is a script that decides whether to show the question or not in the play dialog. Example:  `return variables.gift === "birthday"` will show the question only if the answer is "birthday".
-* In preview, empty strings are showing as `{{variable}}` but in the created card, they are not shown.
-* We can get single lorebook entry by `await world.getFirst({name?: string, keyword: string})`. Example usage:
-```js
-const info = await world.getFirst({keyword: "triggerWord"}); // name is optional, default name is character lorebook
-if (info) {
-    variables.f_companion_content = info.content;
-}
-```
-* We can get all lorebook entries by `await world.getAll({name?: string, keyword: string})`. Example usage:
-```js
-const infos = await world.getAll({keyword: "triggerWord"}); // name is optional, default name is character lorebook
-if (infos && infos.length > 0) {
-    variables.f_companion_content = infos[0].content;
-}
-```
 
+*   `variables` is an object that holds all the user-provided answers (variables).
+*   All variables can be accessed and modified within your scripts.
+*   **Example Usage (Question ID: `gift`):**
 
-## FAQ:
+    *   **Text Input:** `variables.gift` (The text entered by the user)
+    *   **Dropdown Select:** `variables.gift.value` (The selected value) and `variables.gift.label` (The displayed label).  The `label` is used when creating the card.
+    *   **Checkbox:** `variables.gift` (A boolean: `true` if checked, `false` if not).
+
+*   **Show Script:** This script determines whether a question is displayed in the "Play Scenario" dialog.  Example: `return variables.gift === "birthday"` will only show the question if the `gift` variable is "birthday".
+*   In the preview, empty variables are displayed as `{{variable}}`.  In the created character card, these empty variables are not shown.
+*   **Accessing Lorebook Entries:**
+
+    *   **Get a single Lorebook entry:** `await world.getFirst({name?: string, keyword: string})`. *name* is optional, and defaults to the character lorebook.
+
+        ```javascript
+        const info = await world.getFirst({keyword: "triggerWord"});
+        if (info) {
+            variables.f_companion_content = info.content;
+        }
+        ```
+
+    *   **Get all Lorebook entries:** `await world.getAll({name?: string, keyword: string})`. *name* is optional, and defaults to the character lorebook.
+
+        ```javascript
+        const infos = await world.getAll({keyword: "triggerWord"});
+        if (infos && infos.length > 0) {
+            variables.f_companion_content = infos[0].content;
+        }
+        ```
+
+## FAQ
+
 ### Why did you create this?
-I saw this on [AIDungeon](https://play.aidungeon.com/) and liked it. You can see in this [reddit post](https://www.reddit.com/r/SillyTavernAI/comments/1i59jem/scenario_system_similar_to_ai_dungeon_nsfw_for/) with an example.
 
-### Why version is _0.4.4_
-It is because of UI, not functionality.
+I was inspired by the scenario system in [AIDungeon](https://play.aidungeon.com/). See this [Reddit post](https://www.reddit.com/r/SillyTavernAI/comments/1i59jem/scenario_system_similar_to_ai_dungeon_nsfw_for/) for an example.
+
+### Why is the version number *0.4.5*?
+
+The version number reflects UI changes, not core functionality updates.
 
 ## Known Issues
-* Tags are not importing to SillyTavern because I don't want to show `Import Tags` dialog for each play. So I'm planning to add a extension setting to enable/disable this.
+
+*   Character tags are not currently imported from the scenario files. I plan to add an extension setting to enable/disable the "Import Tags" dialog in a future update.
