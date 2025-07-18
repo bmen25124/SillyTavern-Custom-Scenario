@@ -1,3 +1,4 @@
+import { Textarea } from '../components/Textarea';
 import { hljs } from '../config';
 import React, { useState } from 'react';
 
@@ -70,8 +71,7 @@ export const CodeEditor: React.FC<{
             <code dangerouslySetInnerHTML={{ __html: highlightedCode }} />
           </pre>
         ) : (
-          <textarea
-            className="text_pole textarea_compact"
+          <Textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
             rows={rows}

@@ -2,6 +2,8 @@ import React from 'react';
 import { CoreTab, ScriptInputValues } from '../types/types';
 import { ScriptInput, ScriptInputs } from './ScriptInputs';
 import { CodeEditor } from './CodeEditor';
+import { Button } from '../components/Button';
+import { Textarea } from '../components/Textarea';
 
 interface TabContentProps {
   type: CoreTab;
@@ -60,13 +62,11 @@ export const TabContent: React.FC<TabContentProps> = ({
       </div>
       <div className="accordion marginTop10">
         <div className="accordion-header">
-          <button className="menu_button accordion-toggle" onClick={onAccordionToggle}>
+          <Button className="accordion-toggle" onClick={onAccordionToggle}>
             <span className="accordion-icon">{isAccordionOpen ? '▼' : '▶'}</span>
             Script
-          </button>
-          <button className="menu_button" onClick={onRefreshPreview}>
-            Refresh Preview
-          </button>
+          </Button>
+          <Button onClick={onRefreshPreview}>Refresh Preview</Button>
         </div>
         {isAccordionOpen && (
           <div className="accordion-content">
@@ -91,12 +91,7 @@ export const TabContent: React.FC<TabContentProps> = ({
       </div>
       <div className="flex-container flexFlowColumn marginTop10">
         <label>Preview:</label>
-        <textarea
-          className="text_pole"
-          rows={4}
-          readOnly={true}
-          value={previewContent || 'Preview will appear here...'}
-        ></textarea>
+        <Textarea rows={4} readOnly={true} value={previewContent || 'Preview will appear here...'} />
       </div>
     </div>
   );

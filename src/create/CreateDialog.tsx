@@ -28,6 +28,8 @@ import { extensionVersion, st_createPopper, st_echo, st_popupConfirm, st_uuidv4 
 
 import { executeMainScript, executeShowScript, interpolateText } from '../utils/script-utils';
 import { ScriptInput } from './ScriptInputs';
+import { Button } from '../components/Button';
+import { Select } from '../components/Select';
 
 interface Question {
   id: string;
@@ -1083,36 +1085,36 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
       <h2>Scenario Creator</h2>
       <div className="flex-container tab-navigation spaceBetween">
         <div className="flex-container">
-          <button
-            className={`tab-button menu_button ${activeTab === 'description' ? 'active' : ''}`}
+          <Button
+            className={`tab-button ${activeTab === 'description' ? 'active' : ''}`}
             onClick={() => handleTabClick('description')}
           >
             Description
-          </button>
-          <button
-            className={`tab-button menu_button ${activeTab === 'first-message' ? 'active' : ''}`}
+          </Button>
+          <Button
+            className={`tab-button ${activeTab === 'first-message' ? 'active' : ''}`}
             onClick={() => handleTabClick('first-message')}
           >
             First Message
-          </button>
-          <button
-            className={`tab-button menu_button ${activeTab === 'scenario' ? 'active' : ''}`}
+          </Button>
+          <Button
+            className={`tab-button ${activeTab === 'scenario' ? 'active' : ''}`}
             onClick={() => handleTabClick('scenario')}
           >
             Scenario
-          </button>
-          <button
-            className={`tab-button menu_button ${activeTab === 'personality' ? 'active' : ''}`}
+          </Button>
+          <Button
+            className={`tab-button ${activeTab === 'personality' ? 'active' : ''}`}
             onClick={() => handleTabClick('personality')}
           >
             Personality
-          </button>
-          <button
-            className={`tab-button menu_button ${activeTab === 'character-note' ? 'active' : ''}`}
+          </Button>
+          <Button
+            className={`tab-button ${activeTab === 'character-note' ? 'active' : ''}`}
             onClick={() => handleTabClick('character-note')}
           >
             Character Note
-          </button>
+          </Button>
         </div>
         <div className="flex-container justifyEnd gap10">
           <input
@@ -1122,21 +1124,14 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
             ref={fileInputRef}
             onChange={handleFileChange}
           />
-          <button className="menu_button" onClick={() => fileInputRef.current?.click()}>
-            Import
-          </button>
-          <div
-            ref={exportButtonRef}
-            className="export-container"
-            style={{ position: 'relative', paddingTop: '5px', paddingBottom: '5px' }}
-          >
-            <button
-              className="menu_button"
+          <Button onClick={() => fileInputRef.current?.click()}>Import</Button>
+          <div ref={exportButtonRef} style={{ position: 'relative', paddingTop: '5px', paddingBottom: '5px' }}>
+            <Button
               style={{ height: '100%', paddingTop: '0px', paddingBottom: '0px', margin: '0' }}
               onClick={handleExportClick}
             >
               Export
-            </button>
+            </Button>
             <div
               ref={exportMenuRef}
               className="list-group"
@@ -1158,9 +1153,9 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
               </div>
             </div>
           </div>
-          <button className="menu_button" onClick={handleReset} title="Only resets Scenario Creator fields.">
+          <Button onClick={handleReset} title="Only resets Scenario Creator fields.">
             Reset
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -1178,27 +1173,23 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
             ))}
           </div>
           <div className="button-group">
-            <button className="menu_button" title="Move Page Left" onClick={handleMovePageLeft}>
+            <Button title="Move Page Left" onClick={handleMovePageLeft}>
               <i className="fa-solid fa-arrow-left"></i>
-            </button>
-            <button className="menu_button" title="Move Page Right" onClick={handleMovePageRight}>
+            </Button>
+            <Button title="Move Page Right" onClick={handleMovePageRight}>
               <i className="fa-solid fa-arrow-right"></i>
-            </button>
+            </Button>
           </div>
           <div className="button-group">
-            <button
-              className="menu_button primary add-question-btn"
-              title="Add New Question"
-              onClick={handleAddQuestion}
-            >
+            <Button className="primary add-question-btn" title="Add New Question" onClick={handleAddQuestion}>
               <i className="fa-solid fa-plus"></i> Question
-            </button>
-            <button className="menu_button primary" title="Add New Page" onClick={handleAddPage}>
+            </Button>
+            <Button className="primary" title="Add New Page" onClick={handleAddPage}>
               <i className="fa-solid fa-plus"></i> Page
-            </button>
-            <button className="menu_button danger" title="Remove Current Page" onClick={handleRemovePage}>
+            </Button>
+            <Button className="danger" title="Remove Current Page" onClick={handleRemovePage}>
               <i className="fa-solid fa-trash"></i> Page
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -1270,16 +1261,15 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
           {activeTab.startsWith('question-') && (
             <div className="button-group">
               <div style={{ display: 'flex' }}>
-                <button className="menu_button" title="Move Question Left" onClick={handleMoveQuestionLeft}>
+                <Button title="Move Question Left" onClick={handleMoveQuestionLeft}>
                   <i className="fa-solid fa-arrow-left"></i>
-                </button>
-                <button className="menu_button" title="Move Question Right" onClick={handleMoveQuestionRight}>
+                </Button>
+                <Button title="Move Question Right" onClick={handleMoveQuestionRight}>
                   <i className="fa-solid fa-arrow-right"></i>
-                </button>
+                </Button>
               </div>
               <div>
-                <select
-                  className="text_pole"
+                <Select
                   title="Select a page to move question to"
                   onChange={(e) => handleMoveQuestionToPage(e.target.value)}
                 >
@@ -1289,7 +1279,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
                       Page {page}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
           )}
@@ -1436,7 +1426,7 @@ export const CreateDialog: React.FC<CreateDialogProps> = () => {
       })}
 
       {activeTab.startsWith('question-') && (
-        <div className="question-editor">
+        <div>
           {questions.map((question) => {
             const questionId = `question-${question.id}`;
             return (

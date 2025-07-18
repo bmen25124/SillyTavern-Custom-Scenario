@@ -1,5 +1,7 @@
 import React from 'react';
 import { CoreTab, QuestionType, ScriptInputValues } from '../types/types';
+import { Select } from '../components/Select';
+import { Input } from '../components/Input';
 
 export interface ScriptInput {
   id: string;
@@ -51,7 +53,7 @@ export const ScriptInputs: React.FC<ScriptInputsProps> = ({
   };
 
   return (
-    <div className="script-inputs-container">
+    <div>
       {inputs.map((input) => {
         const helpText =
           input.type === 'select'
@@ -60,13 +62,10 @@ export const ScriptInputs: React.FC<ScriptInputsProps> = ({
 
         return (
           <div key={input.id} className="script-input-group">
-            <label htmlFor={`script-input-${input.id}-${type}`} title={helpText}>
-              {input.id}:
-            </label>
+            <label title={helpText}>{input.id}:</label>
             {input.type === 'checkbox' ? (
-              <input
+              <Input
                 type="checkbox"
-                className="text_pole"
                 checked={
                   !!(isQuestionInput && questionId
                     ? values?.question?.[questionId]?.[input.id]
@@ -76,8 +75,7 @@ export const ScriptInputs: React.FC<ScriptInputsProps> = ({
                 title={helpText}
               />
             ) : input.type === 'select' ? (
-              <select
-                className="text_pole"
+              <Select
                 value={
                   isQuestionInput && questionId
                     ? (values?.question?.[questionId]?.[input.id] ?? '')
@@ -92,11 +90,10 @@ export const ScriptInputs: React.FC<ScriptInputsProps> = ({
                     {option.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             ) : (
-              <input
+              <Input
                 type="text"
-                className="text_pole"
                 value={
                   isQuestionInput && questionId
                     ? (values?.question?.[questionId]?.[input.id] ?? '')

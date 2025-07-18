@@ -2,6 +2,10 @@ import React from 'react';
 import { QuestionType, ScriptInputValues } from '../types/types';
 import { ScriptInput, ScriptInputs } from './ScriptInputs';
 import { CodeEditor } from './CodeEditor';
+import { Button } from '../components/Button';
+import { Textarea } from '../components/Textarea';
+import { Select } from '../components/Select';
+import { Input } from '../components/Input';
 
 interface Option {
   value: string;
@@ -91,24 +95,19 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
 
   return (
     <div className="flex-container flexFlowColumn marginTop10">
-      <div className="flex-container question-header gap10">
+      <div className="flex-container gap10">
         <div className="flex1">
           <label>Type: </label>
-          <select
-            className="text_pole input-type-select"
-            value={type}
-            onChange={(e) => onTypeChange(e.target.value as 'text' | 'select' | 'checkbox')}
-          >
+          <Select value={type} onChange={(e) => onTypeChange(e.target.value as 'text' | 'select' | 'checkbox')}>
             <option value="text">Text</option>
             <option value="select">Select</option>
             <option value="checkbox">Checkbox</option>
-          </select>
+          </Select>
         </div>
         <div className="flex2">
           <label>ID: </label>
-          <input
+          <Input
             type="text"
-            className="text_pole input-id"
             placeholder="Enter ID (e.g., character_name)"
             title="This ID will be used as {{answer_id}} in templates"
             value={inputId}
@@ -132,13 +131,11 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
 
       <div className="accordion marginTop10">
         <div className="accordion-header">
-          <button className="menu_button accordion-toggle" onClick={onAccordionToggle}>
+          <Button className="accordion-toggle" onClick={onAccordionToggle}>
             <span className="accordion-icon">{isAccordionOpen ? '▼' : '▶'}</span>
             Script
-          </button>
-          <button className="menu_button" onClick={onRefreshPreview}>
-            Refresh Preview
-          </button>
+          </Button>
+          <Button onClick={onRefreshPreview}>Refresh Preview</Button>
         </div>
         {isAccordionOpen && (
           <div className="accordion-content">
@@ -169,101 +166,85 @@ export const QuestionComponent: React.FC<QuestionComponentProps> = ({
               onHighlightModeChange={onShowScriptHighlightModeChange}
             />
             <label>Preview: </label>
-            <label className="show-preview">{showPreview}</label>
+            <label>{showPreview}</label>
           </div>
         )}
       </div>
 
       <div className="flex-container flexFlowColumn marginTop10">
         <label>Preview:</label>
-        <textarea
-          className="text_pole"
-          rows={2}
-          readOnly={true}
-          value={questionPreview || 'Preview will appear here...'}
-        ></textarea>
+        <Textarea rows={2} readOnly={true} value={questionPreview || 'Preview will appear here...'} />
       </div>
 
       <div className="flex-container alignItemsCenter marginTop10">
         <label className="checkbox_label">
-          <input type="checkbox" checked={isRequired} onChange={(e) => onRequiredChange(e.target.checked)} />
+          <Input type="checkbox" checked={isRequired} onChange={(e) => onRequiredChange(e.target.checked)} />
           Required
         </label>
       </div>
 
       {type === 'select' && (
-        <div className="select-options-container">
-          <div className="flex-container flexFlowColumn marginTop10">
-            <div className="flex-container justifySpaceBetween alignItemsCenter">
-              <label>Options:</label>
-              <button className="menu_button add-option-btn" onClick={handleAddOption}>
-                + Add Option
-              </button>
-            </div>
-            <div className="options-list">
-              {options.map((option, index) => (
-                <div key={index} className="flex-container gap10 marginTop5">
-                  <input
-                    type="text"
-                    className="text_pole flex1"
-                    placeholder="Label"
-                    title={`Label of the option. This is what the user will see. Access with variables.${inputId}.label`}
-                    value={option.label}
-                    onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    className="text_pole flex1"
-                    placeholder="Value"
-                    title={`Value of the option. This is what the user will select. Access with variables.${inputId}.value`}
-                    value={option.value}
-                    onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
+        <div className="flex-container flexFlowColumn marginTop10">
+          <div className="flex-container justifySpaceBetween alignItemsCenter">
+            <label>Options:</label>
+            <Button onClick={handleAddOption}>+ Add Option</Button>
+          </div>
+          <div className="options-list">
+            {options.map((option, index) => (
+              <div key={index} className="flex-container gap10 marginTop5">
+                <Input
+                  type="text"
+                  className="flex1"
+                  placeholder="Label"
+                  title={`Label of the option. This is what the user will see. Access with variables.${inputId}.label`}
+                  value={option.label}
+                  onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
+                />
+                <Input
+                  type="text"
+                  className="flex1"
+                  placeholder="Value"
+                  title={`Value of the option. This is what the user will select. Access with variables.${inputId}.value`}
+                  value={option.value}
+                  onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
+                />
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      <div className="default-value-container">
-        <div className="flex-container flexFlowColumn marginTop10">
-          <label>Default Value:</label>
-          <div className="default-value-input-container">
-            {type === 'text' && (
-              <textarea
-                className="text_pole textarea_compact input-default"
-                rows={2}
-                placeholder="Enter default value"
-                value={defaultValue}
-                onChange={(e) => onDefaultValueChange(e.target.value)}
+      <div className="flex-container flexFlowColumn marginTop10">
+        <label>Default Value:</label>
+        <div>
+          {type === 'text' && (
+            <Textarea
+              rows={2}
+              placeholder="Enter default value"
+              value={defaultValue}
+              onChange={(e) => onDefaultValueChange(e.target.value)}
+            />
+          )}
+          {type === 'checkbox' && (
+            <label className="checkbox_label checkbox-default">
+              <Input
+                type="checkbox"
+                checked={isDefaultChecked}
+                onChange={(e) => onDefaultCheckedChange(e.target.checked)}
               />
-            )}
-            {type === 'checkbox' && (
-              <label className="checkbox_label checkbox-default">
-                <input
-                  type="checkbox"
-                  checked={isDefaultChecked}
-                  onChange={(e) => onDefaultCheckedChange(e.target.checked)}
-                />
-                Checked by default
-              </label>
-            )}
-            {type === 'select' && (
-              <select
-                className="text_pole select-default"
-                value={defaultValue}
-                onChange={(e) => onDefaultValueChange(e.target.value)}
-              >
-                <option value="">Select a default value</option>
-                {options.map((option, index) => (
-                  <option key={index} value={option.value}>
-                    {option.label || option.value}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
+              Checked by default
+            </label>
+          )}
+          {type === 'select' && (
+            <Select value={defaultValue} onChange={(e) => onDefaultValueChange(e.target.value)}>
+              <option value="">Select a default value</option>
+              {options.map((option, index) => (
+                <option key={index} value={option.value}>
+                  {option.label || option.value}
+                </option>
+              ))}
+            </Select>
+          )}
         </div>
       </div>
     </div>

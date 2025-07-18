@@ -1,3 +1,5 @@
+import { Button } from '../components/Button';
+
 interface PageTabButtonProps {
   page: number;
   onClick: () => void;
@@ -7,9 +9,9 @@ interface PageTabButtonProps {
 export const PageTabButton: React.FC<PageTabButtonProps> = ({ page, onClick, isActive = false }) => {
   return (
     <div className="page-button-container">
-      <button className={`page-button menu_button ${isActive ? 'active' : ''}`} onClick={onClick}>
+      <Button className={`page-button ${isActive ? 'active' : ''}`} onClick={onClick}>
         Page {page}
-      </button>
+      </Button>
     </div>
   );
 };

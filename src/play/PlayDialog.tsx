@@ -14,6 +14,9 @@ import {
   st_setWorldInfoButtonClass,
   st_getThumbnailUrl,
 } from '../config';
+import { Button } from '../components/Button';
+import { Select } from '../components/Select';
+import { Input } from '../components/Input';
 
 interface PlayDialogProps {
   onClose: () => void;
@@ -414,35 +417,29 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
     <div id="scenario-play-dialog">
       <h2>Scenario Player</h2>
 
-      <form id="dynamic-inputs-container" className="flex-container flexFlowColumn marginTop10">
+      <form className="flex-container flexFlowColumn marginTop10">
         {sortedQuestions
           .filter((question) => layout[currentPageIndex].includes(question.inputId))
           .map(
             (question) =>
               question.showPreview === 'SHOW' && (
-                <fieldset key={question.inputId} className="dynamic-input-group marginTop10">
+                <fieldset key={question.inputId} className="marginTop10">
                   <div className="flex-container flexFlowColumn">
-                    <pre
-                      className="input-question"
-                      style={{ whiteSpace: 'pre-wrap' }}
-                      title={'{{' + question.inputId + '}}'}
-                    >
+                    <pre style={{ whiteSpace: 'pre-wrap' }} title={'{{' + question.inputId + '}}'}>
                       {question.questionPreview}
                       {question.required ? ' *' : ''}
                     </pre>
-                    <div className="input-container">
+                    <div>
                       {question.type === 'checkbox' ? (
                         <label className="checkbox_label">
-                          <input
+                          <Input
                             type="checkbox"
-                            className="dynamic-input"
                             checked={answers[question.inputId] as boolean}
                             onChange={(e) => handleInputChange(question.inputId, e.target.checked)}
                           />
                         </label>
                       ) : question.type === 'select' ? (
-                        <select
-                          className="text_pole dynamic-input"
+                        <Select
                           value={(answers[question.inputId] as { value: string })?.value || ''}
                           onChange={(e) => {
                             const option = question.options?.find((opt) => opt.value === e.target.value);
@@ -459,11 +456,10 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
                               {opt.label}
                             </option>
                           ))}
-                        </select>
+                        </Select>
                       ) : (
-                        <input
+                        <Input
                           type="text"
-                          className="text_pole dynamic-input"
                           placeholder={question.required ? 'Required' : 'Enter your answer'}
                           value={answers[question.inputId] as string}
                           onChange={(e) => handleInputChange(question.inputId, e.target.value)}
@@ -483,24 +479,19 @@ export const PlayDialog = forwardRef<PlayDialogRef, PlayDialogProps>(({ onClose 
       </form>
 
       <div className="flex-container justifySpaceBetween marginTop10">
-        <button
-          className="menu_button"
+        <Button
           style={{ visibility: currentPageIndex > 0 ? 'visible' : 'hidden' }}
           onClick={() => handleNavigate('prev')}
         >
           Previous
-        </button>
+        </Button>
         <div id="page-indicator">
           Page {currentPageIndex + 1} of {layout.length}
         </div>
         {currentPageIndex < layout.length - 1 ? (
-          <button className="menu_button" onClick={() => handleNavigate('next')}>
-            Next
-          </button>
+          <Button onClick={() => handleNavigate('next')}>Next</Button>
         ) : (
-          <button className="menu_button" onClick={handleSubmit}>
-            Play
-          </button>
+          <Button onClick={handleSubmit}>Play</Button>
         )}
       </div>
     </div>
